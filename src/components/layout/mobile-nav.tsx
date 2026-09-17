@@ -48,7 +48,7 @@ export function MobileBottomNav() {
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="p-3 text-base">
-                    <Link href="/requests" className="flex items-center w-full">
+                    <Link href="/requests/create" className="flex items-center w-full">
                       <ClipboardList className="w-5 h-5 mr-3 text-primary" /> Нужен товар
                     </Link>
                   </DropdownMenuItem>

@@ -173,7 +173,7 @@ export default async function ProfilePage() {
               </a>
             </Button>
             <Button asChild variant="ghost" className="h-auto py-4 flex-col gap-2 rounded-xl">
-              <a href="/requests">
+              <a href="/my-requests">
                 <Package className="w-6 h-6 text-primary" />
                 <span>Мои запросы</span>
               </a>
