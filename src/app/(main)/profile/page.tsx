@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { User, Phone, Mail, Calendar, Edit, Package, CheckCircle, Ban, Heart, MessageCircle, Settings } from "lucide-react"
+import { User, Phone, Mail, Calendar, Edit, Package, CheckCircle, Ban, Heart, MessageCircle, Settings, Store } from "lucide-react"
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -164,6 +164,12 @@ export default async function ProfilePage() {
               <a href="/favorites">
                 <Heart className="w-6 h-6 text-primary" />
                 <span>Избранное</span>
+              </a>
+            </Button>
+            <Button asChild variant="ghost" className="h-auto py-4 flex-col gap-2 rounded-xl">
+              <a href="/my-store">
+                <Store className="w-6 h-6 text-primary" />
+                <span>Мой магазин</span>
               </a>
             </Button>
             <Button asChild variant="ghost" className="h-auto py-4 flex-col gap-2 rounded-xl">

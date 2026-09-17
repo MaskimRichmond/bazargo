@@ -35,9 +35,22 @@ export async function publishListing(formData: FormData) {
     const quantity = parseInt(formData.get("quantity") as string)
     const city = formData.get("city") as string
     const deliveryMethods = JSON.parse(formData.get("deliveryMethods") as string)
+    const publishAsStore = formData.get("publishAsStore") === "true"
 
-    const payload = {
+    let storeId = null
+    if (publishAsStore && type === "INVENTORY") {
+      const { data: store } = await supabase
+        .from("stores")
+        .select("id")
+        .eq("owner_id", session.user.id)
+        .eq("status", "APPROVED")
+        .single()
+      if (store) storeId = store.id
+    }
+
+    const payload: any = {
       seller_id: session.user.id,
+      store_id: storeId,
       title,
       description,
       category_id: categoryId,

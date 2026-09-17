@@ -27,7 +27,7 @@ const STEPS = [
   { id: "preview", title: "Проверка" },
 ]
 
-export function SellFlow({ categories, initialData = null }: { categories: any[], initialData?: any }) {
+export function SellFlow({ categories, userStore, initialData = null }: { categories: any[], userStore?: any, initialData?: any }) {
   const router = useRouter()
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [isPublishing, setIsPublishing] = useState(false)
@@ -46,6 +46,7 @@ export function SellFlow({ categories, initialData = null }: { categories: any[]
       quantity: 1,
       city: "Бишкек",
       deliveryMethods: ["PICKUP"],
+      publishAsStore: false
     },
     mode: "onChange",
   })
@@ -127,6 +128,7 @@ export function SellFlow({ categories, initialData = null }: { categories: any[]
       formData.append('quantity', data.quantity?.toString() || "1")
       formData.append('city', data.city)
       formData.append('deliveryMethods', JSON.stringify(data.deliveryMethods))
+      formData.append('publishAsStore', String(data.publishAsStore || false))
       
       // Append images
       data.images.forEach((img, index) => {
@@ -198,7 +200,7 @@ export function SellFlow({ categories, initialData = null }: { categories: any[]
 
         {/* Step Content */}
         <div className="px-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <CurrentStepComponent categories={categories} />
+          <CurrentStepComponent categories={categories} userStore={userStore} />
         </div>
 
         {/* Bottom CTA */}

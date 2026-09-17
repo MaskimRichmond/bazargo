@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { CheckCircle2, Star } from "lucide-react"
+import { CheckCircle2, Star, Package } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
@@ -12,23 +12,29 @@ interface StoreCardProps {
     category: string
     rating: number
     reviews: number
-    avatar: string
+    image?: string
+    avatar?: string
     isVerified: boolean
+    itemsCount?: number
+    slug?: string
   }
 }
 
 export function StoreCard({ store }: StoreCardProps) {
+  const imgSrc = store.image || store.avatar || ""
+  const href = `/store/${store.slug || store.id}`
+
   return (
     <Card className="hover:shadow-md transition-shadow border-muted">
       <CardContent className="p-5">
         <div className="flex items-center gap-4 mb-4">
           <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-muted relative">
-            <ImageWithFallback src={store.avatar} alt={store.name} />
+            <ImageWithFallback src={imgSrc} alt={store.name} />
           </div>
           <div className="flex-1 min-w-0">
-            <Link href={`/store/${store.id}`} className="hover:text-primary transition-colors flex items-center gap-1.5">
+            <Link href={href} className="hover:text-primary transition-colors flex items-center gap-1.5">
               <h3 className="font-semibold truncate">{store.name}</h3>
-              {store.isVerified && <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />}
+              {store.isVerified && <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0" />}
             </Link>
             <p className="text-sm text-muted-foreground truncate">{store.category}</p>
           </div>
@@ -40,10 +46,16 @@ export function StoreCard({ store }: StoreCardProps) {
             <span className="font-medium">{store.rating}</span>
             <span className="text-muted-foreground text-sm">({store.reviews})</span>
           </div>
+          {store.itemsCount !== undefined && (
+            <div className="flex items-center gap-1 text-muted-foreground text-sm">
+              <Package className="w-4 h-4" />
+              <span>{store.itemsCount} тов.</span>
+            </div>
+          )}
         </div>
         
-        <Button variant="outline" className="w-full text-primary hover:text-primary hover:bg-primary/5 border-primary/20">
-          Подписаться
+        <Button asChild variant="outline" className="w-full text-primary hover:text-primary hover:bg-primary/5 border-primary/20 rounded-xl">
+          <Link href={href}>В магазин</Link>
         </Button>
       </CardContent>
     </Card>

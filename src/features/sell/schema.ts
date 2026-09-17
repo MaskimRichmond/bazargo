@@ -27,6 +27,7 @@ export const productDetailsSchema = z.object({
 
 export const deliverySchema = z.object({
   deliveryMethods: z.array(z.string()).min(1, "Выберите хотя бы один способ получения"),
+  publishAsStore: z.boolean().optional(),
 })
 
 export const sellFormSchema = z.object({

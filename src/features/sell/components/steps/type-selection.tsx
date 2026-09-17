@@ -3,7 +3,7 @@ import { Package, Copy } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
-export function TypeSelection() {
+export function TypeSelection({ userStore }: { userStore?: any }) {
   const { watch, setValue } = useFormContext()
   const currentType = watch("type")
 
@@ -57,6 +57,27 @@ export function TypeSelection() {
           )
         })}
       </div>
+
+      {currentType === "INVENTORY" && userStore && (
+        <Card className="border-primary/20 bg-primary/5 mt-6 animate-in fade-in">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <h4 className="font-semibold text-sm">Публикация от магазина</h4>
+              <p className="text-xs text-muted-foreground">Объявление будет опубликовано от имени "{userStore.name}"</p>
+            </div>
+            <div className="flex items-center">
+              <label className="flex items-center cursor-pointer gap-2">
+                <input 
+                  type="checkbox" 
+                  className="w-5 h-5 rounded border-primary" 
+                  checked={watch("publishAsStore") || false}
+                  onChange={(e) => setValue("publishAsStore", e.target.checked)}
+                />
+              </label>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }

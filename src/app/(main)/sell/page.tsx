@@ -45,6 +45,14 @@ export default async function SellPage(props: { searchParams: Promise<{ edit?: s
     )
   }
 
+  // Fetch user store
+  const { data: store } = await supabase
+    .from("stores")
+    .select("id, name")
+    .eq("owner_id", session.user.id)
+    .eq("status", "APPROVED")
+    .maybeSingle()
+
   if (!categories || categories.length === 0) {
     return (
       <div className="container max-w-2xl mx-auto p-8 text-center mt-20 space-y-6">

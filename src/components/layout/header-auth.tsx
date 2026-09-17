@@ -4,7 +4,7 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { User, LogOut, Settings, Package, Heart, MessageCircle } from "lucide-react"
+import { User, LogOut, Settings, Package, Heart, MessageCircle, Store } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
@@ -117,6 +117,9 @@ export function HeaderAuth() {
             </Link>
             <Link href="/my-listings" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
               <Package className="w-4 h-4" /> Мои объявления
+            </Link>
+            <Link href="/my-store" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors text-primary font-medium">
+              <Store className="w-4 h-4" /> Мой магазин
             </Link>
             <Link href="/favorites" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
               <Heart className="w-4 h-4" /> Избранное
