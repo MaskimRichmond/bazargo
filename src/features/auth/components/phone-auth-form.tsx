@@ -138,7 +138,11 @@ export function PhoneAuthForm() {
       if (authError) throw authError
 
       if (data?.session) {
-        const redirectTo = searchParams.get("redirect_to") || "/profile"
+        const rawRedirect = searchParams.get("redirect_to")
+        let redirectTo = "/profile"
+        if (rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//")) {
+          redirectTo = rawRedirect
+        }
         router.push(redirectTo)
         router.refresh()
       }

@@ -97,7 +97,7 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
               <span>{new Date(listing.created_at).toLocaleDateString()}</span>
             </div>
             <h1 className="text-3xl font-bold tracking-tight mb-2">{listing.title}</h1>
-            <p className="text-4xl font-bold text-primary">{listing.price.toLocaleString("ru-RU")} ₸</p>
+            <p className="text-4xl font-bold text-primary">{listing.price.toLocaleString("ru-RU")} сом</p>
           </div>
 
           <div className="flex flex-col gap-3">

@@ -27,6 +27,7 @@ export const POPULAR_PRODUCTS = [
     seller: { name: "Азамат", rating: 4.8, reviews: 124 },
     image: "/demo/products/iphone.jpg",
     isVerified: true,
+    category: "Смартфоны"
   },
   {
     id: "p2",
@@ -38,6 +39,7 @@ export const POPULAR_PRODUCTS = [
     seller: { name: "TechStore", rating: 4.9, reviews: 342 },
     image: "/demo/products/macbook.jpg",
     isVerified: true,
+    category: "Ноутбуки"
   },
   {
     id: "p3",
@@ -49,6 +51,7 @@ export const POPULAR_PRODUCTS = [
     seller: { name: "SneakerShop", rating: 4.7, reviews: 89 },
     image: "/demo/products/nike.jpg",
     isVerified: false,
+    category: "Одежда"
   },
   {
     id: "p4",
@@ -60,6 +63,7 @@ export const POPULAR_PRODUCTS = [
     seller: { name: "AutoKG", rating: 4.5, reviews: 56 },
     image: "/demo/products/camry.jpg",
     isVerified: true,
+    category: "Авто"
   },
 ];
 

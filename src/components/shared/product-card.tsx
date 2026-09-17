@@ -14,12 +14,13 @@ interface ProductCardProps {
     seller: { name: string; rating: number; reviews: number }
     image: string
     isVerified: boolean
+    outOfStock?: boolean
   }
 }
 
 export function ProductCard({ product }: ProductCardProps) {
   return (
-    <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-border/50 flex flex-col h-full relative outline-none focus-within:ring-2 focus-within:ring-primary rounded-2xl">
+    <Card className={`overflow-hidden group hover:shadow-lg transition-all duration-300 border-border/50 flex flex-col h-full relative outline-none focus-within:ring-2 focus-within:ring-primary rounded-2xl ${product.outOfStock ? 'opacity-70 grayscale-[0.5]' : ''}`}>
       <button 
         className="absolute top-3 right-3 z-10 bg-background/80 backdrop-blur-md hover:bg-background rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity focus-visible:opacity-100 outline-none shadow-sm"
         aria-label="Добавить в избранное"
@@ -34,7 +35,12 @@ export function ProductCard({ product }: ProductCardProps) {
           fallbackText={product.title}
           className="group-hover:scale-105 transition-transform duration-500"
         />
-        {product.isVerified && (
+        {product.outOfStock && (
+          <div className="absolute inset-0 bg-background/40 flex items-center justify-center backdrop-blur-[2px]">
+            <span className="bg-background/90 text-foreground px-3 py-1.5 rounded-lg font-bold text-sm shadow-sm border">Нет в наличии</span>
+          </div>
+        )}
+        {product.isVerified && !product.outOfStock && (
           <div className="absolute bottom-2 left-2 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-md flex items-center gap-1 shadow-sm">
             <CheckCircle2 className="w-3 h-3 text-primary" />
             <span className="text-[10px] font-semibold">Проверен</span>

@@ -64,9 +64,8 @@ export default async function SellPage(props: { searchParams: Promise<{ edit?: s
           <div className="text-left text-sm bg-background p-4 rounded-md border text-foreground overflow-auto">
             <p className="font-semibold mb-2">Как исправить:</p>
             <ol className="list-decimal pl-5 space-y-2">
-              <li>Откройте <b>Supabase Dashboard</b> → SQL Editor</li>
-              <li>Скопируйте содержимое файла <code>supabase/migrations/20260917_categories_seed.sql</code></li>
-              <li>Нажмите <b>Run</b>, чтобы применить миграцию.</li>
+              <li>Убедитесь, что база данных запущена.</li>
+              <li>Проверьте, что актуальные Supabase migrations применены (выполните команду <code>npx supabase db push</code>).</li>
               <li>Обновите эту страницу.</li>
             </ol>
           </div>

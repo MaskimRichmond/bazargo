@@ -82,7 +82,7 @@ export function MyListingsClient({ listings }: { listings: any[] }) {
                 </DropdownMenu>
               )}
             </div>
-            <p className="font-bold whitespace-nowrap text-sm sm:text-lg text-primary">{listing.price.toLocaleString("ru-RU")} ₸</p>
+            <p className="font-bold whitespace-nowrap text-sm sm:text-lg text-primary">{listing.price.toLocaleString("ru-RU")} сом</p>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 truncate">
               {new Date(listing.created_at).toLocaleDateString()} • {listing.city}
             </p>

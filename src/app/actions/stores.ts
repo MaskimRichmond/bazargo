@@ -5,15 +5,28 @@ import { revalidatePath } from "next/cache"
 
 // Utility to generate a basic slug
 function generateSlug(text: string) {
-  return text
+  const cyrillicToLatinMap: Record<string, string> = {
+    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh',
+    'з': 'z', 'и': 'i', 'й': 'j', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o',
+    'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'h', 'ц': 'c',
+    'ч': 'ch', 'ш': 'sh', 'щ': 'shch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu',
+    'я': 'ya'
+  };
+
+  const transliterated = text
     .toString()
     .toLowerCase()
+    .split('')
+    .map(char => cyrillicToLatinMap[char] || char)
+    .join('');
+
+  return transliterated
     .trim()
-    .replace(/\s+/g, '-')       // Replace spaces with -
-    .replace(/[^\w\-]+/g, '')   // Remove all non-word chars
-    .replace(/\-\-+/g, '-')     // Replace multiple - with single -
-    .replace(/^-+/, '')         // Trim - from start of text
-    .replace(/-+$/, '');        // Trim - from end of text
+    .replace(/\s+/g, '-')
+    .replace(/[^\w\-]+/g, '')
+    .replace(/\-\-+/g, '-')
+    .replace(/^-+/, '')
+    .replace(/-+$/, '');
 }
 
 export async function createStore(formData: FormData) {
@@ -178,19 +191,23 @@ export async function toggleFollowStore(storeId: string) {
 
   if (existing) {
     // Unfollow
-    await supabase
+    const { error: deleteError } = await supabase
       .from("follows")
       .delete()
       .eq("follower_id", session.user.id)
       .eq("followed_store_id", storeId)
+      
+    if (deleteError) return { success: false, error: "Ошибка отписки" }
   } else {
     // Follow
-    await supabase
+    const { error: insertError } = await supabase
       .from("follows")
       .insert({
         follower_id: session.user.id,
         followed_store_id: storeId
       })
+      
+    if (insertError) return { success: false, error: "Ошибка подписки" }
   }
 
   revalidatePath(`/store/[slug]`, "page")

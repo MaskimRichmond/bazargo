@@ -24,7 +24,7 @@ export async function publishListing(formData: FormData) {
       if (profileError) console.error("Self-healing profile creation failed:", profileError)
     }
 
-    // Parse form data
+    // 0. Server-side validation
     const id = formData.get("id") as string
     const type = formData.get("type") as string
     const title = formData.get("title") as string
@@ -32,13 +32,26 @@ export async function publishListing(formData: FormData) {
     const price = parseFloat(formData.get("price") as string)
     const condition = formData.get("condition") as string
     const description = formData.get("description") as string
-    const quantity = parseInt(formData.get("quantity") as string)
+    const quantity = parseInt(formData.get("quantity") as string) || 1
     const city = formData.get("city") as string
-    const deliveryMethods = JSON.parse(formData.get("deliveryMethods") as string)
+    let deliveryMethods = []
+    try {
+      deliveryMethods = JSON.parse(formData.get("deliveryMethods") as string)
+    } catch (e) {}
+
+    if (!title || title.length < 5) throw new Error("Слишком короткое название")
+    if (!categoryId) throw new Error("Категория обязательна")
+    if (isNaN(price) || price < 0) throw new Error("Некорректная цена")
+    if (!city) throw new Error("Город обязателен")
+
     const publishAsStore = formData.get("publishAsStore") === "true"
 
     let storeId = null
-    if (publishAsStore && type === "INVENTORY") {
+    // If edit, we should preserve the store_id if it was published as store
+    if (id) {
+      const { data: existing } = await supabase.from("listings").select("store_id").eq("id", id).single()
+      if (existing) storeId = existing.store_id
+    } else if (publishAsStore && type === "INVENTORY") {
       const { data: store } = await supabase
         .from("stores")
         .select("id")
@@ -56,7 +69,7 @@ export async function publishListing(formData: FormData) {
       category_id: categoryId,
       price,
       condition,
-      quantity,
+      quantity: type === "INVENTORY" ? quantity : 1,
       listing_type: type,
       city,
       delivery_methods: deliveryMethods,
@@ -74,24 +87,21 @@ export async function publishListing(formData: FormData) {
     const { data: listing, error: listingError } = listingResponse;
 
     if (listingError) {
-      console.error("Listing insert error:", {
-        message: listingError.message,
-        code: listingError.code,
-        details: listingError.details,
-        hint: listingError.hint,
-      })
       throw new Error(`Ошибка базы данных: ${listingError.message} (код ${listingError.code})`)
     }
 
     const listingId = listing.id
 
-    // 2. Upload images and collect URLs
-    // We expect image_0, image_1, etc.
+    // 2. Upload images
     const imageUrls: string[] = []
+    let uploadFailed = false
+
+    const { data: existingImages } = await supabase.from("listing_images").select("id").eq("listing_id", listingId)
+    let totalImages = existingImages ? existingImages.length : 0
     
     for (let i = 0; i < 10; i++) {
       const file = formData.get(`image_${i}`) as File | null
-      if (file) {
+      if (file && file.size > 0) {
         const fileExt = file.name.split('.').pop()
         const fileName = `${session.user.id}/${listingId}/${uuidv4()}.${fileExt}`
         
@@ -101,8 +111,8 @@ export async function publishListing(formData: FormData) {
           .upload(fileName, file)
 
         if (uploadError) {
-          console.error("Upload error:", uploadError)
-          // For MVP, we continue even if one image fails, or we could throw. Let's just continue.
+          uploadFailed = true
+          break
         } else {
           const { data: publicUrlData } = supabase.storage.from("product-images").getPublicUrl(fileName)
           imageUrls.push(publicUrlData.publicUrl)
@@ -110,12 +120,19 @@ export async function publishListing(formData: FormData) {
       }
     }
 
+    if (uploadFailed) {
+      if (!id) {
+        await supabase.from("listings").delete().eq("id", listingId)
+      }
+      throw new Error("Ошибка при загрузке изображений. Попробуйте еще раз.")
+    }
+
     // 3. Insert listing images
     if (imageUrls.length > 0) {
       const imageRecords = imageUrls.map((url, index) => ({
         listing_id: listingId,
         url,
-        order_index: index
+        order_index: totalImages + index
       }))
 
       const { error: imageError } = await supabase
@@ -123,15 +140,25 @@ export async function publishListing(formData: FormData) {
         .insert(imageRecords)
 
       if (imageError) {
-        console.error("Image insert error:", imageError)
+        if (!id) await supabase.from("listings").delete().eq("id", listingId)
+        throw new Error("Ошибка сохранения изображений")
       }
+      totalImages += imageUrls.length
+    }
+
+    if (totalImages === 0) {
+      if (!id) await supabase.from("listings").delete().eq("id", listingId)
+      throw new Error("Необходимо загрузить хотя бы одно фото")
     }
 
     revalidatePath("/")
     revalidatePath("/profile")
+    revalidatePath("/my-listings")
+    revalidatePath("/catalog")
     
     return { success: true, listingId }
-  } catch (error: any) {
-    return { success: false, error: error.message }
+  } catch (err: any) {
+    console.error("Publish listing error:", err)
+    return { success: false, error: err.message || "Unknown error" }
   }
 }

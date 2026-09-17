@@ -12,6 +12,11 @@ const TABS = ["Все", "Смартфоны", "Ноутбуки", "Авто", "�
 export function PopularProducts() {
   const [activeTab, setActiveTab] = React.useState("Все")
 
+  const filteredProducts = React.useMemo(() => {
+    if (activeTab === "Все") return POPULAR_PRODUCTS;
+    return POPULAR_PRODUCTS.filter(p => p.category === activeTab);
+  }, [activeTab]);
+
   return (
     <section className="py-12 bg-muted/20">
       <div className="container mx-auto px-4">
@@ -37,11 +42,20 @@ export function PopularProducts() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
-          {POPULAR_PRODUCTS.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {filteredProducts.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-background rounded-3xl border border-dashed">
+            <p className="text-muted-foreground font-medium mb-4">В этой категории пока нет популярных товаров</p>
+            <Button variant="outline" onClick={() => setActiveTab("Все")} className="rounded-full">
+              Показать все
+            </Button>
+          </div>
+        )}
         
         <div className="mt-8 flex justify-center lg:hidden">
           <Button variant="outline" className="w-full sm:w-auto" asChild>
