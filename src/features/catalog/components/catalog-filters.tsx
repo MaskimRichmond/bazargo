@@ -3,7 +3,6 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { useTransition, useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Filter, X } from "lucide-react"
-import { useDebounce } from "@/hooks/use-debounce"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CategoryPicker } from "@/features/catalog/components/category-picker"
 
@@ -17,20 +16,37 @@ export function CatalogFilters({ categories }: { categories: Category[] }) {
   
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
-  // Local state for debouncing price
+  // Local state for draft price
   const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") || "")
   const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "")
-  
-  const debouncedMin = useDebounce(minPrice, 500)
-  const debouncedMax = useDebounce(maxPrice, 500)
 
+  // Sync draft state when URL changes (e.g. F5, Back/Forward, Reset)
   useEffect(() => {
-    updateFilter("minPrice", debouncedMin)
-  }, [debouncedMin])
+    setMinPrice(searchParams.get("minPrice") || "")
+    setMaxPrice(searchParams.get("maxPrice") || "")
+  }, [searchParams])
 
-  useEffect(() => {
-    updateFilter("maxPrice", debouncedMax)
-  }, [debouncedMax])
+  const applyPriceFilter = () => {
+    const current = new URLSearchParams(Array.from(searchParams.entries()))
+    
+    if (minPrice) current.set("minPrice", minPrice)
+    else current.delete("minPrice")
+    
+    if (maxPrice) current.set("maxPrice", maxPrice)
+    else current.delete("maxPrice")
+
+    current.delete("page") // reset pagination
+    
+    startTransition(() => {
+      router.push(`${pathname}?${current.toString()}`)
+    })
+  }
+
+  const handlePriceKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      applyPriceFilter()
+    }
+  }
 
   const updateFilter = (key: string, value: string) => {
     const current = new URLSearchParams(Array.from(searchParams.entries()))
@@ -77,22 +93,31 @@ export function CatalogFilters({ categories }: { categories: Category[] }) {
 
       <div>
         <h3 className="font-medium mb-3">Цена</h3>
-        <div className="flex items-center gap-2">
-          <input 
-            type="number" 
-            placeholder="От" 
-            className="w-full h-10 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-            value={minPrice}
-            onChange={(e) => setMinPrice(e.target.value)}
-          />
-          <span className="text-muted-foreground">-</span>
-          <input 
-            type="number" 
-            placeholder="До" 
-            className="w-full h-10 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-            value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
-          />
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <input 
+              type="number" 
+              placeholder="От" 
+              className="w-full h-10 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              value={minPrice}
+              onChange={(e) => setMinPrice(e.target.value)}
+              onKeyDown={handlePriceKeyDown}
+            />
+            <span className="text-muted-foreground">-</span>
+            <input 
+              type="number" 
+              placeholder="До" 
+              className="w-full h-10 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              value={maxPrice}
+              onChange={(e) => setMaxPrice(e.target.value)}
+              onKeyDown={handlePriceKeyDown}
+            />
+          </div>
+          {(minPrice !== (searchParams.get("minPrice") || "") || maxPrice !== (searchParams.get("maxPrice") || "")) && (
+            <Button size="sm" variant="secondary" onClick={applyPriceFilter} className="w-full text-xs h-8">
+              Применить
+            </Button>
+          )}
         </div>
       </div>
 
