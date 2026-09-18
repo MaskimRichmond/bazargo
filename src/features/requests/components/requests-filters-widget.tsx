@@ -167,20 +167,22 @@ export function RequestsFiltersWidget({ categories }: { categories: Category[] }
         </div>
 
         <div>
-          <h3 className="font-medium mb-3">Город</h3>
-          <Select value={searchParams.get("city") || "all"} onValueChange={(val) => updateFilter("city", val)}>
+          <h3 className="font-medium mb-3">Регион</h3>
+          <Select value={searchParams.get("region") || "all"} onValueChange={(val) => updateFilter("region", val)}>
             <SelectTrigger className="w-full h-10">
-              <SelectValue placeholder="Любой город" />
+              <SelectValue placeholder="Все регионы" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Любой город</SelectItem>
+              <SelectItem value="all">Все регионы</SelectItem>
               <SelectItem value="Бишкек">Бишкек</SelectItem>
               <SelectItem value="Ош">Ош</SelectItem>
-              <SelectItem value="Джалал-Абад">Джалал-Абад</SelectItem>
-              <SelectItem value="Каракол">Каракол</SelectItem>
-              <SelectItem value="Талас">Талас</SelectItem>
-              <SelectItem value="Нарын">Нарын</SelectItem>
-              <SelectItem value="Баткен">Баткен</SelectItem>
+              <SelectItem value="Баткенская область">Баткенская область</SelectItem>
+              <SelectItem value="Джалал-Абадская область">Джалал-Абадская область</SelectItem>
+              <SelectItem value="Иссык-Кульская область">Иссык-Кульская область</SelectItem>
+              <SelectItem value="Нарынская область">Нарынская область</SelectItem>
+              <SelectItem value="Ошская область">Ошская область</SelectItem>
+              <SelectItem value="Таласская область">Таласская область</SelectItem>
+              <SelectItem value="Чуйская область">Чуйская область</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -198,7 +200,7 @@ export function RequestsFiltersWidget({ categories }: { categories: Category[] }
           </Select>
         </div>
 
-        {(searchParams.get("budgetMin") || searchParams.get("budgetMax") || searchParams.get("category") || searchParams.get("city") || searchParams.get("q") || (searchParams.get("status") && searchParams.get("status") !== "OPEN")) && (
+        {(searchParams.get("budgetMin") || searchParams.get("budgetMax") || searchParams.get("category") || searchParams.get("region") || searchParams.get("q") || (searchParams.get("status") && searchParams.get("status") !== "OPEN")) && (
           <Button 
             variant="outline" 
             className="w-full text-xs" 
@@ -218,7 +220,7 @@ export function RequestsFiltersWidget({ categories }: { categories: Category[] }
   if (searchParams.get("budgetMin")) activeCount++
   if (searchParams.get("budgetMax")) activeCount++
   if (searchParams.get("category")) activeCount++
-  if (searchParams.get("city")) activeCount++
+  if (searchParams.get("region")) activeCount++
   if (searchParams.get("q")) activeCount++
   if (searchParams.get("status") && searchParams.get("status") !== "OPEN") activeCount++
 

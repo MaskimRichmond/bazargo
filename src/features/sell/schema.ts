@@ -22,7 +22,8 @@ export const productDetailsSchema = z.object({
   }),
   description: z.string().min(10, "Опишите товар подробнее (минимум 10 символов)").max(2000, "Слишком длинное описание"),
   quantity: z.coerce.number().min(1, "Минимум 1").optional(), // Only for INVENTORY
-  city: z.string().min(2, "Укажите город"),
+  region: z.string().min(2, "Выберите регион"),
+  city: z.string().min(2, "Выберите город"),
 })
 
 export const deliverySchema = z.object({

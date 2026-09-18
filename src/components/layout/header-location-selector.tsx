@@ -4,51 +4,71 @@ import { useState, useEffect } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { MapPin } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-
-const REGIONS = [
-  "Бишкек",
-  "Баткенская область",
-  "Джалал-Абадская область",
-  "Иссык-Кульская область",
-  "Нарынская область",
-  "Ошская область",
-  "Таласская область",
-  "Чуйская область"
-]
+import { REGIONS } from "@/lib/regions"
 
 export function HeaderLocationSelector() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   
-  // Try to get from URL first (if in catalog/requests), else fallback to localStorage
-  const urlCity = searchParams.get("city")
-  const [selectedLocation, setSelectedLocation] = useState<string>("Бишкек")
+  const [selectedLocation, setSelectedLocation] = useState<string>("Все регионы")
 
   useEffect(() => {
-    // If URL has a city, sync it to local state & storage
-    if (urlCity) {
-      setSelectedLocation(urlCity)
-      localStorage.setItem("user_location", urlCity)
-    } else {
-      // If URL doesn't have it, try to load from storage
-      const stored = localStorage.getItem("user_location")
-      if (stored && REGIONS.includes(stored)) {
-        setSelectedLocation(stored)
-      }
+    // Priority: URL query param > Cookie > LocalStorage
+    const urlRegion = searchParams.get("region")
+    
+    // Read cookie directly on client
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`
+      const parts = value.split(`; ${name}=`)
+      if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || "")
+      return null
     }
-  }, [urlCity])
+
+    const cookieRegion = getCookie("bazargo_region")
+    const storageRegion = localStorage.getItem("user_location")
+
+    let activeRegion = "Все регионы"
+    
+    if (urlRegion) {
+      activeRegion = urlRegion === "all" ? "Все регионы" : urlRegion
+    } else if (cookieRegion) {
+      activeRegion = cookieRegion === "all" ? "Все регионы" : cookieRegion
+    } else if (storageRegion) {
+      activeRegion = storageRegion === "all" ? "Все регионы" : storageRegion
+    }
+
+    if (activeRegion !== "Все регионы" && !REGIONS.includes(activeRegion as any)) {
+      activeRegion = "Все регионы"
+    }
+
+    setSelectedLocation(activeRegion)
+    
+    // Sync state back to storage if it was from URL
+    if (urlRegion) {
+      document.cookie = `bazargo_region=${encodeURIComponent(urlRegion)}; path=/; max-age=31536000`
+      localStorage.setItem("user_location", urlRegion)
+    }
+  }, [searchParams])
 
   const handleSelect = (region: string) => {
-    setSelectedLocation(region)
-    localStorage.setItem("user_location", region)
+    const value = region === "Все регионы" ? "all" : region
     
-    // If we are currently on a page that supports city filtering (catalog or requests), apply it
+    setSelectedLocation(region)
+    document.cookie = `bazargo_region=${encodeURIComponent(value)}; path=/; max-age=31536000`
+    localStorage.setItem("user_location", value)
+    
     if (pathname === "/catalog" || pathname === "/requests") {
       const current = new URLSearchParams(Array.from(searchParams.entries()))
-      current.set("city", region)
+      if (value === "all") {
+        current.delete("region")
+      } else {
+        current.set("region", value)
+      }
       current.delete("page")
       router.push(`${pathname}?${current.toString()}`)
+    } else {
+      router.refresh()
     }
   }
 
@@ -61,6 +81,12 @@ export function HeaderLocationSelector() {
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
+        <DropdownMenuItem 
+          onClick={() => handleSelect("Все регионы")}
+          className={selectedLocation === "Все регионы" ? "bg-primary/10 text-primary font-medium" : ""}
+        >
+          Все регионы
+        </DropdownMenuItem>
         {REGIONS.map(region => (
           <DropdownMenuItem 
             key={region} 

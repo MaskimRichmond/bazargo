@@ -24,6 +24,10 @@ async function CatalogList({ searchParams, categories }: { searchParams: any, ca
     .eq("status", "ACTIVE")
     
   // Filters
+  if (searchParams.q) {
+    const safeQ = searchParams.q.replace(/,/g, ' ') // Escape commas to avoid breaking PostgREST .or()
+    query = query.or(`title.ilike.%${safeQ}%,description.ilike.%${safeQ}%`)
+  }
   if (searchParams.category) {
     const targetCat = categories.find(c => c.slug === searchParams.category)
     if (targetCat) {
@@ -35,8 +39,8 @@ async function CatalogList({ searchParams, categories }: { searchParams: any, ca
       query = query.eq("categories.slug", searchParams.category)
     }
   }
-  if (searchParams.city) {
-    query = query.ilike("city", `%${searchParams.city}%`)
+  if (searchParams.region && searchParams.region !== "all") {
+    query = query.eq("region", searchParams.region)
   }
   if (searchParams.minPrice) {
     query = query.gte("price", parseFloat(searchParams.minPrice))

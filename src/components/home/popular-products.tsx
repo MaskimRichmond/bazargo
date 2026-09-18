@@ -1,67 +1,84 @@
-"use client"
-
-import * as React from "react"
-import { ArrowRight } from "lucide-react"
+import { cookies } from "next/headers"
 import Link from "next/link"
-import { POPULAR_PRODUCTS } from "@/lib/mock-data"
-import { ProductCard } from "@/components/shared/product-card"
+import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ProductCard } from "@/components/shared/product-card"
+import { createClient } from "@/lib/supabase/server"
 
-const TABS = ["Все", "Смартфоны", "Ноутбуки", "Авто", "Одежда", "Для дома"]
+export async function PopularProducts() {
+  const supabase = await createClient()
+  const cookieStore = await cookies()
+  const regionCookie = cookieStore.get("bazargo_region")?.value
+  const activeRegion = regionCookie && regionCookie !== "all" ? decodeURIComponent(regionCookie) : null
 
-export function PopularProducts() {
-  const [activeTab, setActiveTab] = React.useState("Все")
+  let query = supabase
+    .from("listings")
+    .select(`
+      id, title, price, city, condition, created_at,
+      profiles!seller_id(id, full_name),
+      listing_images(url, order_index)
+    `)
+    .eq("status", "ACTIVE")
+    .order("created_at", { ascending: false })
+    .limit(8)
 
-  const filteredProducts = React.useMemo(() => {
-    if (activeTab === "Все") return POPULAR_PRODUCTS;
-    return POPULAR_PRODUCTS.filter(p => p.category === activeTab);
-  }, [activeTab]);
+  if (activeRegion) {
+    query = query.eq("region", activeRegion)
+  }
+
+  const { data: listings } = await query
+
+  // Map to format for ProductCard
+  const products = (listings || []).map((l: any) => {
+    const images = l.listing_images?.sort((a: any, b: any) => a.order_index - b.order_index) || []
+    return {
+      id: l.id,
+      title: l.title,
+      price: l.price,
+      city: l.city,
+      time: new Date(l.created_at).toLocaleDateString(),
+      condition: l.condition,
+      seller: { name: l.profiles?.full_name || "Пользователь", rating: 4.5, reviews: 0 },
+      image: images.length > 0 ? images[0].url : "",
+      isVerified: false,
+      isFavorite: false // MVP, no favorite check on homepage yet
+    }
+  })
 
   return (
-    <section className="py-12 bg-muted/20">
+    <section className="py-10 md:py-16 bg-background">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-          <h2 className="text-2xl font-bold">Популярные товары</h2>
-          
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
-            {TABS.map((tab) => (
-              <Button
-                key={tab}
-                variant={activeTab === tab ? "default" : "outline"}
-                size="sm"
-                onClick={() => setActiveTab(tab)}
-                className="rounded-full shrink-0 h-8"
-              >
-                {tab}
-              </Button>
-            ))}
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-2 text-foreground">
+              Свежие объявления
+            </h2>
+            <p className="text-muted-foreground">
+              {activeRegion ? `В регионе: ${activeRegion}` : "Новые предложения со всего Кыргызстана"}
+            </p>
           </div>
-
-          <Link href="/catalog" className="hidden lg:flex items-center text-sm font-medium text-primary hover:underline">
-            Смотреть все <ArrowRight className="ml-1 w-4 h-4" />
-          </Link>
+          <Button variant="ghost" className="text-primary hover:text-primary hover:bg-primary/5 -ml-4 sm:ml-0 self-start sm:self-auto" asChild>
+            <Link href="/catalog" className="flex items-center gap-2 font-medium">
+              Смотреть все <ArrowRight className="w-4 h-4" />
+            </Link>
+          </Button>
         </div>
 
-        {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
-            {filteredProducts.map((product) => (
+        {products.length === 0 ? (
+          <div className="text-center py-16 border rounded-2xl bg-muted/20">
+            <h3 className="text-xl font-semibold mb-2">В этом регионе пока нет объявлений</h3>
+            <p className="text-muted-foreground mb-6">Попробуйте посмотреть объявления из всех регионов</p>
+            <Button asChild>
+              <Link href="/catalog">Показать все регионы</Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5">
+            {products.map((product: any) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
-        ) : (
-          <div className="text-center py-12 bg-background rounded-3xl border border-dashed">
-            <p className="text-muted-foreground font-medium mb-4">В этой категории пока нет популярных товаров</p>
-            <Button variant="outline" onClick={() => setActiveTab("Все")} className="rounded-full">
-              Показать все
-            </Button>
-          </div>
         )}
-        
-        <div className="mt-8 flex justify-center lg:hidden">
-          <Button variant="outline" className="w-full sm:w-auto" asChild>
-            <Link href="/catalog">Показать еще</Link>
-          </Button>
-        </div>
       </div>
     </section>
   )

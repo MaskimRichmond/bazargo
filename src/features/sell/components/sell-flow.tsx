@@ -44,6 +44,7 @@ export function SellFlow({ categories, userStore, initialData = null }: { catego
       condition: "USED_GOOD",
       description: "",
       quantity: 1,
+      region: "Бишкек",
       city: "Бишкек",
       deliveryMethods: ["PICKUP"],
       publishAsStore: false,

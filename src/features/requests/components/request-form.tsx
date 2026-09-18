@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2 } from "lucide-react"
+import { CITIES_BY_REGION } from "@/lib/regions"
 
 export function RequestForm({ categories }: { categories: any[] }) {
   const router = useRouter()
@@ -24,6 +25,7 @@ export function RequestForm({ categories }: { categories: any[] }) {
       categoryId: "",
       description: "",
       condition: "ANY",
+      region: "Бишкек",
       city: "Бишкек",
       expiresInDays: 7
     }
@@ -42,6 +44,7 @@ export function RequestForm({ categories }: { categories: any[] }) {
     formData.append("description", data.description || "")
     if (data.budgetMax) formData.append("budgetMax", data.budgetMax.toString())
     formData.append("condition", data.condition || "ANY")
+    formData.append("region", data.region)
     formData.append("city", data.city)
     formData.append("expiresInDays", data.expiresInDays.toString())
 
@@ -137,28 +140,62 @@ export function RequestForm({ categories }: { categories: any[] }) {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="city">Город <span className="text-destructive">*</span></Label>
-            <Input id="city" {...register("city")} className="h-12 bg-muted/50" readOnly />
-            {errors.city && <p className="text-xs text-destructive">{errors.city.message as string}</p>}
-          </div>
-          
-          <div className="space-y-2">
-            <Label>Срок актуальности</Label>
+            <Label>Регион <span className="text-destructive">*</span></Label>
             <Select 
-              value={watch("expiresInDays").toString()} 
-              onValueChange={(val) => setValue("expiresInDays", parseInt(val))}
+              value={watch("region")} 
+              onValueChange={(val) => {
+                setValue("region", val, { shouldValidate: true })
+                setValue("city", "")
+              }}
             >
               <SelectTrigger className="h-12 bg-muted/50">
-                <SelectValue />
+                <SelectValue placeholder="Выберите регион" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="3">3 дня</SelectItem>
-                <SelectItem value="7">7 дней</SelectItem>
-                <SelectItem value="14">14 дней</SelectItem>
-                <SelectItem value="30">30 дней</SelectItem>
+                {Object.keys(CITIES_BY_REGION).map(region => (
+                  <SelectItem key={region} value={region}>{region}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
+            {errors.region && <p className="text-xs text-destructive">{errors.region.message as string}</p>}
           </div>
+
+          <div className="space-y-2">
+            <Label>Город <span className="text-destructive">*</span></Label>
+            <Select 
+              value={watch("city")} 
+              onValueChange={(val) => setValue("city", val, { shouldValidate: true })}
+              disabled={!watch("region")}
+            >
+              <SelectTrigger className="h-12 bg-muted/50">
+                <SelectValue placeholder="Выберите город" />
+              </SelectTrigger>
+              <SelectContent>
+                {watch("region") && (CITIES_BY_REGION as any)[watch("region")]?.map((city: string) => (
+                  <SelectItem key={city} value={city}>{city}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.city && <p className="text-xs text-destructive">{errors.city.message as string}</p>}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Срок актуальности</Label>
+          <Select 
+            value={watch("expiresInDays").toString()} 
+            onValueChange={(val) => setValue("expiresInDays", parseInt(val))}
+          >
+            <SelectTrigger className="h-12 bg-muted/50 w-full md:w-1/2">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="3">3 дня</SelectItem>
+              <SelectItem value="7">7 дней</SelectItem>
+              <SelectItem value="14">14 дней</SelectItem>
+              <SelectItem value="30">30 дней</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
       </div>

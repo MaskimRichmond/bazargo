@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { CITIES_BY_REGION } from "@/lib/regions"
 
 export function ProductDetails({ categories }: { categories: any[] }) {
   const { register, watch, setValue, formState: { errors } } = useFormContext()
@@ -117,22 +118,46 @@ export function ProductDetails({ categories }: { categories: any[] }) {
         {errors.description && <p className="text-xs text-destructive">{errors.description.message as string}</p>}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="city">Город <span className="text-destructive">*</span></Label>
-        <Select 
-          value={watch("city")} 
-          onValueChange={(val) => setValue("city", val, { shouldValidate: true })}
-        >
-          <SelectTrigger className="h-12 bg-muted/50">
-            <SelectValue placeholder="Выберите город" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="Бишкек">Бишкек</SelectItem>
-            <SelectItem value="Ош">Ош</SelectItem>
-            <SelectItem value="Джалал-Абад">Джалал-Абад</SelectItem>
-          </SelectContent>
-        </Select>
-        {errors.city && <p className="text-xs text-destructive">{errors.city.message as string}</p>}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Регион <span className="text-destructive">*</span></Label>
+          <Select 
+            value={watch("region")} 
+            onValueChange={(val) => {
+              setValue("region", val, { shouldValidate: true })
+              setValue("city", "") // Reset city when region changes
+            }}
+          >
+            <SelectTrigger className="h-12 bg-muted/50">
+              <SelectValue placeholder="Выберите регион" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.keys(CITIES_BY_REGION).map(region => (
+                <SelectItem key={region} value={region}>{region}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.region && <p className="text-xs text-destructive">{errors.region.message as string}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label>Город <span className="text-destructive">*</span></Label>
+          <Select 
+            value={watch("city")} 
+            onValueChange={(val) => setValue("city", val, { shouldValidate: true })}
+            disabled={!watch("region")}
+          >
+            <SelectTrigger className="h-12 bg-muted/50">
+              <SelectValue placeholder="Выберите город" />
+            </SelectTrigger>
+            <SelectContent>
+              {watch("region") && (CITIES_BY_REGION as any)[watch("region")]?.map((city: string) => (
+                <SelectItem key={city} value={city}>{city}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.city && <p className="text-xs text-destructive">{errors.city.message as string}</p>}
+        </div>
       </div>
 
     </div>

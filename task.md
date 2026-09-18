@@ -1,0 +1,11 @@
+- [ ] Unified Regions (`src/lib/regions.ts`)
+- [ ] Database Migration for `region` column
+- [ ] Global Search Filters in `/catalog/page.tsx`
+- [ ] Region filter in `/requests/page.tsx`
+- [ ] Header Location Selector (Cookies)
+- [ ] Homepage Real Data (`popular-products.tsx`)
+- [ ] Sell Flow (Create Listing) location update
+- [ ] B2B Multi-Applications (`/b2b/my-applications`)
+- [ ] B2B New Application update (`/b2b/become-supplier`)
+- [ ] Cleanup dead code and console logs
+- [ ] Lint, Build, Push

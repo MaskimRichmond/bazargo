@@ -16,10 +16,11 @@ export async function createRequest(formData: FormData) {
   const description = formData.get("description") as string
   const budgetMax = formData.get("budgetMax") ? parseFloat(formData.get("budgetMax") as string) : null
   const condition = formData.get("condition") as string
+  const region = formData.get("region") as string
   const city = formData.get("city") as string
   const expiresInDays = parseInt(formData.get("expiresInDays") as string) || 7
 
-  if (!title || !categoryId || !city) {
+  if (!title || !categoryId || !region || !city) {
     return { error: "Заполните обязательные поля" }
   }
 
@@ -36,6 +37,7 @@ export async function createRequest(formData: FormData) {
     description: description || null,
     budget_max: budgetMax,
     condition: dbCondition,
+    region,
     city,
     expires_at: expiresAt.toISOString(),
     status: 'OPEN'

@@ -124,16 +124,22 @@ export function CatalogFiltersWidget({ categories }: { categories: Category[] })
         </div>
         
         <div>
-          <h3 className="font-medium mb-3">Город</h3>
-          <Select value={searchParams.get("city") || "all"} onValueChange={(val) => updateFilter("city", val)}>
+          <h3 className="font-medium mb-3">Регион</h3>
+          <Select value={searchParams.get("region") || "all"} onValueChange={(val) => updateFilter("region", val)}>
             <SelectTrigger className="w-full bg-background border rounded-md">
-              <SelectValue placeholder="Все города" />
+              <SelectValue placeholder="Все регионы" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Все города</SelectItem>
+              <SelectItem value="all">Все регионы</SelectItem>
               <SelectItem value="Бишкек">Бишкек</SelectItem>
               <SelectItem value="Ош">Ош</SelectItem>
-              <SelectItem value="Каракол">Каракол</SelectItem>
+              <SelectItem value="Баткенская область">Баткенская область</SelectItem>
+              <SelectItem value="Джалал-Абадская область">Джалал-Абадская область</SelectItem>
+              <SelectItem value="Иссык-Кульская область">Иссык-Кульская область</SelectItem>
+              <SelectItem value="Нарынская область">Нарынская область</SelectItem>
+              <SelectItem value="Ошская область">Ошская область</SelectItem>
+              <SelectItem value="Таласская область">Таласская область</SelectItem>
+              <SelectItem value="Чуйская область">Чуйская область</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -165,7 +171,7 @@ export function CatalogFiltersWidget({ categories }: { categories: Category[] })
           </Select>
         </div>
         
-        {(searchParams.get("minPrice") || searchParams.get("maxPrice") || searchParams.get("category") || searchParams.get("city") || searchParams.get("condition")) && (
+        {(searchParams.get("minPrice") || searchParams.get("maxPrice") || searchParams.get("category") || searchParams.get("region") || searchParams.get("q") || searchParams.get("condition")) && (
           <Button 
             variant="outline" 
             className="w-full text-xs" 

@@ -38,9 +38,9 @@ async function RequestsList({ searchParams, categories }: { searchParams: { [key
     }
   }
 
-  // City Filter
-  if (searchParams.city) {
-    query = query.ilike("city", `%${searchParams.city}%`)
+  // Region Filter
+  if (searchParams.region && searchParams.region !== "all") {
+    query = query.eq("region", searchParams.region)
   }
 
   // Search Query

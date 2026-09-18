@@ -33,6 +33,7 @@ export async function publishListing(formData: FormData) {
     const condition = formData.get("condition") as string
     const description = formData.get("description") as string
     const quantity = parseInt(formData.get("quantity") as string) || 1
+    const region = formData.get("region") as string
     const city = formData.get("city") as string
     const showPhone = formData.get("showPhone") === "true"
     let deliveryMethods = []
@@ -43,6 +44,7 @@ export async function publishListing(formData: FormData) {
     if (!title || title.length < 5) throw new Error("Слишком короткое название")
     if (!categoryId) throw new Error("Категория обязательна")
     if (isNaN(price) || price < 0) throw new Error("Некорректная цена")
+    if (!region) throw new Error("Регион обязателен")
     if (!city) throw new Error("Город обязателен")
 
     const publishAsStore = formData.get("publishAsStore") === "true"
@@ -77,6 +79,7 @@ export async function publishListing(formData: FormData) {
       condition,
       quantity: type === "INVENTORY" ? quantity : 1,
       listing_type: type,
+      region,
       city,
       delivery_methods: deliveryMethods,
       show_phone: showPhone,
