@@ -6,37 +6,41 @@ import { Filter, X } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CategoryPicker } from "@/features/catalog/components/category-picker"
 
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime"
+
 type Category = { id: string, name: string, slug: string }
 
-export function CatalogFilters({ categories }: { categories: Category[] }) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
-  const [isPending, startTransition] = useTransition()
-  
-  const [isMobileOpen, setIsMobileOpen] = useState(false)
-
-  // Local state for draft price
+function PriceFilter({ 
+  searchParams, 
+  pathname, 
+  router, 
+  startTransition 
+}: { 
+  searchParams: URLSearchParams, 
+  pathname: string, 
+  router: AppRouterInstance, 
+  startTransition: React.TransitionStartFunction 
+}) {
   const [minPrice, setMinPrice] = useState(searchParams.get("minPrice") || "")
   const [maxPrice, setMaxPrice] = useState(searchParams.get("maxPrice") || "")
 
-  // Sync draft state when URL changes (e.g. F5, Back/Forward, Reset)
+  const urlMin = searchParams.get("minPrice") || ""
+  const urlMax = searchParams.get("maxPrice") || ""
+
   useEffect(() => {
-    setMinPrice(searchParams.get("minPrice") || "")
-    setMaxPrice(searchParams.get("maxPrice") || "")
-  }, [searchParams])
+    setMinPrice(urlMin)
+    setMaxPrice(urlMax)
+  }, [urlMin, urlMax])
 
   const applyPriceFilter = () => {
     const current = new URLSearchParams(Array.from(searchParams.entries()))
-    
     if (minPrice) current.set("minPrice", minPrice)
     else current.delete("minPrice")
     
     if (maxPrice) current.set("maxPrice", maxPrice)
     else current.delete("maxPrice")
 
-    current.delete("page") // reset pagination
-    
+    current.delete("page")
     startTransition(() => {
       router.push(`${pathname}?${current.toString()}`)
     })
@@ -48,6 +52,46 @@ export function CatalogFilters({ categories }: { categories: Category[] }) {
     }
   }
 
+  const hasChanges = minPrice !== (searchParams.get("minPrice") || "") || maxPrice !== (searchParams.get("maxPrice") || "")
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
+        <input 
+          type="number" 
+          placeholder="От" 
+          className="w-full h-10 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+          value={minPrice}
+          onChange={(e) => setMinPrice(e.target.value)}
+          onKeyDown={handlePriceKeyDown}
+        />
+        <span className="text-muted-foreground">-</span>
+        <input 
+          type="number" 
+          placeholder="До" 
+          className="w-full h-10 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+          value={maxPrice}
+          onChange={(e) => setMaxPrice(e.target.value)}
+          onKeyDown={handlePriceKeyDown}
+        />
+      </div>
+      {hasChanges && (
+        <Button size="sm" variant="secondary" onClick={applyPriceFilter} className="w-full text-xs h-8">
+          Применить
+        </Button>
+      )}
+    </div>
+  )
+}
+
+export function CatalogFilters({ categories }: { categories: Category[] }) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
+  
+  const [isMobileOpen, setIsMobileOpen] = useState(false)
+
   const updateFilter = (key: string, value: string) => {
     const current = new URLSearchParams(Array.from(searchParams.entries()))
     if (!value || value === "all") {
@@ -55,7 +99,6 @@ export function CatalogFilters({ categories }: { categories: Category[] }) {
     } else {
       current.set(key, value)
     }
-    // reset page on filter change
     if (key !== "page") current.delete("page")
     
     startTransition(() => {
@@ -65,93 +108,76 @@ export function CatalogFilters({ categories }: { categories: Category[] }) {
 
   const activeCount = Array.from(searchParams.keys()).filter(k => k !== "sort" && k !== "page").length
 
-  const renderFiltersContent = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="font-medium mb-3">Категория</h3>
-        <CategoryPicker 
-          categories={categories} 
-          value={searchParams.get("category") || ""} 
-          onChange={(val) => updateFilter("category", val)} 
-        />
-      </div>
-      
-      <div>
-        <h3 className="font-medium mb-3">Город</h3>
-        <Select value={searchParams.get("city") || "all"} onValueChange={(val) => updateFilter("city", val)}>
-          <SelectTrigger className="w-full bg-background border rounded-md">
-            <SelectValue placeholder="Все города" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Все города</SelectItem>
-            <SelectItem value="Бишкек">Бишкек</SelectItem>
-            <SelectItem value="Ош">Ош</SelectItem>
-            <SelectItem value="Каракол">Каракол</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div>
-        <h3 className="font-medium mb-3">Цена</h3>
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <input 
-              type="number" 
-              placeholder="От" 
-              className="w-full h-10 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-              value={minPrice}
-              onChange={(e) => setMinPrice(e.target.value)}
-              onKeyDown={handlePriceKeyDown}
-            />
-            <span className="text-muted-foreground">-</span>
-            <input 
-              type="number" 
-              placeholder="До" 
-              className="w-full h-10 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-              value={maxPrice}
-              onChange={(e) => setMaxPrice(e.target.value)}
-              onKeyDown={handlePriceKeyDown}
-            />
-          </div>
-          {(minPrice !== (searchParams.get("minPrice") || "") || maxPrice !== (searchParams.get("maxPrice") || "")) && (
-            <Button size="sm" variant="secondary" onClick={applyPriceFilter} className="w-full text-xs h-8">
-              Применить
-            </Button>
-          )}
+  const renderFiltersContent = () => {
+    const currentParams = new URLSearchParams(Array.from(searchParams.entries()))
+    
+    return (
+      <div className="space-y-6">
+        <div>
+          <h3 className="font-medium mb-3">Категория</h3>
+          <CategoryPicker 
+            categories={categories} 
+            value={searchParams.get("category") || ""} 
+            onChange={(val) => updateFilter("category", val)} 
+          />
         </div>
-      </div>
+        
+        <div>
+          <h3 className="font-medium mb-3">Город</h3>
+          <Select value={searchParams.get("city") || "all"} onValueChange={(val) => updateFilter("city", val)}>
+            <SelectTrigger className="w-full bg-background border rounded-md">
+              <SelectValue placeholder="Все города" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Все города</SelectItem>
+              <SelectItem value="Бишкек">Бишкек</SelectItem>
+              <SelectItem value="Ош">Ош</SelectItem>
+              <SelectItem value="Каракол">Каракол</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-      <div>
-        <h3 className="font-medium mb-3">Состояние</h3>
-        <Select value={searchParams.get("condition") || "all"} onValueChange={(val) => updateFilter("condition", val)}>
-          <SelectTrigger className="w-full bg-background border rounded-md">
-            <SelectValue placeholder="Все" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Все состояния</SelectItem>
-            <SelectItem value="NEW">Новое</SelectItem>
-            <SelectItem value="USED_LIKE_NEW">Как новое</SelectItem>
-            <SelectItem value="USED_GOOD">Хорошее</SelectItem>
-            <SelectItem value="USED_FAIR">Нормальное</SelectItem>
-            <SelectItem value="FOR_PARTS">На запчасти</SelectItem>
-          </SelectContent>
-        </Select>
+        <div>
+          <h3 className="font-medium mb-3">Цена</h3>
+          <PriceFilter 
+            searchParams={currentParams} 
+            pathname={pathname} 
+            router={router} 
+            startTransition={startTransition} 
+          />
+        </div>
+
+        <div>
+          <h3 className="font-medium mb-3">Состояние</h3>
+          <Select value={searchParams.get("condition") || "all"} onValueChange={(val) => updateFilter("condition", val)}>
+            <SelectTrigger className="w-full bg-background border rounded-md">
+              <SelectValue placeholder="Все" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Все состояния</SelectItem>
+              <SelectItem value="NEW">Новое</SelectItem>
+              <SelectItem value="USED_LIKE_NEW">Как новое</SelectItem>
+              <SelectItem value="USED_GOOD">Хорошее</SelectItem>
+              <SelectItem value="USED_FAIR">Нормальное</SelectItem>
+              <SelectItem value="FOR_PARTS">На запчасти</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {(searchParams.get("minPrice") || searchParams.get("maxPrice") || searchParams.get("category") || searchParams.get("city") || searchParams.get("condition")) && (
+          <Button 
+            variant="outline" 
+            className="w-full text-xs" 
+            onClick={() => {
+              router.push(pathname)
+            }}
+          >
+            Сбросить фильтры
+          </Button>
+        )}
       </div>
-      
-      {(minPrice || maxPrice || searchParams.get("category") || searchParams.get("city") || searchParams.get("condition")) && (
-        <Button 
-          variant="outline" 
-          className="w-full text-xs" 
-          onClick={() => {
-            setMinPrice(""); setMaxPrice("");
-            router.push(pathname)
-          }}
-        >
-          Сбросить фильтры
-        </Button>
-      )}
-    </div>
-  )
+    )
+  }
 
   return (
     <>
@@ -162,7 +188,6 @@ export function CatalogFilters({ categories }: { categories: Category[] }) {
         </div>
       </div>
 
-      {/* Mobile Filters */}
       <div className="md:hidden flex flex-col gap-2 mb-4">
         <div className="flex items-center gap-2">
           <Button variant="outline" className="flex-1 rounded-xl font-normal" onClick={() => setIsMobileOpen(true)}>
