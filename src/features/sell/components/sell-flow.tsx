@@ -46,7 +46,8 @@ export function SellFlow({ categories, userStore, initialData = null }: { catego
       quantity: 1,
       city: "Бишкек",
       deliveryMethods: ["PICKUP"],
-      publishAsStore: false
+      publishAsStore: false,
+      showPhone: false
     },
     mode: "onChange",
   })
@@ -129,6 +130,7 @@ export function SellFlow({ categories, userStore, initialData = null }: { catego
       formData.append('city', data.city)
       formData.append('deliveryMethods', JSON.stringify(data.deliveryMethods))
       formData.append('publishAsStore', String(data.publishAsStore || false))
+      formData.append('showPhone', String(data.showPhone || false))
       
       // Append images
       data.images.forEach((img, index) => {

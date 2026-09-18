@@ -95,6 +95,7 @@ export default async function SellPage(props: { searchParams: Promise<{ edit?: s
         quantity: listing.quantity,
         city: listing.city,
         deliveryMethods: listing.delivery_methods,
+        showPhone: listing.show_phone,
         images: [] // images are not loaded as File objects
       }
     }

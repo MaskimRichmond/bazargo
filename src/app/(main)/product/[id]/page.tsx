@@ -5,19 +5,23 @@ import { Button } from "@/components/ui/button"
 import { Heart, MessageCircle, MapPin, CheckCircle } from "lucide-react"
 
 import { POPULAR_PRODUCTS } from "@/lib/mock-data"
+import { ContactSeller } from "@/features/product/components/contact-seller"
+
+import { FavoriteButton } from "@/components/shared/favorite-button"
 
 export default async function ProductPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const { id } = params;
   
   const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
 
   // Try to fetch real listing
   let { data: listing, error } = await supabase
     .from("listings")
     .select(`
       *,
-      profiles!seller_id(id, full_name, avatar_url, created_at),
+      profiles!seller_id(id, full_name, phone, avatar_url, created_at),
       categories(id, name),
       listing_images(url, order_index)
     `)
@@ -29,6 +33,8 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
     if (mock) {
       // Create a mock listing object compatible with the page
       listing = {
+        id: mock.id,
+        seller_id: mock.seller.name,
         title: mock.title,
         price: mock.price,
         city: mock.city,
@@ -58,6 +64,17 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
     }
   }
 
+  let isFavorite = false
+  if (session?.user?.id) {
+    const { data: fav } = await supabase
+      .from("favorites")
+      .select("listing_id")
+      .eq("user_id", session.user.id)
+      .eq("listing_id", listing.id)
+      .maybeSingle()
+    if (fav) isFavorite = true
+  }
+
   // Sort images
   const images = listing.listing_images?.sort((a: any, b: any) => a.order_index - b.order_index) || []
   const mainImage = images.length > 0 ? images[0].url : "/placeholder.png"
@@ -71,11 +88,14 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
         
         {/* Images */}
         <div className="space-y-4">
-          <div className="aspect-[4/3] bg-muted rounded-2xl overflow-hidden relative">
+          <div className="aspect-[4/3] bg-muted rounded-2xl overflow-hidden relative group">
             <img src={mainImage} alt={listing.title} className="w-full h-full object-cover" />
-            <div className="absolute top-4 right-4 bg-background/80 backdrop-blur rounded-full p-2 text-muted-foreground hover:text-red-500 cursor-pointer">
-              <Heart className="w-6 h-6" />
-            </div>
+            <FavoriteButton 
+              listingId={listing.id}
+              initialIsFavorite={isFavorite}
+              className="absolute top-4 right-4 !w-10 !h-10 opacity-100 bg-background/80 hover:bg-background/90"
+              iconClassName="!w-6 !h-6"
+            />
           </div>
           {images.length > 1 && (
             <div className="flex gap-2 overflow-x-auto pb-2 snap-x">
@@ -100,14 +120,13 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
             <p className="text-4xl font-bold text-primary">{listing.price.toLocaleString("ru-RU")} сом</p>
           </div>
 
-          <div className="flex flex-col gap-3">
-            <Button className="w-full h-14 text-lg rounded-xl font-semibold gap-2">
-              <MessageCircle className="w-5 h-5" /> Написать продавцу
-            </Button>
-            <Button variant="outline" className="w-full h-14 text-lg rounded-xl font-semibold">
-              Показать телефон
-            </Button>
-          </div>
+          <ContactSeller 
+            listingId={listing.id}
+            sellerId={listing.seller_id}
+            currentUserId={session?.user?.id}
+            showPhone={listing.show_phone}
+            phone={(listing.show_phone || session?.user?.id === listing.seller_id) ? listing.profiles?.phone : null}
+          />
 
           <Card className="p-4 space-y-4 rounded-xl">
             <div className="flex items-center gap-4">

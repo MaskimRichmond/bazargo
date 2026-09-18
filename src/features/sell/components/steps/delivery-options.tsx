@@ -27,7 +27,7 @@ export function DeliveryOptions() {
 
       {errors.deliveryMethods && <p className="text-sm text-destructive font-medium">{errors.deliveryMethods.message as string}</p>}
 
-      <div className="space-y-3">
+      <div className="space-y-3 mb-8">
         {options.map((opt) => (
           <div 
             key={opt.id} 
@@ -47,6 +47,26 @@ export function DeliveryOptions() {
             </div>
           </div>
         ))}
+      </div>
+
+      <h2 className="text-2xl font-bold tracking-tight mb-2 mt-8">Контактный телефон</h2>
+      <p className="text-sm text-muted-foreground mb-4">Настройте видимость вашего номера телефона в объявлении</p>
+      
+      <div 
+        className={`flex items-start space-x-3 p-4 rounded-xl border transition-colors cursor-pointer ${
+          watch("showPhone") ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+        }`}
+        onClick={() => setValue("showPhone", !watch("showPhone"), { shouldValidate: true })}
+      >
+        <Checkbox 
+          id="showPhone" 
+          checked={!!watch("showPhone")} 
+          className="mt-1"
+        />
+        <div className="space-y-1">
+          <Label htmlFor="showPhone" className="text-base font-semibold cursor-pointer">Показывать номер телефона</Label>
+          <p className="text-sm text-muted-foreground">Если выключено, покупатели смогут связаться с вами только через чат</p>
+        </div>
       </div>
     </div>
   )

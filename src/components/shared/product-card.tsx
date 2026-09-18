@@ -1,7 +1,8 @@
 import Link from "next/link"
-import { Heart, MapPin, CheckCircle2, Star } from "lucide-react"
+import { MapPin, CheckCircle2, Star } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { ImageWithFallback } from "@/components/shared/image-with-fallback"
+import { FavoriteButton } from "@/components/shared/favorite-button"
 
 interface ProductCardProps {
   product: {
@@ -15,18 +16,18 @@ interface ProductCardProps {
     image: string
     isVerified: boolean
     outOfStock?: boolean
+    isFavorite?: boolean
   }
 }
 
 export function ProductCard({ product }: ProductCardProps) {
   return (
     <Card className={`overflow-hidden group hover:shadow-lg transition-all duration-300 border-border/50 flex flex-col h-full relative outline-none focus-within:ring-2 focus-within:ring-primary rounded-2xl ${product.outOfStock ? 'opacity-70 grayscale-[0.5]' : ''}`}>
-      <button 
-        className="absolute top-3 right-3 z-10 bg-background/80 backdrop-blur-md hover:bg-background rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity focus-visible:opacity-100 outline-none shadow-sm"
-        aria-label="Добавить в избранное"
-      >
-        <Heart className="w-4 h-4 text-foreground" />
-      </button>
+      <FavoriteButton 
+        listingId={product.id} 
+        initialIsFavorite={!!product.isFavorite} 
+        className="absolute top-3 right-3"
+      />
       
       <Link href={`/product/${product.id}`} className="block relative aspect-square sm:aspect-[4/3] bg-muted overflow-hidden outline-none">
         <ImageWithFallback 

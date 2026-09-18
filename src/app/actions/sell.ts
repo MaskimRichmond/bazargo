@@ -34,6 +34,7 @@ export async function publishListing(formData: FormData) {
     const description = formData.get("description") as string
     const quantity = parseInt(formData.get("quantity") as string) || 1
     const city = formData.get("city") as string
+    const showPhone = formData.get("showPhone") === "true"
     let deliveryMethods = []
     try {
       deliveryMethods = JSON.parse(formData.get("deliveryMethods") as string)
@@ -48,9 +49,14 @@ export async function publishListing(formData: FormData) {
 
     let storeId = null
     // If edit, we should preserve the store_id if it was published as store
+    // WAIT, what if a user edits someone else's listing?
+    // We MUST enforce ownership check on existing listings!
     if (id) {
-      const { data: existing } = await supabase.from("listings").select("store_id").eq("id", id).single()
-      if (existing) storeId = existing.store_id
+      const { data: existing } = await supabase.from("listings").select("store_id, seller_id").eq("id", id).single()
+      if (!existing || existing.seller_id !== session.user.id) {
+         throw new Error("У вас нет прав для редактирования этого объявления")
+      }
+      storeId = existing.store_id
     } else if (publishAsStore && type === "INVENTORY") {
       const { data: store } = await supabase
         .from("stores")
@@ -73,6 +79,7 @@ export async function publishListing(formData: FormData) {
       listing_type: type,
       city,
       delivery_methods: deliveryMethods,
+      show_phone: showPhone,
       status: quantity === 0 ? "OUT_OF_STOCK" : "ACTIVE"
     }
 
@@ -94,6 +101,7 @@ export async function publishListing(formData: FormData) {
 
     // 2. Upload images
     const imageUrls: string[] = []
+    const uploadedPaths: string[] = []
     let uploadFailed = false
 
     const { data: existingImages } = await supabase.from("listing_images").select("id").eq("listing_id", listingId)
@@ -114,6 +122,7 @@ export async function publishListing(formData: FormData) {
           uploadFailed = true
           break
         } else {
+          uploadedPaths.push(fileName)
           const { data: publicUrlData } = supabase.storage.from("product-images").getPublicUrl(fileName)
           imageUrls.push(publicUrlData.publicUrl)
         }
@@ -121,6 +130,9 @@ export async function publishListing(formData: FormData) {
     }
 
     if (uploadFailed) {
+      if (uploadedPaths.length > 0) {
+        await supabase.storage.from("product-images").remove(uploadedPaths)
+      }
       if (!id) {
         await supabase.from("listings").delete().eq("id", listingId)
       }
@@ -140,6 +152,9 @@ export async function publishListing(formData: FormData) {
         .insert(imageRecords)
 
       if (imageError) {
+        if (uploadedPaths.length > 0) {
+          await supabase.storage.from("product-images").remove(uploadedPaths)
+        }
         if (!id) await supabase.from("listings").delete().eq("id", listingId)
         throw new Error("Ошибка сохранения изображений")
       }
@@ -147,6 +162,9 @@ export async function publishListing(formData: FormData) {
     }
 
     if (totalImages === 0) {
+      if (uploadedPaths.length > 0) {
+        await supabase.storage.from("product-images").remove(uploadedPaths)
+      }
       if (!id) await supabase.from("listings").delete().eq("id", listingId)
       throw new Error("Необходимо загрузить хотя бы одно фото")
     }
