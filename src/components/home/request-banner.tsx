@@ -1,5 +1,6 @@
 import { FileQuestion } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export function RequestBanner() {
   return (
@@ -15,8 +16,10 @@ export function RequestBanner() {
             <p className="text-primary-foreground/90 text-lg mb-8">
               Создайте запрос — продавцы сами предложат подходящие варианты. Это быстро и бесплатно.
             </p>
-            <Button size="lg" variant="secondary" className="font-semibold px-8 w-full sm:w-auto">
-              Создать запрос
+            <Button asChild size="lg" variant="secondary" className="font-semibold px-8 w-full sm:w-auto">
+              <Link href="/requests/create">
+                Создать запрос
+              </Link>
             </Button>
           </div>
           

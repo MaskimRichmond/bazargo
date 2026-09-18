@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { ImageWithFallback } from "@/components/shared/image-with-fallback"
+import { GlobalSearch } from "@/components/shared/global-search"
 
 const QUICK_LINKS = ["iPhone 13", "Авто", "Квартиры", "Одежда", "Мебель"]
 
@@ -30,17 +31,12 @@ export function Hero() {
             </p>
 
             {/* Smart Search */}
-            <div className="bg-background rounded-2xl p-2 shadow-lg border border-border/50 flex flex-col sm:flex-row gap-2 max-w-xl mx-auto lg:mx-0">
-              <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-3.5 h-5 w-5 text-muted-foreground" />
-                <Input 
-                  className="h-12 w-full pl-11 text-base border-none shadow-none focus-visible:ring-0 bg-transparent" 
-                  placeholder="Например: iPhone 13 128GB до 30000" 
-                />
-              </div>
-              <Button className="h-12 px-8 text-base font-medium rounded-xl shrink-0">
-                Найти
-              </Button>
+            <div className="bg-background rounded-2xl p-2 shadow-lg border border-border/50 max-w-xl mx-auto lg:mx-0">
+              <GlobalSearch 
+                placeholder="Например: iPhone 13 128GB до 30000"
+                inputClassName="h-12 text-base border-none shadow-none focus-visible:ring-0 bg-transparent"
+                button
+              />
             </div>
 
             {/* Quick Links */}

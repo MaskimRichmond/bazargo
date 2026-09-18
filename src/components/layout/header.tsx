@@ -1,12 +1,15 @@
 "use client"
 
+import { Suspense } from "react"
 import Link from "next/link"
 import { useTheme } from "next-themes"
-import { MapPin, Moon, Sun, Heart, MessageCircle, Menu, ShoppingBag, Search, Bell } from "lucide-react"
+import { Moon, Sun, Heart, ShoppingBag, Bell } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { HeaderAuth } from "@/components/layout/header-auth"
+import { GlobalSearch } from "@/components/shared/global-search"
+import { HeaderLocationSelector } from "@/components/layout/header-location-selector"
+import { HeaderNav } from "@/components/layout/header-nav"
 
 export function Header() {
   const { setTheme, theme } = useTheme()
@@ -24,27 +27,18 @@ export function Header() {
             <span className="font-bold text-lg md:text-xl tracking-tight">BazarGo</span>
           </Link>
           
-          <div className="hidden lg:flex items-center gap-1 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-muted">
-            <MapPin className="w-4 h-4 text-primary" />
-            <span className="font-medium">Бишкек</span>
-          </div>
+          <Suspense fallback={<div className="hidden lg:flex w-24 h-8 bg-muted rounded-md animate-pulse" />}>
+            <HeaderLocationSelector />
+          </Suspense>
         </div>
 
         {/* Desktop Navigation */}
-        <nav className="hidden xl:flex items-center gap-6 text-sm font-medium">
-          <Link href="/catalog" className="text-muted-foreground hover:text-primary transition-colors">Каталог</Link>
-          <Link href="/stores" className="text-muted-foreground hover:text-primary transition-colors">Магазины</Link>
-          <Link href="/requests" className="text-muted-foreground hover:text-primary transition-colors">Запросы</Link>
-          <Link href="/b2b" className="text-muted-foreground hover:text-primary transition-colors">B2B</Link>
-        </nav>
+        <HeaderNav />
 
         {/* Search Bar (Tablet/Desktop) */}
-        <div className="hidden md:flex flex-1 max-w-md relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            type="search" 
-            placeholder="Поиск по миллионам товаров..." 
-            className="w-full pl-9 h-10 bg-muted/40 border-border/50 hover:bg-muted/60 focus:bg-background focus-visible:ring-1 transition-colors rounded-full" 
+        <div className="hidden md:flex flex-1 max-w-md">
+          <GlobalSearch 
+            inputClassName="bg-muted/40 border-border/50 hover:bg-muted/60 focus:bg-background rounded-full"
           />
         </div>
 
@@ -68,10 +62,7 @@ export function Header() {
             </Link>
           </Button>
 
-          {/* Mobile Notifications (Visible on mobile instead of full nav) */}
-          <Button variant="ghost" size="icon" className="md:hidden h-9 w-9 text-muted-foreground hover:text-foreground">
-            <Bell className="w-5 h-5" />
-          </Button>
+
 
           <div className="hidden sm:block w-px h-6 bg-border mx-1" />
 
@@ -85,14 +76,10 @@ export function Header() {
 
       {/* Mobile Smart Search (Below Header) */}
       <div className="md:hidden px-4 pb-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input 
-            type="search" 
-            placeholder="Я ищу..." 
-            className="w-full pl-9 h-10 bg-muted border-none focus-visible:ring-1 rounded-xl shadow-inner text-base" 
-          />
-        </div>
+        <GlobalSearch 
+          placeholder="Я ищу..."
+          inputClassName="bg-muted border-none rounded-xl shadow-inner text-base"
+        />
       </div>
     </header>
   )

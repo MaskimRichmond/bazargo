@@ -25,7 +25,7 @@ export default function Page() {
       </div>
       <div className="flex justify-center">
         <Button asChild size="lg" className="rounded-xl font-semibold">
-          <Link href="/requests">Стать поставщиком</Link>
+          <Link href="/b2b/become-supplier">Стать поставщиком</Link>
         </Button>
       </div>
     </div>

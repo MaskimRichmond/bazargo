@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export function PromoSection() {
   return (
@@ -14,7 +15,9 @@ export function PromoSection() {
               <div className="bg-blue-500 text-xs font-bold px-2 py-1 rounded w-fit mb-4">% Выгодно</div>
               <h3 className="text-2xl font-bold mb-2">Техника со скидками</h3>
               <p className="text-slate-300 mb-6 max-w-xs">Лучшие предложения от проверенных магазинов электроники.</p>
-              <Button variant="secondary" className="w-fit">Смотреть акции</Button>
+              <Button asChild variant="secondary" className="w-fit">
+                <Link href="/catalog">Смотреть акции</Link>
+              </Button>
             </CardContent>
           </Card>
 
@@ -24,7 +27,9 @@ export function PromoSection() {
               <div className="bg-emerald-500 text-xs font-bold px-2 py-1 rounded w-fit mb-4">B2B</div>
               <h3 className="text-2xl font-bold mb-2">Стань поставщиком</h3>
               <p className="text-emerald-100 mb-6 max-w-xs">Развивай свой бизнес вместе с BazarGo. Больше клиентов, больше возможностей.</p>
-              <Button variant="secondary" className="w-fit">Узнать больше</Button>
+              <Button asChild variant="secondary" className="w-fit">
+                <Link href="/b2b/become-supplier">Узнать больше</Link>
+              </Button>
             </CardContent>
           </Card>
         </div>
