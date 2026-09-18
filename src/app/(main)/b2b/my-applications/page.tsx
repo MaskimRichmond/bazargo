@@ -67,7 +67,9 @@ export default async function MyApplicationsPage() {
                     <div className="flex flex-wrap items-center gap-4 mt-2">
                       <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {app.city}</span>
                       <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> {new Date(app.created_at).toLocaleDateString("ru-RU")}</span>
-                      <span className="flex items-center gap-1"><ListPlus className="w-4 h-4" /> {app.categories.join(", ")}</span>
+                      {app.categories && (
+                        <span className="flex items-center gap-1"><ListPlus className="w-4 h-4" /> {app.categories}</span>
+                      )}
                     </div>
                   </div>
                   <div className={`shrink-0 px-3 py-1 rounded-full text-sm font-semibold ${statusInfo.bg} ${statusInfo.text}`}>
@@ -78,7 +80,7 @@ export default async function MyApplicationsPage() {
                 <div className="mt-4 pt-4 border-t border-dashed grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-muted-foreground block mb-1">Контактное лицо:</span>
-                    <span className="font-medium">{app.contact_name} ({app.contact_phone})</span>
+                    <span className="font-medium">{app.contact_name} ({app.phone})</span>
                   </div>
                   {app.admin_comment && (
                     <div className="bg-muted/30 p-3 rounded-lg">
