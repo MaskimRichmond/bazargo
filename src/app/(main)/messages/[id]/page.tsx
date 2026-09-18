@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Send } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
+import { ChatRoom } from "@/features/chat/components/chat-room"
 
 export default async function ChatPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -35,11 +36,17 @@ export default async function ChatPage(props: { params: Promise<{ id: string }> 
     notFound()
   }
 
+  // Fetch initial messages
+  const { data: messages } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("chat_id", id)
+    .order("created_at", { ascending: true })
+
   const isBuyer = session.user.id === chat.buyer_id
   const otherUser = isBuyer ? chat.seller : chat.buyer
   const listing = chat.listings
 
-  // Simple static chat UI for MVP
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl min-h-[70vh] flex flex-col">
       <div className="flex items-center gap-4 mb-6">
@@ -71,22 +78,11 @@ export default async function ChatPage(props: { params: Promise<{ id: string }> 
         </div>
       </div>
 
-      <div className="flex-1 bg-background border rounded-2xl p-6 mb-4 flex flex-col items-center justify-center text-muted-foreground">
-        <p>Чат создан.</p>
-        <p className="text-sm">В MVP версии история сообщений не сохраняется в реальном времени.</p>
-      </div>
-
-      <div className="flex gap-2">
-        <input 
-          type="text" 
-          placeholder="Написать сообщение..." 
-          className="flex-1 h-12 px-4 rounded-xl border bg-muted/20 focus:outline-none focus:ring-2 focus:ring-primary"
-        />
-        <button className="h-12 px-6 bg-primary text-primary-foreground rounded-xl font-semibold flex items-center gap-2 hover:bg-primary/90 transition-colors">
-          <Send className="w-4 h-4" />
-          <span>Отправить</span>
-        </button>
-      </div>
+      <ChatRoom 
+        chatId={id} 
+        currentUserId={session.user.id} 
+        initialMessages={messages || []} 
+      />
     </div>
   )
 }
