@@ -37,7 +37,13 @@ export async function toggleFavorite(listingId: string) {
         listing_id: listingId
       })
 
-    if (insertError) return { success: false, error: "Ошибка добавления в избранное" }
+    if (insertError) {
+      if (insertError.code === '23505') {
+        // It was already inserted by a racing request, that's fine
+      } else {
+        return { success: false, error: "Ошибка добавления в избранное" }
+      }
+    }
   }
 
   revalidatePath("/favorites")

@@ -85,6 +85,23 @@ async function CatalogList({ searchParams, categories }: { searchParams: any, ca
     )
   }
 
+  // Fetch favorites
+  let favoriteIds = new Set<string>()
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  if (session && listings.length > 0) {
+    const listingIds = listings.map((l: any) => l.id)
+    const { data: favs } = await supabase
+      .from("favorites")
+      .select("listing_id")
+      .eq("user_id", session.user.id)
+      .in("listing_id", listingIds)
+      
+    if (favs) {
+      favs.forEach((f: any) => favoriteIds.add(f.listing_id))
+    }
+  }
+
   let breadcrumbs: string[] = []
   if (searchParams.category) {
     const targetCat = categories.find(c => c.slug === searchParams.category)
@@ -123,7 +140,8 @@ async function CatalogList({ searchParams, categories }: { searchParams: any, ca
             condition: l.condition,
             seller: { name: l.profiles?.full_name || "Пользователь", rating: 4.5, reviews: 0 },
             image: images.length > 0 ? images[0].url : "",
-            isVerified: false
+            isVerified: false,
+            isFavorite: favoriteIds.has(l.id)
           }
           return <ProductCard key={l.id} product={product} />
         })}

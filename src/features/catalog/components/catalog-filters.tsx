@@ -49,7 +49,7 @@ export function CatalogFilters({ categories }: { categories: Category[] }) {
 
   const activeCount = Array.from(searchParams.keys()).filter(k => k !== "sort" && k !== "page").length
 
-  const FiltersContent = () => (
+  const renderFiltersContent = () => (
     <div className="space-y-6">
       <div>
         <h3 className="font-medium mb-3">Категория</h3>
@@ -133,7 +133,7 @@ export function CatalogFilters({ categories }: { categories: Category[] }) {
       <div className="hidden md:block w-64 shrink-0 opacity-100 transition-opacity" style={{ opacity: isPending ? 0.6 : 1 }}>
         <h2 className="font-semibold mb-4 text-lg">Фильтры</h2>
         <div className="p-4 bg-muted/30 rounded-xl">
-          <FiltersContent />
+          {renderFiltersContent()}
         </div>
       </div>
 
@@ -167,7 +167,7 @@ export function CatalogFilters({ categories }: { categories: Category[] }) {
               </Button>
             </div>
             <div className="flex-1 overflow-y-auto p-4">
-              <FiltersContent />
+              {renderFiltersContent()}
             </div>
             <div className="p-4 border-t">
               <Button className="w-full" onClick={() => setIsMobileOpen(false)}>Показать результаты</Button>
