@@ -46,16 +46,15 @@ function PriceFilter({
     })
   }
 
-  const handlePriceKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      applyPriceFilter()
-    }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    applyPriceFilter()
   }
 
   const hasChanges = minPrice !== (searchParams.get("minPrice") || "") || maxPrice !== (searchParams.get("maxPrice") || "")
 
   return (
-    <div className="flex flex-col gap-2">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
         <input 
           type="number" 
@@ -63,7 +62,6 @@ function PriceFilter({
           className="w-full h-10 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           value={minPrice}
           onChange={(e) => setMinPrice(e.target.value)}
-          onKeyDown={handlePriceKeyDown}
         />
         <span className="text-muted-foreground">-</span>
         <input 
@@ -72,24 +70,27 @@ function PriceFilter({
           className="w-full h-10 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           value={maxPrice}
           onChange={(e) => setMaxPrice(e.target.value)}
-          onKeyDown={handlePriceKeyDown}
         />
       </div>
       {hasChanges && (
-        <Button size="sm" variant="secondary" onClick={applyPriceFilter} className="w-full text-xs h-8">
+        <Button size="sm" type="submit" variant="secondary" className="w-full text-xs h-8">
           Применить
         </Button>
       )}
-    </div>
+    </form>
   )
 }
 
-export function CatalogFilters({ categories }: { categories: Category[] }) {
+export function CatalogFiltersWidget({ categories }: { categories: Category[] }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
   
+  useEffect(() => {
+    console.log("[SEARCH PARAMS]", searchParams.toString())
+  }, [searchParams])
+
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   const updateFilter = (key: string, value: string) => {

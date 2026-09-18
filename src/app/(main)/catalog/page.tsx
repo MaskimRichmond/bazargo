@@ -2,7 +2,7 @@ import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { ProductCard } from "@/components/shared/product-card"
 import { Button } from "@/components/ui/button"
-import { CatalogFilters } from "@/features/catalog/components/catalog-filters"
+import { CatalogFiltersWidget } from "@/features/catalog/components/catalog-filters-widget"
 import { CatalogSort } from "@/features/catalog/components/catalog-sort"
 
 export const metadata = {
@@ -172,7 +172,7 @@ export default async function CatalogPage(props: { searchParams: Promise<{ [key:
         
         {/* Client-side Filters */}
         <Suspense fallback={<div className="w-64 shrink-0" />}>
-          <CatalogFilters categories={categories || []} />
+          <CatalogFiltersWidget categories={categories || []} />
         </Suspense>
 
         {/* Main Content */}
