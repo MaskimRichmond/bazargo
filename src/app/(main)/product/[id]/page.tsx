@@ -121,24 +121,26 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
             <p className="text-4xl font-bold text-primary">{listing.price.toLocaleString("ru-RU")} сом</p>
           </div>
 
-          <ContactSeller 
-            listingId={listing.id}
-            sellerId={listing.seller_id}
-            currentUserId={session?.user?.id}
-            showPhone={listing.show_phone}
-            phone={(listing.show_phone || session?.user?.id === listing.seller_id) ? listing.profiles?.phone : null}
-          />
+          <div className="hidden md:block space-y-3">
+            <ContactSeller 
+              listingId={listing.id}
+              sellerId={listing.seller_id}
+              currentUserId={session?.user?.id}
+              showPhone={listing.show_phone}
+              phone={(listing.show_phone || session?.user?.id === listing.seller_id) ? listing.profiles?.phone : null}
+            />
 
-          <BuyButtons 
-            listingId={listing.id}
-            sellerId={listing.seller_id}
-            currentUserId={session?.user?.id}
-            status={listing.status}
-            quantity={listing.quantity}
-            listingType={listing.listing_type}
-          />
+            <BuyButtons 
+              listingId={listing.id}
+              sellerId={listing.seller_id}
+              currentUserId={session?.user?.id}
+              status={listing.status}
+              quantity={listing.quantity}
+              listingType={listing.listing_type}
+            />
+          </div>
 
-          <Card className="p-4 space-y-4 rounded-xl">
+          <Card className="p-4 space-y-4 rounded-xl border-border/50 shadow-sm">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl overflow-hidden">
                 {seller?.avatar_url ? <img src={seller.avatar_url} className="w-full h-full object-cover" /> : sellerInitial}
@@ -153,7 +155,7 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
             </div>
           </Card>
 
-          <div className="space-y-4 pt-4 border-t">
+          <div className="space-y-4 pt-4 border-t border-border/50">
             <h2 className="text-xl font-semibold">Характеристики</h2>
             <div className="grid grid-cols-2 gap-y-2 text-sm">
               <div className="text-muted-foreground">Состояние</div>
@@ -164,7 +166,7 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
                  listing.condition === "USED_FAIR" ? "Б/у (нормальное)" : "На запчасти"}
               </div>
               <div className="text-muted-foreground">Город</div>
-              <div className="font-medium flex items-center gap-1"><MapPin className="w-4 h-4"/> {listing.city}</div>
+              <div className="font-medium flex items-center gap-1"><MapPin className="w-4 h-4 text-muted-foreground"/> {listing.city}</div>
               
               {listing.listing_type === "INVENTORY" && (
                 <>
@@ -175,27 +177,48 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
             </div>
           </div>
 
-          <div className="space-y-4 pt-4 border-t">
+          <div className="space-y-4 pt-4 border-t border-border/50">
             <h2 className="text-xl font-semibold">Описание</h2>
             <div className="text-sm whitespace-pre-wrap leading-relaxed text-muted-foreground">
               {listing.description}
             </div>
           </div>
 
-          <div className="space-y-4 pt-4 border-t">
+          <div className="space-y-4 pt-4 border-t border-border/50">
             <h2 className="text-xl font-semibold">Способ получения</h2>
             <div className="flex gap-2 flex-wrap">
               {(listing.delivery_methods || []).map((m: string) => {
-                if (m === "PICKUP") return <span key={m} className="px-3 py-1.5 bg-muted rounded-full text-sm font-medium">Самовывоз</span>
-                if (m === "SELLER_DELIVERY") return <span key={m} className="px-3 py-1.5 bg-muted rounded-full text-sm font-medium">Доставка продавцом</span>
-                if (m === "THIRD_PARTY") return <span key={m} className="px-3 py-1.5 bg-muted rounded-full text-sm font-medium">Доставка через сторонний сервис</span>
-                return <span key={m} className="px-3 py-1.5 bg-muted rounded-full text-sm font-medium">{m}</span>
+                if (m === "PICKUP") return <span key={m} className="px-3 py-1 bg-muted rounded-full text-xs font-medium">Самовывоз</span>
+                if (m === "SELLER_DELIVERY") return <span key={m} className="px-3 py-1 bg-muted rounded-full text-xs font-medium">Доставка продавцом</span>
+                if (m === "THIRD_PARTY") return <span key={m} className="px-3 py-1 bg-muted rounded-full text-xs font-medium">Курьер</span>
+                return <span key={m} className="px-3 py-1 bg-muted rounded-full text-xs font-medium">{m}</span>
               })}
             </div>
           </div>
 
         </div>
       </div>
+
+      {/* Mobile Sticky Action Bar */}
+      <div className="md:hidden fixed bottom-14 left-0 right-0 p-3 bg-background/95 backdrop-blur-md border-t border-border shadow-[0_-4px_12px_rgba(0,0,0,0.05)] z-40 flex flex-col gap-2">
+        <ContactSeller 
+          listingId={listing.id}
+          sellerId={listing.seller_id}
+          currentUserId={session?.user?.id}
+          showPhone={listing.show_phone}
+          phone={(listing.show_phone || session?.user?.id === listing.seller_id) ? listing.profiles?.phone : null}
+        />
+        <BuyButtons 
+          listingId={listing.id}
+          sellerId={listing.seller_id}
+          currentUserId={session?.user?.id}
+          status={listing.status}
+          quantity={listing.quantity}
+          listingType={listing.listing_type}
+        />
+      </div>
+      <div className="h-24 md:hidden" /> {/* Spacer for mobile bar */}
     </div>
   )
 }
+

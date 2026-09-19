@@ -1,38 +1,62 @@
-# Implementation Plan: Stage 9
+# Goal Description
+Professional Product UI/UX + Chat Redesign + Mobile-first Navigation. We are moving from a standard "website" look to a true "marketplace application" look (mobile-first, clean, consistent, professional).
 
-## Goal
-Implement a complete ordering and cart system, robust inventory decrement logic using an atomic SQL transaction, user settings, and smart text search via `pg_trgm` and synonym mappings.
+## User Review Required
+> [!IMPORTANT]
+> The chat redesign is massive. We are replacing the fixed 600px widget with a full two-column layout on desktop, and dedicated full-screen views on mobile.
+> The footer will be severely reduced to look like an application footer (compact, secondary links only).
+> The desktop layout will utilize max-w-7xl mostly for better focus.
 
-## Scope of Changes
+## Proposed Changes
 
-### 1. Database Migrations
-- **Orders & Cart**: Create `orders`, `order_items`, and `cart_items` tables with appropriate enums (`order_status`). 
-- **Inventory Logic**: Create a PostgreSQL stored function (RPC) `complete_order` to atomically deduct inventory and handle `SINGLE` vs `INVENTORY` logic (`ACTIVE` -> `SOLD`, or decrement `quantity` -> `OUT_OF_STOCK`).
-- **Search Extensions**: Enable `pg_trgm` extension and create `GIN` indexes on `listings(title)` and `listings(description)`.
-- **RLS**: Apply strict Row Level Security to ensure buyers can only read their own orders, sellers can only read orders where they are the seller, and cart items are isolated.
+### Global UI / Layout
+#### [MODIFY] src/components/layout/footer.tsx
+- Remove heavy block structure. Shrink to a minimal single row of links on mobile, clean small block on desktop.
+- Remove redundant main nav links.
 
-### 2. Orders & Cart Backend (Server Actions)
-- `add_to_cart`, `remove_from_cart`, `update_cart_quantity` actions.
-- `checkout` action: reads real prices directly from listings (not trusting client), chunks `cart_items` into separate orders per `seller_id`, applies initial status `PENDING`.
-- `update_order_status` action: to transition from `PENDING` -> `CONFIRMED` / `REJECTED`, or `PENDING`/`CONFIRMED` -> `CANCELLED`.
-- `complete_order_action`: Calls the PostgreSQL RPC `complete_order(order_id)` safely.
+#### [MODIFY] src/components/layout/header.tsx
+- Clean up search bar, add proper states.
+- Ensure the header looks like an application shell (sticky, thin border, proper focus states).
 
-### 3. Smart Search & Normalization
-- Modify the existing catalog search to normalize strings.
-- Add an array of starter synonyms (e.g., 'клава' -> 'клавиатура').
-- Query using Supabase `.or('title.ilike.%query%,description.ilike.%query%')` but supplemented with `textSearch` or RPC for `pg_trgm` similarity if necessary. In PostgREST, `pg_trgm` can be utilized using `title.wfts.query` or simply falling back to our JS-based synonym expander combined with standard `ilike`.
+#### [MODIFY] src/components/layout/mobile-nav.tsx
+- Already mostly okay, but ensure touch targets are big enough and the "+" button dropdown is styled as a mobile-friendly menu (larger padding, rounded).
 
-### 4. UI Modifications
-- `/cart`: Shopping cart page showing totals and quantity controls.
-- `/checkout`: Simple MVP checkout summary screen.
-- `/orders` & `/orders/[id]`: Buyer view.
-- `/seller/orders` & `/seller/orders/[id]`: Seller view.
-- `ProductPage`: Add "Купить сейчас" and "В корзину" buttons for buyers (hidden for the listing owner).
-- `/settings`: Simple user settings for Profile, Region, and mock notifications preferences.
-- `Header` & `MobileNav`: Add entries for Cart and Orders.
+### Pages
+#### [MODIFY] src/app/(main)/catalog/page.tsx
+- Add Skeleton loaders.
+- Improve product grid: standardize aspect ratios (e.g., aspect-[4/3] for images), clear visual hierarchy (Image > Price > Title > Location).
 
-## Open Questions & Review
-- Is `pg_trgm` strictly required or can we just use a JS-based Synonym expansion + multiple `.ilike` queries in Supabase? We will enable `pg_trgm` and GIN indexes in a migration so that in the future or via RPC we can use `.rpc('search_listings')` if standard `.or()` is insufficient for typos.
-- The `b2b_applications` and previous architectures will remain completely untouched.
+#### [MODIFY] src/app/(main)/product/[id]/page.tsx
+- Clean up layout. Use a unified image gallery, clear CTA area (sticky bottom action bar on mobile).
 
-Does this plan accurately capture your constraints?
+#### [MODIFY] src/app/(main)/profile/page.tsx
+- Turn profile into an application hub with clear sections.
+- B2B discoverability: Add a dedicated, clean entry point "Для бизнеса" here.
+
+### Chat Redesign
+#### [MODIFY] src/app/(main)/messages/page.tsx
+- Implement the "Chat List" view. On desktop, this is the left column. On mobile, this is the full screen list.
+
+#### [MODIFY] src/app/(main)/messages/[id]/page.tsx
+- Desktop: Left column (list), Right column (conversation).
+- Mobile: Full screen conversation with a "Back" button in the header.
+
+#### [MODIFY] src/features/chat/components/chat-room.tsx
+- Re-style bubbles. No excessive pills. Distinct incoming/outgoing colors (Primary vs Muted).
+- Remove fixed height `h-[600px]`, make it fill the container flex.
+- Add a compact "Product Context" card at the top.
+
+### B2B Discoverability
+#### [MODIFY] src/app/(main)/b2b/page.tsx
+- Minor UI polish to match the new token system.
+
+### UI System
+#### [NEW] src/components/ui/skeleton.tsx
+- Add standard skeleton component.
+
+## Verification Plan
+1. Check visually across 390px (iPhone), 768px (iPad), and 1440px (Desktop).
+2. Ensure no horizontal overflow anywhere.
+3. Test Chat flow on mobile to ensure the keyboard doesn't break the layout and the two screens (List vs Room) feel native.
+4. Verify "Для бизнеса" is easy to find in the Profile.
+5. Run `npm run build` and `npm run lint`.

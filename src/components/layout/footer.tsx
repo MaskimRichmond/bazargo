@@ -3,67 +3,30 @@ import { ShoppingBag } from "lucide-react"
 
 export function Footer() {
   return (
-    <footer className="bg-muted/30 border-t pt-12 pb-24 md:pb-12 mt-auto">
+    <footer className="bg-background border-t pt-8 pb-20 md:pb-8 mt-auto">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
-          <div className="col-span-2 lg:col-span-1">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="bg-primary text-primary-foreground p-1 rounded-lg">
-                <ShoppingBag className="w-4 h-4" />
-              </div>
-              <span className="font-bold text-xl tracking-tight">BazarGo</span>
-            </Link>
-            <p className="text-sm text-muted-foreground mb-4">
-              Больше, чем объявления. Покупай, продавай и развивайся с BazarGo.
-            </p>
-            <p className="text-sm font-medium">Бишкек, Кыргызстан</p>
-          </div>
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
           
-          <div>
-            <h4 className="font-semibold mb-4">Покупателям</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/catalog" className="hover:text-foreground">Каталог товаров</Link></li>
-              <li><Link href="/requests" className="hover:text-foreground">Нужен товар</Link></li>
-              <li><Link href="/stores" className="hover:text-foreground">Магазины</Link></li>
-              <li><Link href="/safety" className="hover:text-foreground">Безопасность</Link></li>
-            </ul>
-          </div>
-          
-          <div>
-            <h4 className="font-semibold mb-4">Продавцам</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/sell" className="hover:text-foreground">Разместить объявление</Link></li>
-              <li><Link href="/b2b" className="hover:text-foreground">Открыть магазин</Link></li>
-              <li><Link href="/about" className="hover:text-foreground">Тарифы</Link></li>
-              <li><Link href="/safety" className="hover:text-foreground">Правила</Link></li>
-            </ul>
+          <div className="flex items-center gap-2">
+            <div className="bg-primary text-primary-foreground p-1 rounded-lg">
+              <ShoppingBag className="w-4 h-4" />
+            </div>
+            <span className="font-bold text-lg tracking-tight">BazarGo</span>
           </div>
 
-          <div>
-            <h4 className="font-semibold mb-4">Бизнесу</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/b2b" className="hover:text-foreground">Стать поставщиком</Link></li>
-              <li><Link href="/b2b" className="hover:text-foreground">B2B решения</Link></li>
-              <li><Link href="/b2b" className="hover:text-foreground">Реклама</Link></li>
-            </ul>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground font-medium">
+            <Link href="/about" className="hover:text-foreground transition-colors">О нас</Link>
+            <Link href="/help" className="hover:text-foreground transition-colors">Помощь</Link>
+            <Link href="/safety" className="hover:text-foreground transition-colors">Безопасность</Link>
+            <Link href="/b2b" className="hover:text-foreground transition-colors">Для бизнеса</Link>
+          </div>
+
+          <div className="flex gap-4 text-xs text-muted-foreground">
+            <Link href="/privacy" className="hover:text-foreground transition-colors">Конфиденциальность</Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">Условия</Link>
+            <span>© {new Date().getFullYear()}</span>
           </div>
           
-          <div>
-            <h4 className="font-semibold mb-4">BazarGo</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/about" className="hover:text-foreground">О компании</Link></li>
-              <li><Link href="/help" className="hover:text-foreground">Помощь</Link></li>
-              <li><Link href="/contacts" className="hover:text-foreground">Контакты</Link></li>
-            </ul>
-          </div>
-        </div>
-        
-        <div className="pt-8 border-t flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} BazarGo. Все права защищены.</p>
-          <div className="flex gap-4">
-            <Link href="/privacy" className="hover:text-foreground">Политика конфиденциальности</Link>
-            <Link href="/terms" className="hover:text-foreground">Пользовательское соглашение</Link>
-          </div>
         </div>
       </div>
     </footer>

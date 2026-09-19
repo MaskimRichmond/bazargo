@@ -1,8 +1,22 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { User, Phone, Mail, Calendar, Edit, Package, CheckCircle, Ban, Heart, MessageCircle, Settings, Store } from "lucide-react"
+import Link from "next/link"
+import { 
+  User, 
+  Settings, 
+  Heart, 
+  Package, 
+  Store, 
+  MessageCircle, 
+  ChevronRight, 
+  LogOut, 
+  Briefcase,
+  ShieldCheck,
+  ShoppingBag,
+  HelpCircle
+} from "lucide-react"
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -22,182 +36,103 @@ export default async function ProfilePage() {
     redirect("/login?redirect_to=/profile")
   }
 
-  // Fetch real profile data
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
     .eq("id", session.user.id)
     .single()
 
-  // Fetch counts
-  const { count: activeCount } = await supabase
-    .from("listings")
-    .select("*", { count: "exact", head: true })
-    .eq("seller_id", session.user.id)
-    .eq("status", "ACTIVE")
-
-  const { count: soldCount } = await supabase
-    .from("listings")
-    .select("*", { count: "exact", head: true })
-    .eq("seller_id", session.user.id)
-    .eq("status", "SOLD")
-
-  const { count: deactivatedCount } = await supabase
-    .from("listings")
-    .select("*", { count: "exact", head: true })
-    .eq("seller_id", session.user.id)
-    .eq("status", "DEACTIVATED")
-
-  const { count: archivedCount } = await supabase
-    .from("listings")
-    .select("*", { count: "exact", head: true })
-    .eq("seller_id", session.user.id)
-    .eq("status", "ARCHIVED")
-
   const displayName = profile?.full_name || session.user.phone || session.user.email || "Пользователь"
-  const createdAt = profile?.created_at ? new Date(profile.created_at).toLocaleDateString("ru-RU", {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  }) : "Неизвестно"
+
+  const NavItem = ({ href, icon: Icon, title, subtitle, isPrimary = false }: any) => (
+    <Link 
+      href={href} 
+      className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors active:bg-muted"
+    >
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isPrimary ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className={`font-semibold text-[15px] ${isPrimary ? 'text-primary' : 'text-foreground'}`}>{title}</h3>
+        {subtitle && <p className="text-xs text-muted-foreground truncate">{subtitle}</p>}
+      </div>
+      <ChevronRight className="w-5 h-5 text-muted-foreground/50 shrink-0" />
+    </Link>
+  )
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Мой профиль</h1>
-        <Button variant="outline" className="hidden sm:flex gap-2">
-          <Edit className="w-4 h-4" />
-          Редактировать
-        </Button>
+    <div className="container mx-auto px-0 sm:px-4 py-4 sm:py-8 max-w-2xl pb-24">
+      <div className="px-4 sm:px-0 mb-6">
+        <h1 className="text-2xl font-bold tracking-tight">Профиль</h1>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        
-        {/* User Info Card */}
-        <Card className="md:col-span-2 shadow-sm rounded-2xl border-border/50">
-          <CardHeader className="pb-4">
-            <CardTitle>Личные данные</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
+      <div className="px-4 sm:px-0 mb-8">
+        <Card className="rounded-2xl border-none shadow-md overflow-hidden bg-gradient-to-br from-primary/10 to-transparent">
+          <CardContent className="p-6">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center text-primary text-2xl font-bold shrink-0">
+              <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center text-primary text-xl font-bold shrink-0 shadow-sm overflow-hidden">
                 {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+                  <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                 ) : (
                   displayName.charAt(0).toUpperCase()
                 )}
               </div>
               <div>
-                <h2 className="text-xl font-semibold">{displayName}</h2>
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted text-xs font-medium mt-2 text-muted-foreground">
-                  <User className="w-3.5 h-3.5" />
-                  Роль: {profile?.role || "BUYER"}
+                <h2 className="text-lg font-bold">{displayName}</h2>
+                <p className="text-sm text-muted-foreground">{session.user.phone || session.user.email}</p>
+                <div className="flex gap-2 mt-2">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-background text-muted-foreground">
+                    ID: {session.user.id.substring(0, 6)}
+                  </span>
+                  {profile?.is_verified && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-600">
+                      <ShieldCheck className="w-3 h-3" /> Верифицирован
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
-
-            <div className="grid sm:grid-cols-2 gap-4 pt-4 border-t border-border/50">
-              <div className="space-y-1">
-                <span className="text-xs text-muted-foreground flex items-center gap-1.5"><Phone className="w-3.5 h-3.5"/> Телефон</span>
-                <p className="font-medium">{session.user.phone || "Не указан"}</p>
-              </div>
-              <div className="space-y-1">
-                <span className="text-xs text-muted-foreground flex items-center gap-1.5"><Mail className="w-3.5 h-3.5"/> Email</span>
-                <p className="font-medium text-foreground">{session.user.email || "Не указан"}</p>
-              </div>
-              <div className="space-y-1">
-                <span className="text-xs text-muted-foreground flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5"/> Дата регистрации</span>
-                <p className="font-medium">{createdAt}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stats Card */}
-        <Card className="shadow-sm rounded-2xl border-border/50">
-          <CardHeader className="pb-4">
-            <CardTitle>Статистика</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-500/10 text-blue-500 rounded-lg"><Package className="w-4 h-4"/></div>
-                <span className="font-medium">Активные</span>
-              </div>
-              <span className="font-bold text-lg">{activeCount || 0}</span>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-lg"><CheckCircle className="w-4 h-4"/></div>
-                <span className="font-medium">Проданные</span>
-              </div>
-              <span className="font-bold text-lg">{soldCount || 0}</span>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-zinc-500/10 text-zinc-500 rounded-lg"><Ban className="w-4 h-4"/></div>
-                <span className="font-medium">Деактивированные</span>
-              </div>
-              <span className="font-bold text-lg">{deactivatedCount || 0}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-500/10 text-slate-500 rounded-lg"><User className="w-4 h-4"/></div>
-                <span className="font-medium">Архив</span>
-              </div>
-              <span className="font-bold text-lg">{archivedCount || 0}</span>
-            </div>
-
-            <Button asChild className="w-full mt-4 bg-primary text-primary-foreground hover:bg-primary/90">
-              <a href="/my-listings">Перейти в Мои объявления</a>
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Navigation Card */}
-        <Card className="md:col-span-3 shadow-sm rounded-2xl border-border/50">
-          <CardContent className="p-2 sm:p-4 grid grid-cols-2 md:grid-cols-4 gap-2">
-            <Button asChild variant="ghost" className="h-auto py-4 flex-col gap-2 rounded-xl">
-              <a href="/favorites">
-                <Heart className="w-6 h-6 text-primary" />
-                <span>Избранное</span>
-              </a>
-            </Button>
-            <Button asChild variant="ghost" className="h-auto py-4 flex-col gap-2 rounded-xl">
-              <a href="/my-store">
-                <Store className="w-6 h-6 text-primary" />
-                <span>Мой магазин</span>
-              </a>
-            </Button>
-            <Button asChild variant="ghost" className="h-auto py-4 flex-col gap-2 rounded-xl">
-              <a href="/my-requests">
-                <Package className="w-6 h-6 text-primary" />
-                <span>Мои запросы</span>
-              </a>
-            </Button>
-            <Button asChild variant="ghost" className="h-auto py-4 flex-col gap-2 rounded-xl">
-              <a href="/messages">
-                <MessageCircle className="w-6 h-6 text-primary" />
-                <span>Чаты</span>
-              </a>
-            </Button>
-            <Button asChild variant="ghost" className="h-auto py-4 flex-col gap-2 rounded-xl">
-              <a href="/settings">
-                <Settings className="w-6 h-6 text-primary" />
-                <span>Настройки</span>
-              </a>
-            </Button>
           </CardContent>
         </Card>
       </div>
-      
-      {/* Mobile edit button */}
-      <Button variant="outline" className="w-full mt-6 sm:hidden">
-        Редактировать профиль
-      </Button>
+
+      <div className="space-y-6">
+        
+        <div className="bg-background sm:border sm:rounded-2xl overflow-hidden shadow-sm divide-y">
+          <NavItem href="/my-listings" icon={Package} title="Мои объявления" subtitle="Активные, проданные, архив" />
+          <NavItem href="/favorites" icon={Heart} title="Избранное" subtitle="Сохраненные товары" />
+          <NavItem href="/orders" icon={ShoppingBag} title="Мои заказы" subtitle="Покупки и статус доставки" />
+          <NavItem href="/messages" icon={MessageCircle} title="Чаты" subtitle="Переписка с продавцами и покупателями" />
+        </div>
+
+        <div className="px-4 sm:px-0 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6">
+          Бизнес и продажи
+        </div>
+        <div className="bg-background sm:border sm:rounded-2xl overflow-hidden shadow-sm divide-y">
+          <NavItem href="/seller/orders" icon={Package} title="Заказы клиентов" subtitle="Управление заказами на ваши товары" />
+          <NavItem href="/my-store" icon={Store} title="Мой магазин" subtitle="Управление витриной и товарами" />
+          <NavItem href="/my-requests" icon={HelpCircle} title="Мои запросы (Нужен товар)" subtitle="Поиск редких товаров" />
+          <NavItem href="/b2b" icon={Briefcase} title="Для бизнеса (B2B)" subtitle="Оптовые закупки и заявки" isPrimary={true} />
+        </div>
+
+        <div className="px-4 sm:px-0 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6">
+          Аккаунт
+        </div>
+        <div className="bg-background sm:border sm:rounded-2xl overflow-hidden shadow-sm divide-y">
+          <NavItem href="/settings" icon={Settings} title="Настройки" subtitle="Пароль, уведомления, данные" />
+          <NavItem href="/safety" icon={ShieldCheck} title="Безопасность и правила" />
+        </div>
+
+        <div className="px-4 sm:px-0 pt-4">
+          <form action="/auth/signout" method="post">
+            <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 rounded-xl h-12">
+              <LogOut className="w-5 h-5 mr-3" />
+              Выйти из аккаунта
+            </Button>
+          </form>
+        </div>
+
+      </div>
     </div>
   )
 }
