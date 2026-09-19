@@ -1,0 +1,1701 @@
+-- Add new listing status if it doesn't exist
+ALTER TYPE listing_status ADD VALUE IF NOT EXISTS 'OUT_OF_STOCK';
+
+-- Add new listing types
+ALTER TYPE listing_type ADD VALUE IF NOT EXISTS 'SINGLE';
+ALTER TYPE listing_type ADD VALUE IF NOT EXISTS 'INVENTORY';
+
+-- Enable RLS on listing_images
+ALTER TABLE listing_images ENABLE ROW LEVEL SECURITY;
+
+-- listing_images RLS Policies
+CREATE POLICY "Images are viewable by everyone." 
+  ON listing_images FOR SELECT USING (true);
+
+CREATE POLICY "Users can insert images for their own listings." 
+  ON listing_images FOR INSERT 
+  WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM listings 
+      WHERE listings.id = listing_images.listing_id 
+      AND listings.seller_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can update their own listing images." 
+  ON listing_images FOR UPDATE 
+  USING (
+    EXISTS (
+      SELECT 1 FROM listings 
+      WHERE listings.id = listing_images.listing_id 
+      AND listings.seller_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "Users can delete their own listing images." 
+  ON listing_images FOR DELETE 
+  USING (
+    EXISTS (
+      SELECT 1 FROM listings 
+      WHERE listings.id = listing_images.listing_id 
+      AND listings.seller_id = auth.uid()
+    )
+  );
+
+-- Create Storage Bucket for product images
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('product-images', 'product-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage RLS Policies for product-images bucket
+CREATE POLICY "Product images are publicly accessible." 
+  ON storage.objects FOR SELECT 
+  USING (bucket_id = 'product-images');
+
+CREATE POLICY "Authenticated users can upload product images." 
+  ON storage.objects FOR INSERT 
+  WITH CHECK (bucket_id = 'product-images' AND auth.role() = 'authenticated');
+
+CREATE POLICY "Users can delete their own product images." 
+  ON storage.objects FOR DELETE 
+  USING (bucket_id = 'product-images' AND auth.uid() = owner);
+
+-- Seed basic categories (if empty)
+INSERT INTO categories (name, slug, icon_name)
+SELECT * FROM (
+    VALUES 
+        ('Электроника', 'electronics', 'Smartphone'),
+        ('Авто', 'auto', 'Car'),
+        ('Квартиры', 'real-estate', 'Home'),
+        ('Одежда', 'clothing', 'Shirt'),
+        ('Мебель', 'furniture', 'Sofa'),
+        ('Спорт', 'sport', 'Dumbbell'),
+        ('Услуги', 'services', 'Wrench'),
+        ('Прочее', 'other', 'Package')
+) AS v(name, slug, icon_name)
+WHERE NOT EXISTS (SELECT 1 FROM categories);
+﻿-- Initial Schema for BazarGo MVP
+
+-- Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Enum Types
+CREATE TYPE user_role AS ENUM ('USER', 'ADMIN');
+CREATE TYPE store_status AS ENUM ('PENDING', 'APPROVED', 'BLOCKED');
+CREATE TYPE listing_status AS ENUM ('ACTIVE', 'DEACTIVATED', 'SOLD', 'BLOCKED');
+CREATE TYPE listing_type AS ENUM ('SIMPLE', 'QUANTITY');
+CREATE TYPE item_condition AS ENUM ('NEW', 'USED_LIKE_NEW', 'USED_GOOD', 'USED_FAIR', 'FOR_PARTS');
+CREATE TYPE request_status AS ENUM ('ACTIVE', 'CLOSED');
+
+-- 1. Profiles Table (extends auth.users)
+CREATE TABLE profiles (
+    id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+    phone VARCHAR(20) UNIQUE,
+    full_name VARCHAR(100),
+    avatar_url TEXT,
+    city VARCHAR(100) DEFAULT 'Bishkek',
+    role user_role DEFAULT 'USER',
+    is_verified BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. Categories Table
+CREATE TABLE categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL,
+    slug VARCHAR(100) UNIQUE NOT NULL,
+    parent_id UUID REFERENCES categories(id) ON DELETE CASCADE,
+    icon_name VARCHAR(50),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. Stores Table
+CREATE TABLE stores (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    name VARCHAR(150) NOT NULL,
+    description TEXT,
+    logo_url TEXT,
+    category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+    city VARCHAR(100) NOT NULL,
+    status store_status DEFAULT 'PENDING',
+    is_verified BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 4. Products Catalog (Optional for Listings, useful for normalization)
+CREATE TABLE products (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    brand VARCHAR(100),
+    model VARCHAR(150) NOT NULL,
+    category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 5. Listings Table (The main ad entity)
+CREATE TABLE listings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    seller_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+    store_id UUID REFERENCES stores(id) ON DELETE CASCADE,
+    product_id UUID REFERENCES products(id) ON DELETE SET NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    category_id UUID REFERENCES categories(id) ON DELETE RESTRICT NOT NULL,
+    price NUMERIC(12, 2) NOT NULL,
+    condition item_condition NOT NULL,
+    quantity INTEGER DEFAULT 1,
+    status listing_status DEFAULT 'ACTIVE',
+    listing_type listing_type DEFAULT 'SIMPLE',
+    city VARCHAR(100) NOT NULL,
+    delivery_methods JSONB DEFAULT '[]'::JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 6. Listing Images
+CREATE TABLE listing_images (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    listing_id UUID REFERENCES listings(id) ON DELETE CASCADE NOT NULL,
+    url TEXT NOT NULL,
+    order_index INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 7. Favorites Table
+CREATE TABLE favorites (
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    listing_id UUID REFERENCES listings(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (user_id, listing_id)
+);
+
+-- 8. Follows Table (following stores or users)
+CREATE TABLE follows (
+    follower_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    followed_profile_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+    followed_store_id UUID REFERENCES stores(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    CHECK (
+        (followed_profile_id IS NOT NULL AND followed_store_id IS NULL) OR
+        (followed_profile_id IS NULL AND followed_store_id IS NOT NULL)
+    ),
+    UNIQUE(follower_id, followed_profile_id),
+    UNIQUE(follower_id, followed_store_id)
+);
+
+-- 9. Chat and Messages
+CREATE TABLE chats (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    listing_id UUID REFERENCES listings(id) ON DELETE SET NULL,
+    buyer_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+    seller_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(listing_id, buyer_id)
+);
+
+CREATE TABLE messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    chat_id UUID REFERENCES chats(id) ON DELETE CASCADE NOT NULL,
+    sender_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+    content TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 10. Requests ("РќСѓР¶РµРЅ С‚РѕРІР°СЂ")
+CREATE TABLE requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    category_id UUID REFERENCES categories(id) ON DELETE RESTRICT NOT NULL,
+    max_price NUMERIC(12, 2),
+    condition item_condition,
+    description TEXT,
+    city VARCHAR(100) NOT NULL,
+    status request_status DEFAULT 'ACTIVE',
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE request_offers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    request_id UUID REFERENCES requests(id) ON DELETE CASCADE NOT NULL,
+    seller_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+    listing_id UUID REFERENCES listings(id) ON DELETE SET NULL,
+    message TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 11. Notifications
+CREATE TABLE notifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+    type VARCHAR(50) NOT NULL,
+    message TEXT NOT NULL,
+    link TEXT,
+    is_read BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Triggers for updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_profiles_modtime BEFORE UPDATE ON profiles FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+CREATE TRIGGER update_stores_modtime BEFORE UPDATE ON stores FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+CREATE TRIGGER update_listings_modtime BEFORE UPDATE ON listings FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+CREATE TRIGGER update_chats_modtime BEFORE UPDATE ON chats FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+CREATE TRIGGER update_requests_modtime BEFORE UPDATE ON requests FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+-- Function to handle new user signup
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, phone, full_name, avatar_url)
+  VALUES (
+    new.id,
+    new.phone,
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'avatar_url'
+  );
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger to call handle_new_user on auth.users insert
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+
+-- Enable RLS (Row Level Security) on basic tables
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE listings ENABLE ROW LEVEL SECURITY;
+
+-- Profiles RLS
+CREATE POLICY "Public profiles are viewable by everyone." ON profiles FOR SELECT USING (true);
+CREATE POLICY "Users can insert their own profile." ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "Users can update own profile." ON profiles FOR UPDATE USING (auth.uid() = id);
+
+-- Listings RLS
+CREATE POLICY "Listings are viewable by everyone." ON listings FOR SELECT USING (status = 'ACTIVE' OR auth.uid() = seller_id);
+CREATE POLICY "Users can insert own listings." ON listings FOR INSERT WITH CHECK (auth.uid() = seller_id);
+CREATE POLICY "Users can update own listings." ON listings FOR UPDATE USING (auth.uid() = seller_id);
+
+-- Stores RLS
+CREATE POLICY "Stores are viewable by everyone." ON stores FOR SELECT USING (status = 'APPROVED' OR auth.uid() = owner_id);
+CREATE POLICY "Users can create own store." ON stores FOR INSERT WITH CHECK (auth.uid() = owner_id);
+CREATE POLICY "Users can update own store." ON stores FOR UPDATE USING (auth.uid() = owner_id);
+
+﻿-- Add email to profiles
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS email VARCHAR(255) UNIQUE;
+
+-- Update trigger to handle email and phone gracefully
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, phone, email, full_name, avatar_url)
+  VALUES (
+    new.id,
+    new.phone,
+    new.email,
+    new.raw_user_meta_data->>'full_name',
+    new.raw_user_meta_data->>'avatar_url'
+  );
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- Enable UUID extension just in case it's missing
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Safely create categories table if it was skipped or missing
+CREATE TABLE IF NOT EXISTS public.categories (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) NOT NULL,
+    slug VARCHAR(100) UNIQUE NOT NULL,
+    parent_id UUID REFERENCES public.categories(id) ON DELETE CASCADE,
+    icon_name VARCHAR(50),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+
+-- Allow public read access to categories
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' 
+        AND tablename = 'categories' 
+        AND policyname = 'Categories are viewable by everyone.'
+    ) THEN
+        CREATE POLICY "Categories are viewable by everyone." 
+        ON public.categories FOR SELECT 
+        USING (true);
+    END IF;
+END $$;
+
+-- Allow only authenticated users to modify categories (for future admin panel)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE schemaname = 'public' 
+        AND tablename = 'categories' 
+        AND policyname = 'Admins can manage categories.'
+    ) THEN
+        CREATE POLICY "Admins can manage categories." 
+        ON public.categories FOR ALL 
+        USING (auth.role() = 'authenticated'); -- Simplified for MVP, ideally check role = 'ADMIN'
+    END IF;
+END $$;
+
+-- Seed minimal required categories
+INSERT INTO public.categories (name, slug, icon_name)
+SELECT * FROM (
+    VALUES 
+        ('Электроника', 'electronics', 'Smartphone'),
+        ('Телефоны', 'phones', 'Phone'),
+        ('Компьютеры', 'computers', 'Laptop'),
+        ('Авто', 'auto', 'Car'),
+        ('Недвижимость', 'real-estate', 'Home'),
+        ('Одежда и обувь', 'clothing', 'Shirt'),
+        ('Дом и сад', 'home-garden', 'TreePine'),
+        ('Детские товары', 'kids', 'Baby'),
+        ('Красота и здоровье', 'beauty', 'Heart'),
+        ('Спорт и отдых', 'sport', 'Dumbbell'),
+        ('Животные', 'pets', 'Dog'),
+        ('Работа', 'jobs', 'Briefcase'),
+        ('Услуги', 'services', 'Wrench'),
+        ('Бизнес и оборудование', 'business', 'Building')
+) AS v(name, slug, icon_name)
+ON CONFLICT (slug) DO NOTHING;
+-- Fix category names corrupted by mojibake
+
+UPDATE public.categories SET name = 'Электроника' WHERE slug = 'electronics';
+UPDATE public.categories SET name = 'Телефоны' WHERE slug = 'phones';
+UPDATE public.categories SET name = 'Компьютеры' WHERE slug = 'computers';
+UPDATE public.categories SET name = 'Авто' WHERE slug = 'auto';
+UPDATE public.categories SET name = 'Недвижимость' WHERE slug = 'real-estate';
+UPDATE public.categories SET name = 'Одежда и обувь' WHERE slug = 'clothing';
+UPDATE public.categories SET name = 'Дом и сад' WHERE slug = 'home-garden';
+UPDATE public.categories SET name = 'Детские товары' WHERE slug = 'kids';
+UPDATE public.categories SET name = 'Красота и здоровье' WHERE slug = 'beauty';
+UPDATE public.categories SET name = 'Спорт и отдых' WHERE slug = 'sport';
+UPDATE public.categories SET name = 'Животные' WHERE slug = 'pets';
+UPDATE public.categories SET name = 'Работа' WHERE slug = 'jobs';
+UPDATE public.categories SET name = 'Услуги' WHERE slug = 'services';
+UPDATE public.categories SET name = 'Бизнес и оборудование' WHERE slug = 'business';
+UPDATE public.categories SET name = 'Мебель' WHERE slug = 'furniture';
+UPDATE public.categories SET name = 'Прочее' WHERE slug = 'other';
+-- Add ARCHIVED status to listing_status enum
+ALTER TYPE listing_status ADD VALUE IF NOT EXISTS 'ARCHIVED';
+-- Create hierarchy for electronics
+UPDATE public.categories 
+SET parent_id = (SELECT id FROM public.categories WHERE slug = 'electronics') 
+WHERE slug IN ('phones', 'computers');
+
+-- Fix icons for electronics
+UPDATE public.categories SET icon_name = 'Monitor' WHERE slug = 'electronics';
+UPDATE public.categories SET icon_name = 'Smartphone' WHERE slug = 'phones';
+UPDATE public.categories SET icon_name = 'Laptop' WHERE slug = 'computers';
+-- 1. Add missing columns to stores
+ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS slug VARCHAR(150) UNIQUE;
+ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS phone VARCHAR(50);
+ALTER TABLE public.stores ADD COLUMN IF NOT EXISTS email VARCHAR(100);
+
+-- 2. Create Storage Bucket for store images
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('store-images', 'store-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage RLS Policies for store-images bucket
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Store images are publicly accessible.') THEN
+        CREATE POLICY "Store images are publicly accessible." ON storage.objects FOR SELECT USING (bucket_id = 'store-images');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated users can upload store images.') THEN
+        CREATE POLICY "Authenticated users can upload store images." ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'store-images' AND auth.role() = 'authenticated');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update their own store images.') THEN
+        CREATE POLICY "Users can update their own store images." ON storage.objects FOR UPDATE USING (bucket_id = 'store-images' AND auth.uid() = owner);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can delete their own store images.') THEN
+        CREATE POLICY "Users can delete their own store images." ON storage.objects FOR DELETE USING (bucket_id = 'store-images' AND auth.uid() = owner);
+    END IF;
+END $$;
+
+-- 3. Stores Table RLS
+ALTER TABLE public.stores ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Stores are viewable by everyone.' AND tablename = 'stores') THEN
+        CREATE POLICY "Stores are viewable by everyone." ON public.stores FOR SELECT USING (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can insert their own store.' AND tablename = 'stores') THEN
+        CREATE POLICY "Users can insert their own store." ON public.stores FOR INSERT WITH CHECK (auth.uid() = owner_id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update their own store.' AND tablename = 'stores') THEN
+        CREATE POLICY "Users can update their own store." ON public.stores FOR UPDATE USING (auth.uid() = owner_id);
+    END IF;
+END $$;
+
+-- 4. Follows Table RLS
+ALTER TABLE public.follows ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Follows are viewable by everyone.' AND tablename = 'follows') THEN
+        CREATE POLICY "Follows are viewable by everyone." ON public.follows FOR SELECT USING (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can insert their own follows.' AND tablename = 'follows') THEN
+        CREATE POLICY "Users can insert their own follows." ON public.follows FOR INSERT WITH CHECK (auth.uid() = follower_id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can delete their own follows.' AND tablename = 'follows') THEN
+        CREATE POLICY "Users can delete their own follows." ON public.follows FOR DELETE USING (auth.uid() = follower_id);
+    END IF;
+END $$;
+-- 1. Rename columns to match requirements
+ALTER TABLE public.requests RENAME COLUMN user_id TO buyer_id;
+ALTER TABLE public.requests RENAME COLUMN max_price TO budget_max;
+ALTER TABLE public.requests ADD COLUMN IF NOT EXISTS budget_min NUMERIC(12, 2);
+
+-- 2. Add missing enum values to request_status
+ALTER TYPE request_status ADD VALUE IF NOT EXISTS 'OPEN';
+ALTER TYPE request_status ADD VALUE IF NOT EXISTS 'EXPIRED';
+ALTER TYPE request_status ADD VALUE IF NOT EXISTS 'CANCELLED';
+
+
+
+-- 3. RLS for Requests
+ALTER TABLE public.requests ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Requests are viewable by everyone.') THEN
+        CREATE POLICY "Requests are viewable by everyone." ON public.requests FOR SELECT USING (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can insert their own requests.') THEN
+        CREATE POLICY "Users can insert their own requests." ON public.requests FOR INSERT WITH CHECK (auth.uid() = buyer_id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can update their own requests.') THEN
+        CREATE POLICY "Users can update their own requests." ON public.requests FOR UPDATE USING (auth.uid() = buyer_id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can delete their own requests.') THEN
+        CREATE POLICY "Users can delete their own requests." ON public.requests FOR DELETE USING (auth.uid() = buyer_id);
+    END IF;
+END $$;
+
+-- 4. RLS for Request Offers
+ALTER TABLE public.request_offers ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Users can view offers for their requests or their own offers.') THEN
+        CREATE POLICY "Users can view offers for their requests or their own offers." 
+          ON public.request_offers FOR SELECT 
+          USING (
+            auth.uid() = seller_id OR 
+            auth.uid() = (SELECT buyer_id FROM public.requests WHERE id = request_id)
+          );
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Sellers can insert offers.') THEN
+        CREATE POLICY "Sellers can insert offers." 
+          ON public.request_offers FOR INSERT 
+          WITH CHECK (auth.uid() = seller_id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Sellers can update their own offers.') THEN
+        CREATE POLICY "Sellers can update their own offers." 
+          ON public.request_offers FOR UPDATE 
+          USING (auth.uid() = seller_id);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Sellers can delete their own offers.') THEN
+        CREATE POLICY "Sellers can delete their own offers." 
+          ON public.request_offers FOR DELETE 
+          USING (auth.uid() = seller_id);
+    END IF;
+END $$;
+
+-- 5. Ensure UNIQUE constraint to prevent duplicate offers
+ALTER TABLE public.request_offers ADD CONSTRAINT unique_request_listing UNIQUE (request_id, listing_id);
+-- Change default status from ACTIVE to OPEN
+ALTER TABLE public.requests ALTER COLUMN status SET DEFAULT 'OPEN';
+
+-- If there are any 'ACTIVE' rows, change them to 'OPEN'
+UPDATE public.requests SET status = 'OPEN' WHERE status = 'ACTIVE';
+-- PRE-STAGE-8 AUDIT HOTFIX MIGRATION
+
+-- 1. Fix Categories RLS
+DROP POLICY IF EXISTS "Admins can manage categories." ON public.categories;
+
+CREATE POLICY "Admins can insert categories" 
+ON public.categories FOR INSERT
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'ADMIN'));
+
+CREATE POLICY "Admins can update categories" 
+ON public.categories FOR UPDATE
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'ADMIN'));
+
+CREATE POLICY "Admins can delete categories" 
+ON public.categories FOR DELETE
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'ADMIN'));
+
+
+-- 2. Fix Stores RLS (Public Select)
+DROP POLICY IF EXISTS "Stores are viewable by everyone." ON public.stores;
+
+CREATE POLICY "Stores are viewable by everyone." 
+ON public.stores FOR SELECT 
+USING (status = 'APPROVED' OR auth.uid() = owner_id);
+
+
+-- 3. Fix Storage Policies (Upload path check)
+DROP POLICY IF EXISTS "Authenticated users can upload product images." ON storage.objects;
+CREATE POLICY "Authenticated users can upload product images." 
+  ON storage.objects FOR INSERT 
+  WITH CHECK (
+    bucket_id = 'product-images' 
+    AND auth.role() = 'authenticated'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+DROP POLICY IF EXISTS "Authenticated users can upload store images." ON storage.objects;
+CREATE POLICY "Authenticated users can upload store images." 
+  ON storage.objects FOR INSERT 
+  WITH CHECK (
+    bucket_id = 'store-images' 
+    AND auth.role() = 'authenticated'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+
+-- 4. Fix Requests RLS (Public Select)
+DROP POLICY IF EXISTS "Requests are viewable by everyone." ON public.requests;
+CREATE POLICY "Requests are viewable by everyone." 
+ON public.requests FOR SELECT 
+USING (status = 'OPEN' OR auth.uid() = buyer_id);
+
+
+-- 5. Fix favorites RLS
+ALTER TABLE public.favorites ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'favorites' 
+        AND policyname = 'Favorites are viewable by everyone.'
+    ) THEN
+        DROP POLICY "Favorites are viewable by everyone." ON public.favorites;
+    END IF;
+END $$;
+
+CREATE POLICY "Users can view their own favorites." 
+ON public.favorites FOR SELECT 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own favorites." 
+ON public.favorites FOR INSERT 
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own favorites." 
+ON public.favorites FOR DELETE 
+USING (auth.uid() = user_id);
+
+
+-- 6. Fix products RLS
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Products are viewable by everyone." 
+ON public.products FOR SELECT 
+USING (true);
+
+-- Only admins can mutate products
+CREATE POLICY "Admins can insert products" 
+ON public.products FOR INSERT
+WITH CHECK (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'ADMIN'));
+
+CREATE POLICY "Admins can update products" 
+ON public.products FOR UPDATE
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'ADMIN'));
+
+CREATE POLICY "Admins can delete products" 
+ON public.products FOR DELETE
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.role = 'ADMIN'));
+
+
+-- 7. Fix chats RLS
+ALTER TABLE public.chats ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own chats." 
+ON public.chats FOR SELECT 
+USING (auth.uid() = buyer_id OR auth.uid() = seller_id);
+
+CREATE POLICY "Users can insert chats where they are the buyer." 
+ON public.chats FOR INSERT 
+WITH CHECK (auth.uid() = buyer_id);
+
+
+-- 8. Fix messages RLS
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view messages in their chats." 
+ON public.messages FOR SELECT 
+USING (
+  EXISTS (
+    SELECT 1 FROM public.chats 
+    WHERE chats.id = messages.chat_id 
+    AND (chats.buyer_id = auth.uid() OR chats.seller_id = auth.uid())
+  )
+);
+
+CREATE POLICY "Users can insert messages in their chats." 
+ON public.messages FOR INSERT 
+WITH CHECK (
+  auth.uid() = sender_id AND
+  EXISTS (
+    SELECT 1 FROM public.chats 
+    WHERE chats.id = messages.chat_id 
+    AND (chats.buyer_id = auth.uid() OR chats.seller_id = auth.uid())
+  )
+);
+
+
+-- 9. Fix notifications RLS
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own notifications." 
+ON public.notifications FOR SELECT 
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own notifications." 
+ON public.notifications FOR UPDATE 
+USING (auth.uid() = user_id);
+
+-- FINAL PRE-STAGE-8 SECURITY MIGRATION
+
+-- 1. REQUEST_OFFERS RLS
+ALTER TABLE public.request_offers ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing INSERT policy if any
+DO $$ BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'request_offers' 
+        AND policyname = 'Sellers can insert offers.'
+    ) THEN
+        DROP POLICY "Sellers can insert offers." ON public.request_offers;
+    END IF;
+END $$;
+
+-- Create secure INSERT policy checking both seller_id and listing ownership
+CREATE POLICY "Sellers can insert offers." 
+  ON public.request_offers FOR INSERT 
+  WITH CHECK (
+    auth.uid() = seller_id AND
+    auth.uid() = (SELECT seller_id FROM public.listings WHERE id = listing_id)
+  );
+
+-- Keep the other policies for request_offers as they are secure (uid = seller_id / buyer_id)
+-- Just ensuring the SELECT policy is intact for buyer and seller
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'request_offers' 
+        AND policyname = 'Users can view offers for their requests or their own offers.'
+    ) THEN
+        CREATE POLICY "Users can view offers for their requests or their own offers." 
+          ON public.request_offers FOR SELECT 
+          USING (
+            auth.uid() = seller_id OR 
+            auth.uid() = (SELECT buyer_id FROM public.requests WHERE id = request_id)
+          );
+    END IF;
+END $$;
+
+
+-- 2. FOLLOWS RLS
+ALTER TABLE public.follows ENABLE ROW LEVEL SECURITY;
+
+DO $$ BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'follows' 
+        AND policyname = 'Follows are viewable by everyone.'
+    ) THEN
+        DROP POLICY "Follows are viewable by everyone." ON public.follows;
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'follows' 
+        AND policyname = 'Users can view their own follows or store follows'
+    ) THEN
+        DROP POLICY "Users can view their own follows or store follows" ON public.follows;
+    END IF;
+END $$;
+
+-- Selective SELECT: users see their own follows, and store follows remain public for the counter
+CREATE POLICY "Users can view their own follows or store follows" 
+ON public.follows FOR SELECT 
+USING (auth.uid() = follower_id OR followed_store_id IS NOT NULL);
+
+-- Ensure INSERT/DELETE are strictly auth.uid() = follower_id
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'follows' 
+        AND policyname = 'Users can insert their own follows.'
+    ) THEN
+        CREATE POLICY "Users can insert their own follows." ON public.follows FOR INSERT WITH CHECK (auth.uid() = follower_id);
+    END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'follows' 
+        AND policyname = 'Users can delete their own follows.'
+    ) THEN
+        CREATE POLICY "Users can delete their own follows." ON public.follows FOR DELETE USING (auth.uid() = follower_id);
+    END IF;
+END $$;
+-- Add show_phone column to listings table
+ALTER TABLE public.listings ADD COLUMN IF NOT EXISTS show_phone BOOLEAN NOT NULL DEFAULT false;
+Empty
+BEGIN;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND tablename = 'messages'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE messages;
+  END IF;
+END $$;
+
+-- Allow chat members to update the chat (e.g. bump updated_at)
+DROP POLICY IF EXISTS "Users can update their own chats." ON public.chats;
+CREATE POLICY "Users can update their own chats." 
+ON public.chats FOR UPDATE 
+USING (auth.uid() = buyer_id OR auth.uid() = seller_id);
+
+COMMIT;
+CREATE TYPE public.b2b_application_status AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+
+CREATE TABLE public.b2b_applications (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    company_name TEXT NOT NULL,
+    contact_name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    city TEXT NOT NULL,
+    categories TEXT,
+    description TEXT,
+    status public.b2b_application_status DEFAULT 'PENDING' NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
+);
+
+-- Enable RLS
+ALTER TABLE public.b2b_applications ENABLE ROW LEVEL SECURITY;
+
+-- Users can view their own applications
+CREATE POLICY "Users can view their own b2b applications" 
+ON public.b2b_applications FOR SELECT 
+USING (auth.uid() = user_id);
+
+-- Users can insert their own applications
+CREATE POLICY "Users can insert their own b2b applications" 
+ON public.b2b_applications FOR INSERT 
+WITH CHECK (auth.uid() = user_id);
+
+-- We won't allow users to update their applications for MVP, only admins can update (which implies service_role or admin RLS in the future)
+-- Add region column to listings
+ALTER TABLE public.listings 
+ADD COLUMN region VARCHAR(100);
+
+-- Backfill region for listings based on existing city
+UPDATE public.listings
+SET region = 
+  CASE 
+    WHEN city = 'Бишкек' THEN 'Бишкек'
+    WHEN city = 'Ош' THEN 'Ош'
+    WHEN city = 'Джалал-Абад' THEN 'Джалал-Абадская область'
+    WHEN city = 'Каракол' THEN 'Иссык-Кульская область'
+    WHEN city = 'Баткен' THEN 'Баткенская область'
+    WHEN city = 'Талас' THEN 'Таласская область'
+    WHEN city = 'Нарын' THEN 'Нарынская область'
+    WHEN city = 'Токмок' THEN 'Чуйская область'
+    WHEN city = 'Кант' THEN 'Чуйская область'
+    WHEN city = 'Кара-Балта' THEN 'Чуйская область'
+    ELSE 'Бишкек' -- default fallback for existing data to allow NOT NULL, MVP approach
+  END;
+
+-- Make region NOT NULL now that it's populated
+ALTER TABLE public.listings 
+ALTER COLUMN region SET NOT NULL;
+
+-- Do the same for requests
+ALTER TABLE public.requests 
+ADD COLUMN region VARCHAR(100);
+
+UPDATE public.requests
+SET region = 
+  CASE 
+    WHEN city = 'Бишкек' THEN 'Бишкек'
+    WHEN city = 'Ош' THEN 'Ош'
+    WHEN city = 'Джалал-Абад' THEN 'Джалал-Абадская область'
+    WHEN city = 'Каракол' THEN 'Иссык-Кульская область'
+    WHEN city = 'Баткен' THEN 'Баткенская область'
+    WHEN city = 'Талас' THEN 'Таласская область'
+    WHEN city = 'Нарын' THEN 'Нарынская область'
+    ELSE 'Бишкек'
+  END;
+
+ALTER TABLE public.requests 
+ALTER COLUMN region SET NOT NULL;
+ALTER TABLE public.b2b_applications ADD COLUMN IF NOT EXISTS admin_comment TEXT; 
+-- STAGE 9: Orders, Cart, Inventory, Smart Search
+
+-- 1. Create Enums
+CREATE TYPE public.order_status AS ENUM ('PENDING', 'CONFIRMED', 'COMPLETED', 'REJECTED', 'CANCELLED');
+
+-- 2. Create Orders Table
+CREATE TABLE public.orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    buyer_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    seller_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    store_id UUID REFERENCES public.stores(id) ON DELETE SET NULL,
+    status public.order_status DEFAULT 'PENDING' NOT NULL,
+    total_amount NUMERIC(12, 2) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    confirmed_at TIMESTAMPTZ,
+    completed_at TIMESTAMPTZ,
+    cancelled_at TIMESTAMPTZ
+);
+
+-- 3. Create Order Items Table
+CREATE TABLE public.order_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID REFERENCES public.orders(id) ON DELETE CASCADE NOT NULL,
+    listing_id UUID REFERENCES public.listings(id) ON DELETE SET NULL,
+    quantity INTEGER NOT NULL,
+    unit_price NUMERIC(12, 2) NOT NULL,
+    title_snapshot VARCHAR(255) NOT NULL,
+    image_url_snapshot TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- 4. Create Cart Items Table
+CREATE TABLE public.cart_items (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+    listing_id UUID REFERENCES public.listings(id) ON DELETE CASCADE NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    UNIQUE(user_id, listing_id)
+);
+
+-- 5. RLS for Cart Items
+ALTER TABLE public.cart_items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage their own cart" ON public.cart_items
+    FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+-- 6. RLS for Orders
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Buyers can view their orders" ON public.orders
+    FOR SELECT USING (auth.uid() = buyer_id);
+CREATE POLICY "Sellers can view their orders" ON public.orders
+    FOR SELECT USING (auth.uid() = seller_id);
+-- No INSERT/UPDATE for clients, only through secure server actions (bypassing RLS with service role or relying on backend auth check)
+CREATE POLICY "Buyers can insert their orders" ON public.orders
+    FOR INSERT WITH CHECK (auth.uid() = buyer_id);
+CREATE POLICY "Participants can update orders" ON public.orders
+    FOR UPDATE USING (auth.uid() = buyer_id OR auth.uid() = seller_id);
+
+-- 7. RLS for Order Items
+ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Participants can view order items" ON public.order_items
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM public.orders 
+            WHERE orders.id = order_items.order_id 
+            AND (orders.buyer_id = auth.uid() OR orders.seller_id = auth.uid())
+        )
+    );
+CREATE POLICY "Buyers can insert order items" ON public.order_items
+    FOR INSERT WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.orders 
+            WHERE orders.id = order_items.order_id 
+            AND orders.buyer_id = auth.uid()
+        )
+    );
+
+-- 8. Atomic Inventory Logic (RPC)
+CREATE OR REPLACE FUNCTION public.complete_order(order_id_param UUID, executing_user UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_order RECORD;
+    v_item RECORD;
+    v_listing RECORD;
+BEGIN
+    -- Get order and lock it for update to prevent concurrent completions
+    SELECT * INTO v_order FROM public.orders WHERE id = order_id_param FOR UPDATE;
+    
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Order not found';
+    END IF;
+
+    -- Security check: only the seller can complete
+    IF v_order.seller_id != executing_user THEN
+        RAISE EXCEPTION 'Unauthorized: only seller can complete this order';
+    END IF;
+
+    -- Idempotency and State Machine check
+    IF v_order.status = 'COMPLETED' THEN
+        -- Safely ignore double-completion
+        RETURN TRUE;
+    END IF;
+
+    IF v_order.status != 'CONFIRMED' THEN
+        RAISE EXCEPTION 'Order must be CONFIRMED to complete';
+    END IF;
+
+    -- Loop through items
+    FOR v_item IN SELECT * FROM public.order_items WHERE order_id = order_id_param LOOP
+        -- Lock listing
+        SELECT * INTO v_listing FROM public.listings WHERE id = v_item.listing_id FOR UPDATE;
+        
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Listing % not found', v_item.listing_id;
+        END IF;
+
+        IF v_listing.status != 'ACTIVE' THEN
+            RAISE EXCEPTION 'Listing is no longer ACTIVE';
+        END IF;
+
+        IF v_listing.listing_type = 'SINGLE' THEN
+            UPDATE public.listings SET status = 'SOLD' WHERE id = v_listing.id;
+        ELSIF v_listing.listing_type = 'INVENTORY' THEN
+            IF v_listing.quantity < v_item.quantity THEN
+                RAISE EXCEPTION 'Недостаточно товара в наличии для завершения этой сделки.';
+            END IF;
+            
+            UPDATE public.listings SET quantity = quantity - v_item.quantity WHERE id = v_listing.id;
+            
+            IF (v_listing.quantity - v_item.quantity) = 0 THEN
+                UPDATE public.listings SET status = 'OUT_OF_STOCK' WHERE id = v_listing.id;
+            END IF;
+        END IF;
+    END LOOP;
+
+    -- Mark order as completed
+    UPDATE public.orders 
+    SET status = 'COMPLETED', completed_at = NOW(), updated_at = NOW() 
+    WHERE id = order_id_param;
+    
+    RETURN TRUE;
+END;
+$$;
+
+-- 9. Smart Search & pg_trgm
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+CREATE INDEX IF NOT EXISTS listings_title_trgm_idx ON public.listings USING gin (title gin_trgm_ops);
+CREATE INDEX IF NOT EXISTS listings_desc_trgm_idx ON public.listings USING gin (description gin_trgm_ops);
+
+-- 10. Synonyms Table
+CREATE TABLE public.search_synonyms (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    keyword VARCHAR(100) NOT NULL UNIQUE,
+    synonyms TEXT[] NOT NULL
+);
+
+INSERT INTO public.search_synonyms (keyword, synonyms) VALUES
+('клавиатура', ARRAY['клава', 'клавы']),
+('ноутбук', ARRAY['ноут', 'ноуты']),
+('iphone', ARRAY['айфон', 'айфоны']),
+('телефон', ARRAY['мобила', 'смартфон', 'смарт'])
+ON CONFLICT (keyword) DO NOTHING;
+
+-- 11. RPC for updating search synonyms via admin if needed
+CREATE OR REPLACE FUNCTION public.get_synonyms(query_term TEXT)
+RETURNS TEXT[]
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    res TEXT[];
+BEGIN
+    SELECT synonyms INTO res FROM public.search_synonyms WHERE keyword = query_term LIMIT 1;
+    RETURN res;
+END;
+$$;
+-- STAGE 9.1: BAZARGO SECURITY, ORDER INTEGRITY & UX HARDENING
+
+-- 1. Drop permissive policies
+DROP POLICY IF EXISTS "Buyers can insert their orders" ON public.orders;
+DROP POLICY IF EXISTS "Participants can update orders" ON public.orders;
+DROP POLICY IF EXISTS "Buyers can insert order items" ON public.order_items;
+
+DROP FUNCTION IF EXISTS public.complete_order(UUID, UUID);
+
+-- (Keep SELECT policies so users can still read their orders/items)
+
+-- 2. Hardened complete_order
+CREATE OR REPLACE FUNCTION public.complete_order(order_id_param UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_order RECORD;
+    v_item RECORD;
+    v_listing RECORD;
+    v_uid UUID := auth.uid();
+BEGIN
+    IF v_uid IS NULL THEN
+        RAISE EXCEPTION 'Unauthorized';
+    END IF;
+
+    -- Lock order
+    SELECT * INTO v_order FROM public.orders WHERE id = order_id_param FOR UPDATE;
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Order not found';
+    END IF;
+
+    IF v_order.seller_id != v_uid THEN
+        RAISE EXCEPTION 'Unauthorized: only seller can complete this order';
+    END IF;
+
+    IF v_order.status = 'COMPLETED' THEN
+        RETURN TRUE; -- Idempotency
+    END IF;
+
+    IF v_order.status != 'CONFIRMED' THEN
+        RAISE EXCEPTION 'Order must be CONFIRMED to complete';
+    END IF;
+
+    FOR v_item IN SELECT * FROM public.order_items WHERE order_id = order_id_param LOOP
+        SELECT * INTO v_listing FROM public.listings WHERE id = v_item.listing_id FOR UPDATE;
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Listing % not found', v_item.listing_id;
+        END IF;
+
+        IF v_listing.status != 'ACTIVE' THEN
+            RAISE EXCEPTION 'Listing % is no longer ACTIVE', v_listing.id;
+        END IF;
+
+        IF v_listing.seller_id != v_order.seller_id THEN
+            RAISE EXCEPTION 'Listing seller mismatch';
+        END IF;
+
+        IF v_listing.listing_type = 'SINGLE' THEN
+            UPDATE public.listings SET status = 'SOLD' WHERE id = v_listing.id;
+        ELSIF v_listing.listing_type = 'INVENTORY' THEN
+            IF v_listing.quantity < v_item.quantity THEN
+                RAISE EXCEPTION 'Insufficient stock for listing %', v_listing.id;
+            END IF;
+            
+            UPDATE public.listings 
+            SET quantity = quantity - v_item.quantity 
+            WHERE id = v_listing.id;
+            
+            IF (v_listing.quantity - v_item.quantity) = 0 THEN
+                UPDATE public.listings SET status = 'OUT_OF_STOCK' WHERE id = v_listing.id;
+            END IF;
+        END IF;
+    END LOOP;
+
+    UPDATE public.orders 
+    SET status = 'COMPLETED', completed_at = NOW(), updated_at = NOW() 
+    WHERE id = order_id_param;
+    
+    RETURN TRUE;
+END;
+$$;
+
+-- 3. Hardened order state machine functions
+CREATE OR REPLACE FUNCTION public.confirm_order(order_id_param UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_order RECORD;
+    v_uid UUID := auth.uid();
+BEGIN
+    IF v_uid IS NULL THEN RAISE EXCEPTION 'Unauthorized'; END IF;
+    SELECT * INTO v_order FROM public.orders WHERE id = order_id_param FOR UPDATE;
+    IF NOT FOUND THEN RAISE EXCEPTION 'Order not found'; END IF;
+    IF v_order.seller_id != v_uid THEN RAISE EXCEPTION 'Unauthorized'; END IF;
+    IF v_order.status = 'CONFIRMED' THEN RETURN TRUE; END IF;
+    IF v_order.status != 'PENDING' THEN RAISE EXCEPTION 'Cannot confirm non-pending order'; END IF;
+    
+    UPDATE public.orders SET status = 'CONFIRMED', confirmed_at = NOW(), updated_at = NOW() WHERE id = order_id_param;
+    RETURN TRUE;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.reject_order(order_id_param UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_order RECORD;
+    v_uid UUID := auth.uid();
+BEGIN
+    IF v_uid IS NULL THEN RAISE EXCEPTION 'Unauthorized'; END IF;
+    SELECT * INTO v_order FROM public.orders WHERE id = order_id_param FOR UPDATE;
+    IF NOT FOUND THEN RAISE EXCEPTION 'Order not found'; END IF;
+    IF v_order.seller_id != v_uid THEN RAISE EXCEPTION 'Unauthorized'; END IF;
+    IF v_order.status = 'REJECTED' THEN RETURN TRUE; END IF;
+    IF v_order.status != 'PENDING' THEN RAISE EXCEPTION 'Cannot reject non-pending order'; END IF;
+    
+    UPDATE public.orders SET status = 'REJECTED', updated_at = NOW() WHERE id = order_id_param;
+    RETURN TRUE;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.cancel_order(order_id_param UUID)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_order RECORD;
+    v_uid UUID := auth.uid();
+BEGIN
+    IF v_uid IS NULL THEN RAISE EXCEPTION 'Unauthorized'; END IF;
+    SELECT * INTO v_order FROM public.orders WHERE id = order_id_param FOR UPDATE;
+    IF NOT FOUND THEN RAISE EXCEPTION 'Order not found'; END IF;
+    IF v_order.buyer_id != v_uid THEN RAISE EXCEPTION 'Unauthorized'; END IF;
+    IF v_order.status = 'CANCELLED' THEN RETURN TRUE; END IF;
+    IF v_order.status NOT IN ('PENDING', 'CONFIRMED') THEN RAISE EXCEPTION 'Order cannot be cancelled'; END IF;
+    
+    UPDATE public.orders SET status = 'CANCELLED', cancelled_at = NOW(), updated_at = NOW() WHERE id = order_id_param;
+    RETURN TRUE;
+END;
+$$;
+
+-- 4. Hardened checkout from cart
+CREATE OR REPLACE FUNCTION public.create_orders_from_cart()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_uid UUID := auth.uid();
+    v_cart_item RECORD;
+    v_listing RECORD;
+    v_seller_id UUID;
+    v_store_id UUID;
+    v_order_id UUID;
+    v_total NUMERIC;
+BEGIN
+    IF v_uid IS NULL THEN RAISE EXCEPTION 'Unauthorized'; END IF;
+
+    -- Basic check if cart empty
+    IF NOT EXISTS (SELECT 1 FROM public.cart_items WHERE user_id = v_uid) THEN
+        RAISE EXCEPTION 'Cart is empty';
+    END IF;
+
+    -- Group by seller and create orders
+    FOR v_seller_id IN (
+        SELECT DISTINCT l.seller_id 
+        FROM public.cart_items c 
+        JOIN public.listings l ON c.listing_id = l.id 
+        WHERE c.user_id = v_uid
+    ) LOOP
+        
+        IF v_seller_id = v_uid THEN
+            RAISE EXCEPTION 'Cannot buy own listings';
+        END IF;
+
+        v_total := 0;
+        v_store_id := NULL;
+
+        -- Create pending order
+        INSERT INTO public.orders (buyer_id, seller_id, status, total_amount)
+        VALUES (v_uid, v_seller_id, 'PENDING', 0)
+        RETURNING id INTO v_order_id;
+
+        -- Process items for this seller
+        FOR v_cart_item IN (
+            SELECT c.quantity, l.id, l.price, l.title, l.status, l.quantity as stock, l.listing_type, l.store_id,
+                   (SELECT url FROM public.listing_images WHERE listing_id = l.id ORDER BY order_index ASC LIMIT 1) as img_url
+            FROM public.cart_items c
+            JOIN public.listings l ON c.listing_id = l.id
+            WHERE c.user_id = v_uid AND l.seller_id = v_seller_id
+        ) LOOP
+            -- Integrity checks
+            IF v_cart_item.status != 'ACTIVE' THEN
+                RAISE EXCEPTION 'Listing % is not ACTIVE', v_cart_item.title;
+            END IF;
+            IF v_cart_item.listing_type = 'SINGLE' AND v_cart_item.quantity > 1 THEN
+                RAISE EXCEPTION 'Single listings can only have quantity 1';
+            END IF;
+            IF v_cart_item.listing_type = 'INVENTORY' AND v_cart_item.quantity > v_cart_item.stock THEN
+                RAISE EXCEPTION 'Insufficient stock for %', v_cart_item.title;
+            END IF;
+
+            v_store_id := COALESCE(v_store_id, v_cart_item.store_id);
+            v_total := v_total + (v_cart_item.price * v_cart_item.quantity);
+
+            INSERT INTO public.order_items (order_id, listing_id, quantity, unit_price, title_snapshot, image_url_snapshot)
+            VALUES (v_order_id, v_cart_item.id, v_cart_item.quantity, v_cart_item.price, v_cart_item.title, v_cart_item.img_url);
+        END LOOP;
+
+        -- Update order total and store_id
+        UPDATE public.orders 
+        SET total_amount = v_total, store_id = v_store_id 
+        WHERE id = v_order_id;
+
+    END LOOP;
+
+    -- Clear cart
+    DELETE FROM public.cart_items WHERE user_id = v_uid;
+
+    RETURN TRUE;
+END;
+$$;
+
+-- 5. Revoke EXECUTE from anon
+REVOKE EXECUTE ON FUNCTION public.complete_order(UUID) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.complete_order(UUID) FROM anon;
+GRANT EXECUTE ON FUNCTION public.complete_order(UUID) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.confirm_order(UUID) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.confirm_order(UUID) FROM anon;
+GRANT EXECUTE ON FUNCTION public.confirm_order(UUID) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.reject_order(UUID) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.reject_order(UUID) FROM anon;
+GRANT EXECUTE ON FUNCTION public.reject_order(UUID) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.cancel_order(UUID) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.cancel_order(UUID) FROM anon;
+GRANT EXECUTE ON FUNCTION public.cancel_order(UUID) TO authenticated;
+
+REVOKE EXECUTE ON FUNCTION public.create_orders_from_cart() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.create_orders_from_cart() FROM anon;
+GRANT EXECUTE ON FUNCTION public.create_orders_from_cart() TO authenticated;
+
+-- 6. RPC for pg_trgm smart search ranking
+CREATE OR REPLACE FUNCTION public.search_listings(query_text TEXT)
+RETURNS TABLE (id UUID, rank REAL)
+LANGUAGE plpgsql
+STABLE
+AS $$
+DECLARE
+    v_synonyms TEXT[];
+    v_combined_query TEXT;
+    v_term TEXT;
+BEGIN
+    -- Base condition for simple trigram match
+    -- But we also want to lookup synonyms and include them
+    SELECT synonyms INTO v_synonyms FROM public.search_synonyms WHERE keyword = lower(trim(query_text)) LIMIT 1;
+    
+    IF v_synonyms IS NOT NULL THEN
+        -- Create a combined string of terms separated by spaces
+        v_combined_query := lower(trim(query_text)) || ' ' || array_to_string(v_synonyms, ' ');
+    ELSE
+        v_combined_query := lower(trim(query_text));
+    END IF;
+
+    RETURN QUERY
+    SELECT l.id,
+           -- Simple heuristic rank: exact title prefix match = +1.0, trigram similarity = +similarity
+           (CASE WHEN lower(l.title) LIKE lower(trim(query_text)) || '%' THEN 1.0 ELSE 0.0 END
+            + similarity(lower(l.title), v_combined_query)
+           )::REAL as rank
+    FROM public.listings l
+    WHERE 
+        l.status = 'ACTIVE' 
+        AND (
+            l.title % v_combined_query 
+            OR l.description % v_combined_query
+            OR similarity(lower(l.title), v_combined_query) > 0.2
+        )
+    ORDER BY rank DESC;
+END;
+$$;
+-- STAGE 1: BAZARGO SECURITY & DATABASE INTEGRITY
+
+-- ==========================================
+-- 1. PROFILES PROTECTION (Prevent Privilege Escalation)
+-- ==========================================
+DROP POLICY IF EXISTS "Users can update own profile." ON public.profiles;
+
+CREATE POLICY "Users can update own profile." 
+ON public.profiles FOR UPDATE 
+USING (auth.uid() = id) 
+WITH CHECK (auth.uid() = id);
+
+CREATE OR REPLACE FUNCTION public.protect_profile_escalation()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    -- Only allow admins to change role or is_verified
+    IF OLD.role != NEW.role OR OLD.is_verified != NEW.is_verified THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM public.profiles 
+            WHERE id = auth.uid() AND role = 'ADMIN'
+        ) THEN
+            NEW.role := OLD.role;
+            NEW.is_verified := OLD.is_verified;
+        END IF;
+    END IF;
+    
+    -- Never allow id change
+    NEW.id := OLD.id;
+    
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS tr_protect_profile_escalation ON public.profiles;
+CREATE TRIGGER tr_protect_profile_escalation
+BEFORE UPDATE ON public.profiles
+FOR EACH ROW EXECUTE FUNCTION public.protect_profile_escalation();
+
+
+-- ==========================================
+-- 2. STORES PROTECTION (Prevent Moderation Bypass)
+-- ==========================================
+DROP POLICY IF EXISTS "Users can update own store." ON public.stores;
+DROP POLICY IF EXISTS "Users can update their own store." ON public.stores;
+
+CREATE POLICY "Users can update own store." 
+ON public.stores FOR UPDATE 
+USING (auth.uid() = owner_id)
+WITH CHECK (auth.uid() = owner_id);
+
+CREATE OR REPLACE FUNCTION public.protect_store_moderation()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    -- Prevent users from approving their own stores or making them verified
+    IF OLD.status != NEW.status OR OLD.is_verified != NEW.is_verified THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM public.profiles 
+            WHERE id = auth.uid() AND role = 'ADMIN'
+        ) THEN
+            NEW.status := OLD.status;
+            NEW.is_verified := OLD.is_verified;
+        END IF;
+    END IF;
+    
+    NEW.owner_id := OLD.owner_id; -- Prevent transferring ownership arbitrarily
+    
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS tr_protect_store_moderation ON public.stores;
+CREATE TRIGGER tr_protect_store_moderation
+BEFORE UPDATE ON public.stores
+FOR EACH ROW EXECUTE FUNCTION public.protect_store_moderation();
+
+
+-- ==========================================
+-- 3. LISTINGS PROTECTION
+-- ==========================================
+DROP POLICY IF EXISTS "Users can update own listings." ON public.listings;
+
+CREATE POLICY "Users can update own listings." 
+ON public.listings FOR UPDATE 
+USING (auth.uid() = seller_id)
+WITH CHECK (auth.uid() = seller_id);
+
+CREATE OR REPLACE FUNCTION public.protect_listing_integrity()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    -- If listing is blocked, only admin can unblock it
+    IF OLD.status = 'BLOCKED' AND NEW.status != 'BLOCKED' THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM public.profiles 
+            WHERE id = auth.uid() AND role = 'ADMIN'
+        ) THEN
+            NEW.status := 'BLOCKED';
+        END IF;
+    END IF;
+    
+    -- Prevent changing the seller
+    NEW.seller_id := OLD.seller_id;
+    
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS tr_protect_listing_integrity ON public.listings;
+CREATE TRIGGER tr_protect_listing_integrity
+BEFORE UPDATE ON public.listings
+FOR EACH ROW EXECUTE FUNCTION public.protect_listing_integrity();
+
+
+-- ==========================================
+-- 4. CATEGORIES (Fix permissive admin policy)
+-- ==========================================
+DROP POLICY IF EXISTS "Admins can manage categories." ON public.categories;
+
+
+-- ==========================================
+-- 5. CHAT & MESSAGES SECURITY
+-- ==========================================
+DROP POLICY IF EXISTS "Users can insert chats where they are the buyer." ON public.chats;
+
+-- Prevent spoofing seller_id or creating chat for another's listing
+CREATE POLICY "Users can insert chats safely." 
+ON public.chats FOR INSERT 
+WITH CHECK (
+    auth.uid() = buyer_id 
+    AND seller_id = (SELECT seller_id FROM public.listings WHERE id = listing_id)
+    AND buyer_id != seller_id
+);
+
+-- Message restrictions
+CREATE OR REPLACE FUNCTION public.protect_messages()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    NEW.content := trim(NEW.content);
+    
+    IF length(NEW.content) = 0 THEN
+        RAISE EXCEPTION 'Message cannot be empty';
+    END IF;
+    
+    IF length(NEW.content) > 2000 THEN
+        RAISE EXCEPTION 'Message is too long';
+    END IF;
+
+    -- Protect chat membership (RLS handles this for INSERT, but let's double enforce)
+    IF NOT EXISTS (
+        SELECT 1 FROM public.chats 
+        WHERE id = NEW.chat_id AND (buyer_id = NEW.sender_id OR seller_id = NEW.sender_id)
+    ) THEN
+        RAISE EXCEPTION 'Sender is not in this chat';
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS tr_protect_messages ON public.messages;
+CREATE TRIGGER tr_protect_messages
+BEFORE INSERT ON public.messages
+FOR EACH ROW EXECUTE FUNCTION public.protect_messages();
+
+
+-- ==========================================
+-- 6. DOUBLE CHECK ORDER INSERT INTEGRITY
+-- ==========================================
+-- Ensure orders/order_items can ONLY be inserted via our secured RPCs or by owner, but since we rely on checkoutCart, 
+-- we already dropped INSERT policies for orders and order_items in 9.1 for users. 
+-- Let's just make absolutely sure no public INSERT exists.
+DROP POLICY IF EXISTS "Buyers can insert their orders" ON public.orders;
+DROP POLICY IF EXISTS "Buyers can insert order items" ON public.order_items;
+
+-- ==========================================
+-- 7. CLEAN UP CART_ITEMS (Fix quantity spoofing)
+-- ==========================================
+CREATE OR REPLACE FUNCTION public.protect_cart_items()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    v_listing RECORD;
+BEGIN
+    SELECT * INTO v_listing FROM public.listings WHERE id = NEW.listing_id;
+    
+    IF NOT FOUND THEN
+        RAISE EXCEPTION 'Listing not found';
+    END IF;
+    
+    IF v_listing.seller_id = NEW.user_id THEN
+        RAISE EXCEPTION 'Cannot add own item to cart';
+    END IF;
+    
+    IF v_listing.status != 'ACTIVE' THEN
+        RAISE EXCEPTION 'Listing is not ACTIVE';
+    END IF;
+    
+    IF v_listing.listing_type = 'SINGLE' AND NEW.quantity > 1 THEN
+        NEW.quantity := 1;
+    END IF;
+    
+    IF v_listing.listing_type = 'INVENTORY' AND NEW.quantity > v_listing.quantity THEN
+        RAISE EXCEPTION 'Cannot add more than available stock';
+    END IF;
+
+    IF NEW.quantity <= 0 THEN
+        RAISE EXCEPTION 'Quantity must be positive';
+    END IF;
+    
+    RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS tr_protect_cart_items ON public.cart_items;
+CREATE TRIGGER tr_protect_cart_items
+BEFORE INSERT OR UPDATE ON public.cart_items
+FOR EACH ROW EXECUTE FUNCTION public.protect_cart_items();
+
+-- ==========================================
+-- 8. STORAGE BUCKET POLICIES HARDENING
+-- ==========================================
+-- (Assuming they were mostly correct but let's enforce path ownership more cleanly if needed.
+-- Already had path verification `(storage.foldername(name))[1] = auth.uid()::text`. 
+-- We ensure no UPDATE to files not owned by them)
+-- STAGE 1: ORDER CHECKOUT CONCURRENCY & OVERSELLING FIX
+
+CREATE OR REPLACE FUNCTION public.create_orders_from_cart()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+    v_uid UUID;
+    v_seller RECORD;
+    v_cart_item RECORD;
+    v_order_id UUID;
+    v_total_amount DECIMAL(10,2);
+    v_created_order_ids UUID[] := '{}';
+    v_active_reserved INTEGER;
+BEGIN
+    v_uid := auth.uid();
+    IF v_uid IS NULL THEN
+        RAISE EXCEPTION 'Not authenticated';
+    END IF;
+
+    -- For each unique seller in the cart
+    FOR v_seller IN (
+        SELECT DISTINCT l.seller_id
+        FROM public.cart_items c
+        JOIN public.listings l ON c.listing_id = l.id
+        WHERE c.user_id = v_uid
+    ) LOOP
+        v_total_amount := 0;
+
+        -- We need to check stock with row locking to prevent race conditions during checkout
+        FOR v_cart_item IN (
+            SELECT c.quantity, l.id, l.price, l.title, l.status, l.quantity as stock, l.listing_type, l.store_id
+            FROM public.cart_items c
+            JOIN public.listings l ON c.listing_id = l.id
+            WHERE c.user_id = v_uid AND l.seller_id = v_seller.seller_id
+            FOR UPDATE OF l -- Row lock to prevent concurrent checkouts of the same listing!
+        ) LOOP
+            IF v_cart_item.status != 'ACTIVE' THEN
+                RAISE EXCEPTION 'Item % is no longer active', v_cart_item.title;
+            END IF;
+
+            -- Calculate currently reserved stock in PENDING/CONFIRMED orders
+            SELECT COALESCE(SUM(oi.quantity), 0) INTO v_active_reserved
+            FROM public.order_items oi
+            JOIN public.orders o ON o.id = oi.order_id
+            WHERE oi.listing_id = v_cart_item.id 
+            AND o.status IN ('PENDING', 'CONFIRMED');
+
+            IF v_cart_item.listing_type = 'SINGLE' THEN
+                IF v_active_reserved + v_cart_item.quantity > 1 THEN
+                    RAISE EXCEPTION 'Item % is already ordered by someone else', v_cart_item.title;
+                END IF;
+            ELSE
+                IF v_active_reserved + v_cart_item.quantity > v_cart_item.stock THEN
+                    RAISE EXCEPTION 'Item % does not have enough available stock (Available: %, Requested: %)', 
+                        v_cart_item.title, 
+                        v_cart_item.stock - v_active_reserved, 
+                        v_cart_item.quantity;
+                END IF;
+            END IF;
+
+            v_total_amount := v_total_amount + (v_cart_item.price * v_cart_item.quantity);
+        END LOOP;
+
+        -- Create the order
+        INSERT INTO public.orders (
+            buyer_id,
+            seller_id,
+            total_amount,
+            status,
+            payment_status,
+            delivery_type,
+            notes
+        ) VALUES (
+            v_uid,
+            v_seller.seller_id,
+            v_total_amount,
+            'PENDING',
+            'PENDING',
+            'PICKUP',
+            ''
+        ) RETURNING id INTO v_order_id;
+
+        -- Insert order items
+        FOR v_cart_item IN (
+            SELECT c.quantity, l.id, l.price, l.title, l.store_id,
+                   (SELECT url FROM public.listing_images WHERE listing_id = l.id ORDER BY order_index ASC LIMIT 1) as img_url
+            FROM public.cart_items c
+            JOIN public.listings l ON c.listing_id = l.id
+            WHERE c.user_id = v_uid AND l.seller_id = v_seller.seller_id
+        ) LOOP
+            INSERT INTO public.order_items (
+                order_id,
+                listing_id,
+                store_id,
+                quantity,
+                unit_price,
+                title,
+                image_url
+            ) VALUES (
+                v_order_id,
+                v_cart_item.id,
+                v_cart_item.store_id,
+                v_cart_item.quantity,
+                v_cart_item.price,
+                v_cart_item.title,
+                v_cart_item.img_url
+            );
+        END LOOP;
+
+        -- Remove these items from cart
+        DELETE FROM public.cart_items 
+        WHERE user_id = v_uid 
+        AND listing_id IN (
+            SELECT id FROM public.listings WHERE seller_id = v_seller.seller_id
+        );
+
+        v_created_order_ids := array_append(v_created_order_ids, v_order_id);
+    END LOOP;
+
+    RETURN true;
+END;
+$$;

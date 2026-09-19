@@ -16,20 +16,7 @@ export default async function MessagesLayout({
     redirect("/login?redirect_to=/messages")
   }
 
-  const { data: chats, error } = await supabase
-    .from("chats")
-    .select(`
-      id,
-      updated_at,
-      buyer_id,
-      seller_id,
-      buyer:buyer_id(id, full_name, avatar_url),
-      seller:seller_id(id, full_name, avatar_url),
-      listings(title, listing_images(url)),
-      messages(content, created_at, sender_id, is_read)
-    `)
-    .or(`buyer_id.eq.${session.user.id},seller_id.eq.${session.user.id}`)
-    .order("updated_at", { ascending: false })
+  const { data: chats, error } = await supabase.rpc("get_chats_with_unread")
 
   if (error) console.error("Error fetching chats:", error)
 
@@ -51,51 +38,57 @@ export default async function MessagesLayout({
           <div className="divide-y">
             {chats.map((chat: any) => {
               const isBuyer = chat.buyer_id === session.user.id
-              const otherUser = isBuyer ? chat.seller : chat.buyer
+              const otherUserName = isBuyer ? chat.seller_name : chat.buyer_name
+              const otherUserAvatar = isBuyer ? chat.seller_avatar : chat.buyer_avatar
               
-              const sortedMessages = chat.messages ? [...chat.messages].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) : []
-              const lastMessage = sortedMessages[0]
-              
-              const listingTitle = chat.listings?.title || "Товар удален"
-              const listingImage = chat.listings?.listing_images?.[0]?.url || "/placeholder.png"
+              const listingTitle = chat.listing_title || "Товар удален"
+              const listingImage = chat.listing_image || "/placeholder.png"
 
               return (
                 <Link 
                   key={chat.id} 
                   href={`/messages/${chat.id}`}
-                  className="flex gap-3 p-4 hover:bg-muted/50 transition-colors focus:bg-muted/50 outline-none"
+                  className="flex gap-3 p-4 hover:bg-muted/50 transition-colors focus:bg-muted/50 outline-none relative"
                 >
                   <div className="flex-shrink-0 relative">
                     <img src={listingImage} alt={listingTitle} className="w-12 h-12 rounded-lg object-cover" />
                     <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-background bg-muted flex items-center justify-center overflow-hidden text-[9px] font-bold text-muted-foreground">
-                      {otherUser?.avatar_url ? (
-                        <img src={otherUser.avatar_url} className="w-full h-full object-cover" />
+                      {otherUserAvatar ? (
+                        <img src={otherUserAvatar} className="w-full h-full object-cover" />
                       ) : (
-                        otherUser?.full_name?.charAt(0) || "U"
+                        otherUserName?.charAt(0) || "U"
                       )}
                     </div>
                   </div>
                   
                   <div className="flex-1 min-w-0 flex flex-col justify-center">
                     <div className="flex items-center justify-between gap-2 mb-0.5">
-                      <h3 className="font-semibold text-sm truncate">{otherUser?.full_name}</h3>
-                      {lastMessage && (
+                      <h3 className="font-semibold text-sm truncate">{otherUserName}</h3>
+                      {chat.last_message_created_at && (
                         <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                          {new Date(lastMessage.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
+                          {new Date(chat.last_message_created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}
                         </span>
                       )}
                     </div>
                     
                     <p className="text-xs font-medium text-foreground/80 truncate mb-1">{listingTitle}</p>
                     
-                    {lastMessage ? (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {lastMessage.sender_id === session.user.id && <span className="text-primary mr-1">Вы:</span>}
-                        {lastMessage.content}
-                      </p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground italic">Нет сообщений</p>
-                    )}
+                    <div className="flex items-center justify-between gap-2">
+                      {chat.last_message_content ? (
+                        <p className={`text-xs truncate ${chat.unread_count > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                          {chat.last_message_sender_id === session.user.id && <span className="text-primary mr-1 font-normal">Вы:</span>}
+                          {chat.last_message_content}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic">Нет сообщений</p>
+                      )}
+
+                      {chat.unread_count > 0 && (
+                        <span className="bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 min-w-[1.25rem] text-center">
+                          {chat.unread_count}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </Link>
               )

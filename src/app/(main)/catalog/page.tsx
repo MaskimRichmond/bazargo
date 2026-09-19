@@ -71,8 +71,11 @@ async function CatalogList({ searchParams, categories }: { searchParams: any, ca
   else if (sort === "cheapest") query = query.order("price", { ascending: true })
   else if (sort === "expensive") query = query.order("price", { ascending: false })
 
-  // Pagination (MVP)
-  const page = parseInt(searchParams.page || "1")
+  // Pagination (MVP offset-limit is fine with indexes, but cap max page)
+  let page = parseInt(searchParams.page || "1")
+  if (isNaN(page) || page < 1) page = 1
+  if (page > 50) page = 50 // Protect against deep offset scanning
+
   const limit = 20
   const from = (page - 1) * limit
   const to = from + limit - 1

@@ -76,27 +76,17 @@ export async function sendMessage(chatId: string, content: string) {
     return { success: false, error: "Слишком длинное сообщение (максимум 2000 символов)" }
   }
 
-  // Insert message (RLS will enforce that user is member of chat_id)
+  // Use the RPC to insert message and update chat timestamp atomically
   const { data: message, error } = await supabase
-    .from("messages")
-    .insert({
-      chat_id: chatId,
-      sender_id: session.user.id,
-      content: cleanContent
+    .rpc("send_message_transaction", {
+      p_chat_id: chatId,
+      p_content: cleanContent
     })
-    .select()
-    .single()
 
   if (error) {
     console.error("sendMessage error:", error)
     return { success: false, error: "Ошибка при отправке сообщения" }
   }
-
-  // Update chat updated_at
-  await supabase
-    .from("chats")
-    .update({ updated_at: new Date().toISOString() })
-    .eq("id", chatId)
 
   return { success: true, message }
 }

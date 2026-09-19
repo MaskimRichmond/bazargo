@@ -31,7 +31,7 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing }: Ch
   const [isConnected, setIsConnected] = useState(true)
   
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const supabase = createClient()
+  const supabase = useRef(createClient()).current
 
   // Scroll to bottom
   const scrollToBottom = () => {
@@ -40,7 +40,19 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing }: Ch
 
   useEffect(() => {
     scrollToBottom()
-  }, [messages])
+    
+    // Mark unread messages as read
+    const unreadMessages = messages.filter(m => !m.is_read && m.sender_id !== currentUserId)
+    if (unreadMessages.length > 0) {
+      const unreadIds = unreadMessages.map(m => m.id)
+      supabase.from('messages').update({ is_read: true }).in('id', unreadIds).then()
+      
+      // Update local state to avoid re-triggering
+      setMessages(prev => prev.map(m => 
+        unreadIds.includes(m.id) ? { ...m, is_read: true } : m
+      ))
+    }
+  }, [messages, currentUserId, supabase])
 
   // Subscriptions
   useEffect(() => {

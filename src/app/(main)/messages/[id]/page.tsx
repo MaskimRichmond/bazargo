@@ -36,12 +36,16 @@ export default async function ChatPage(props: { params: Promise<{ id: string }> 
     notFound()
   }
 
-  // Fetch initial messages
-  const { data: messages } = await supabase
+  // Fetch initial messages (last 50)
+  const { data: rawMessages } = await supabase
     .from("messages")
     .select("*")
     .eq("chat_id", id)
-    .order("created_at", { ascending: true })
+    .order("created_at", { ascending: false })
+    .limit(50)
+
+  // Reverse them so they are in chronological order for the UI
+  const messages = rawMessages ? [...rawMessages].reverse() : []
 
   const isBuyer = session.user.id === chat.buyer_id
   const otherUser = isBuyer ? chat.seller : chat.buyer
