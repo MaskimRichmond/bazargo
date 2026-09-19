@@ -18,7 +18,9 @@ export default async function MessagesLayout({
 
   const { data: chats, error } = await supabase.rpc("get_chats_with_unread")
 
-  if (error) console.error("Error fetching chats:", error)
+  if (error) {
+    console.error("Error fetching chats:", error)
+  }
 
   const sidebar = (
     <div className="flex flex-col h-full">
