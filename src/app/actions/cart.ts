@@ -91,7 +91,7 @@ export async function updateCartQuantity(cartItemId: string, newQuantity: number
 
   if (!cartItem || !cartItem.listings) return { error: "Товар не найден" }
 
-  const listing: Record<string, unknown> | null = cartItem.listings
+  const listing: any = cartItem.listings
   if (listing.listing_type === "SINGLE" && newQuantity > 1) {
     newQuantity = 1
   } else if (listing.listing_type === "INVENTORY" && newQuantity > listing.quantity) {
