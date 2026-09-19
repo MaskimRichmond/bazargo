@@ -27,7 +27,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
     .from("orders")
     .select(`
       *,
-      profiles!seller_id (id, full_name, phone, avatar_url),
+      profiles!seller_id (id, full_name, avatar_url),
       order_items (*)
     `)
     .eq("id", params.id)
@@ -35,6 +35,8 @@ export default async function OrderDetailPage({ params }: { params: { id: string
     .single()
 
   if (!order) notFound()
+
+  const { data: sellerPhone } = await supabase.rpc("get_order_seller_phone", { p_order_id: order.id })
 
   const statusInfo = STATUS_MAP[order.status] || { label: order.status, color: "bg-muted text-muted-foreground", description: "" }
   const seller = order.profiles
@@ -90,8 +92,8 @@ export default async function OrderDetailPage({ params }: { params: { id: string
           </div>
           <div>
             <p className="font-medium">{seller.full_name || "Неизвестно"}</p>
-            {order.status === "CONFIRMED" && seller.phone ? (
-              <a href={`tel:${seller.phone}`} className="text-sm text-primary hover:underline">{seller.phone}</a>
+            {order.status === "CONFIRMED" && sellerPhone ? (
+              <a href={`tel:${sellerPhone}`} className="text-sm text-primary hover:underline">{sellerPhone}</a>
             ) : (
               <p className="text-xs text-muted-foreground">Телефон доступен после подтверждения</p>
             )}

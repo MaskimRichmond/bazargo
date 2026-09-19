@@ -22,7 +22,7 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
     .from("listings")
     .select(`
       *,
-      profiles!seller_id(id, full_name, phone, avatar_url, created_at),
+      profiles!seller_id(id, full_name, avatar_url, created_at),
       categories(id, name),
       listing_images(url, order_index)
     `)
@@ -83,6 +83,12 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
   const seller = listing.profiles
   const sellerInitial = seller?.full_name?.charAt(0) || "U"
 
+  let sellerPhone = null;
+  if (listing.show_phone || session?.user?.id === listing.seller_id) {
+    const { data: phoneData } = await supabase.rpc("get_listing_phone", { p_listing_id: listing.id })
+    if (phoneData) sellerPhone = phoneData;
+  }
+
   return (
     <div className="container max-w-5xl mx-auto px-4 py-8">
       <div className="grid md:grid-cols-2 gap-8">
@@ -127,7 +133,7 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
               sellerId={listing.seller_id}
               currentUserId={session?.user?.id}
               showPhone={listing.show_phone}
-              phone={(listing.show_phone || session?.user?.id === listing.seller_id) ? listing.profiles?.phone : null}
+              phone={sellerPhone}
             />
 
             <BuyButtons 
@@ -206,7 +212,7 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
           sellerId={listing.seller_id}
           currentUserId={session?.user?.id}
           showPhone={listing.show_phone}
-          phone={(listing.show_phone || session?.user?.id === listing.seller_id) ? listing.profiles?.phone : null}
+          phone={sellerPhone}
         />
         <BuyButtons 
           listingId={listing.id}

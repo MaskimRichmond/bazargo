@@ -27,7 +27,7 @@ export default async function SellerOrderDetailPage({ params }: { params: { id: 
     .from("orders")
     .select(`
       *,
-      profiles!buyer_id (id, full_name, phone, avatar_url),
+      profiles!buyer_id (id, full_name, avatar_url),
       order_items (*)
     `)
     .eq("id", params.id)
@@ -35,6 +35,8 @@ export default async function SellerOrderDetailPage({ params }: { params: { id: 
     .single()
 
   if (!order) notFound()
+
+  const { data: buyerPhone } = await supabase.rpc("get_order_buyer_phone", { p_order_id: order.id })
 
   const statusInfo = STATUS_MAP[order.status] || { label: order.status, color: "bg-muted text-muted-foreground", description: "" }
   const buyer = order.profiles
@@ -90,10 +92,10 @@ export default async function SellerOrderDetailPage({ params }: { params: { id: 
           </div>
           <div>
             <p className="font-medium">{buyer.full_name || "Неизвестно"}</p>
-            {buyer.phone ? (
-              <a href={`tel:${buyer.phone}`} className="text-sm text-primary hover:underline">{buyer.phone}</a>
+            {buyerPhone ? (
+              <a href={`tel:${buyerPhone}`} className="text-sm text-primary hover:underline">{buyerPhone}</a>
             ) : (
-              <p className="text-xs text-muted-foreground">Телефон не указан</p>
+              <p className="text-xs text-muted-foreground">Телефон не доступен</p>
             )}
           </div>
         </div>

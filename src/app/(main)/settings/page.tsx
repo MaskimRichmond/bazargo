@@ -14,7 +14,7 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, phone, city")
+    .select("full_name, city")
     .eq("id", session.user.id)
     .single()
 
