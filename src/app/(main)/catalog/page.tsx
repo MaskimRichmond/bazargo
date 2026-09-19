@@ -25,8 +25,37 @@ async function CatalogList({ searchParams, categories }: { searchParams: any, ca
     
   // Filters
   if (searchParams.q) {
-    const safeQ = searchParams.q.replace(/,/g, ' ') // Escape commas to avoid breaking PostgREST .or()
-    query = query.or(`title.ilike.%${safeQ}%,description.ilike.%${safeQ}%`)
+    const rawQ = searchParams.q.trim().toLowerCase().replace(/\s+/g, ' ')
+    const safeQ = rawQ.replace(/,/g, ' ')
+
+    // Fetch synonyms
+    let orQuery = `title.ilike.%${safeQ}%,description.ilike.%${safeQ}%`
+    
+    // Quick search for synonyms
+    const { data: synonymsData } = await supabase
+      .from("search_synonyms")
+      .select("keyword, synonyms")
+
+    if (synonymsData) {
+      let matchedKeyword = null
+      
+      // Match rawQ with either a keyword or one of its synonyms
+      for (const row of synonymsData) {
+        if (row.keyword === rawQ || row.synonyms.includes(rawQ)) {
+          matchedKeyword = row.keyword
+          // Add all related terms to search
+          const allTerms = [row.keyword, ...row.synonyms]
+          for (const term of allTerms) {
+            if (term !== safeQ) {
+              orQuery += `,title.ilike.%${term}%,description.ilike.%${term}%`
+            }
+          }
+          break
+        }
+      }
+    }
+    
+    query = query.or(orQuery)
   }
   if (searchParams.category) {
     const targetCat = categories.find(c => c.slug === searchParams.category)

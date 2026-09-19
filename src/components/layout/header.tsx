@@ -3,7 +3,7 @@
 import { Suspense } from "react"
 import Link from "next/link"
 import { useTheme } from "next-themes"
-import { Moon, Sun, Heart, ShoppingBag, Bell } from "lucide-react"
+import { Search, Plus, MapPin, Heart, Menu, Sun, Moon, ShoppingBag } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { HeaderAuth } from "@/components/layout/header-auth"
@@ -59,6 +59,12 @@ export function Header() {
           <Button variant="ghost" size="icon" className="hidden lg:flex h-9 w-9 text-muted-foreground hover:text-foreground" asChild>
             <Link href="/favorites" aria-label="Избранное">
               <Heart className="w-5 h-5" />
+            </Link>
+          </Button>
+
+          <Button variant="ghost" size="icon" className="hidden lg:flex h-9 w-9 text-muted-foreground hover:text-foreground" asChild>
+            <Link href="/cart" aria-label="Корзина">
+              <ShoppingBag className="w-5 h-5" />
             </Link>
           </Button>
 

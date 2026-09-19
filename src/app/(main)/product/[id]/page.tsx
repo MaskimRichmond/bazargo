@@ -6,6 +6,7 @@ import { Heart, MessageCircle, MapPin, CheckCircle } from "lucide-react"
 
 import { POPULAR_PRODUCTS } from "@/lib/mock-data"
 import { ContactSeller } from "@/features/product/components/contact-seller"
+import { BuyButtons } from "@/features/product/components/buy-buttons"
 
 import { FavoriteButton } from "@/components/shared/favorite-button"
 
@@ -126,6 +127,15 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
             currentUserId={session?.user?.id}
             showPhone={listing.show_phone}
             phone={(listing.show_phone || session?.user?.id === listing.seller_id) ? listing.profiles?.phone : null}
+          />
+
+          <BuyButtons 
+            listingId={listing.id}
+            sellerId={listing.seller_id}
+            currentUserId={session?.user?.id}
+            status={listing.status}
+            quantity={listing.quantity}
+            listingType={listing.listing_type}
           />
 
           <Card className="p-4 space-y-4 rounded-xl">

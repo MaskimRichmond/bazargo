@@ -1,69 +1,38 @@
-# Stage 8.0: Global Search, Regional System, B2B Applications
+# Implementation Plan: Stage 9
 
-This plan details the implementation of full global search, unified regional filtering, and multi-application B2B flow.
+## Goal
+Implement a complete ordering and cart system, robust inventory decrement logic using an atomic SQL transaction, user settings, and smart text search via `pg_trgm` and synonym mappings.
 
-## 1. Unified Regions (`src/lib/regions.ts`)
-Create a single source of truth for regions:
-```typescript
-export const REGIONS = [
-  "Бишкек",
-  "Ош",
-  "Баткенская область",
-  "Джалал-Абадская область",
-  "Иссык-Кульская область",
-  "Нарынская область",
-  "Ошская область",
-  "Таласская область",
-  "Чуйская область"
-] as const;
+## Scope of Changes
 
-export const CITIES_BY_REGION: Record<string, string[]> = { ... } // mappings for MVP
-```
+### 1. Database Migrations
+- **Orders & Cart**: Create `orders`, `order_items`, and `cart_items` tables with appropriate enums (`order_status`). 
+- **Inventory Logic**: Create a PostgreSQL stored function (RPC) `complete_order` to atomically deduct inventory and handle `SINGLE` vs `INVENTORY` logic (`ACTIVE` -> `SOLD`, or decrement `quantity` -> `OUT_OF_STOCK`).
+- **Search Extensions**: Enable `pg_trgm` extension and create `GIN` indexes on `listings(title)` and `listings(description)`.
+- **RLS**: Apply strict Row Level Security to ensure buyers can only read their own orders, sellers can only read orders where they are the seller, and cart items are isolated.
 
-## 2. Database Migration
-Create `supabase/migrations/20260919000000_stage8_regions.sql`.
-- Add `region VARCHAR(100)` to `listings` and `requests`.
-- Backfill `region` based on existing `city`.
-  - e.g. `UPDATE listings SET region = 'Бишкек' WHERE city = 'Бишкек';`
-  - e.g. `UPDATE listings SET region = 'Джалал-Абадская область' WHERE city = 'Джалал-Абад';`
-- Make `region` NOT NULL.
+### 2. Orders & Cart Backend (Server Actions)
+- `add_to_cart`, `remove_from_cart`, `update_cart_quantity` actions.
+- `checkout` action: reads real prices directly from listings (not trusting client), chunks `cart_items` into separate orders per `seller_id`, applies initial status `PENDING`.
+- `update_order_status` action: to transition from `PENDING` -> `CONFIRMED` / `REJECTED`, or `PENDING`/`CONFIRMED` -> `CANCELLED`.
+- `complete_order_action`: Calls the PostgreSQL RPC `complete_order(order_id)` safely.
 
-## 3. Global Search & Filters
-- **Catalog Page (`/catalog/page.tsx`)**:
-  - Implement full Supabase filtering using `q`, `region`, and existing filters (category, price, etc.).
-  - `q` search will use `.or('title.ilike.%query%,description.ilike.%query%')` safely escaping `%` and `,`.
-  - Fix pagination to reset when `q` or `region` changes (already handled mostly by Next.js if we pass standard link logic, but ensure `useRouter().push` resets page).
-- **Requests Page (`/requests/page.tsx`)**:
-  - Add `region` filtering to requests alongside existing filters.
+### 3. Smart Search & Normalization
+- Modify the existing catalog search to normalize strings.
+- Add an array of starter synonyms (e.g., 'клава' -> 'клавиатура').
+- Query using Supabase `.or('title.ilike.%query%,description.ilike.%query%')` but supplemented with `textSearch` or RPC for `pg_trgm` similarity if necessary. In PostgREST, `pg_trgm` can be utilized using `title.wfts.query` or simply falling back to our JS-based synonym expander combined with standard `ilike`.
 
-## 4. Header Location Selector (Cookies)
-- Update `HeaderLocationSelector` to set a cookie `bazargo_region`.
-- Use a Server Action or Route Handler to set the cookie securely, or just `document.cookie` client-side combined with `router.refresh()`.
-- If "Все регионы" is selected, delete the cookie or set to `all`.
-- This cookie will be used by SSR pages (Homepage).
+### 4. UI Modifications
+- `/cart`: Shopping cart page showing totals and quantity controls.
+- `/checkout`: Simple MVP checkout summary screen.
+- `/orders` & `/orders/[id]`: Buyer view.
+- `/seller/orders` & `/seller/orders/[id]`: Seller view.
+- `ProductPage`: Add "Купить сейчас" and "В корзину" buttons for buyers (hidden for the listing owner).
+- `/settings`: Simple user settings for Profile, Region, and mock notifications preferences.
+- `Header` & `MobileNav`: Add entries for Cart and Orders.
 
-## 5. Homepage Real Data
-- **Popular Products (`popular-products.tsx`)**:
-  - Fetch `listings` where `status = 'ACTIVE'`.
-  - Filter by `region` cookie if it exists and != `all`.
-  - Filter by selected category tabs.
-  - Show empty state "В этом регионе пока нет объявлений" if empty.
-  - Remove `mock-data.ts` usage here.
+## Open Questions & Review
+- Is `pg_trgm` strictly required or can we just use a JS-based Synonym expansion + multiple `.ilike` queries in Supabase? We will enable `pg_trgm` and GIN indexes in a migration so that in the future or via RPC we can use `.rpc('search_listings')` if standard `.or()` is insufficient for typos.
+- The `b2b_applications` and previous architectures will remain completely untouched.
 
-## 6. Sell Flow (Create Listing)
-- Update `src/features/sell/components/steps/product-details.tsx` (or location step) to select `region` first, then `city` based on `CITIES_BY_REGION`.
-
-## 7. B2B Multi-Applications
-- Create `/b2b/my-applications` page.
-- Fetch all applications for `auth.uid()` ordered by `created_at desc`.
-- Translate statuses (PENDING -> На рассмотрении, etc.).
-- Update `/b2b/become-supplier` to allow submitting a new application.
-  - If a PENDING application exists, show a warning, but don't block.
-  - Link to `/b2b/my-applications`.
-
-## 8. Cleanup
-- Audit `console.log` and `any`.
-- Remove dead mock data usage.
-
-## User Review Required
-No breaking user-facing changes, but significant architectural shift to regions and full Supabase querying on homepage.
+Does this plan accurately capture your constraints?

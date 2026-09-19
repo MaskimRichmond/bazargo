@@ -4,7 +4,7 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { User, LogOut, Settings, Package, Heart, MessageCircle, Store, ClipboardList } from "lucide-react"
+import { User, LogOut, Package, Store, Heart, MessageCircle, Settings, ClipboardList, ShoppingBag } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
@@ -123,6 +123,15 @@ export function HeaderAuth() {
             </Link>
             <Link href="/my-requests" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
               <ClipboardList className="w-4 h-4" /> Мои запросы
+            </Link>
+            <Link href="/cart" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors text-primary">
+              <ShoppingBag className="w-4 h-4" /> Корзина
+            </Link>
+            <Link href="/orders" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
+              <Package className="w-4 h-4" /> Мои покупки
+            </Link>
+            <Link href="/seller/orders" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
+              <Store className="w-4 h-4" /> Заказы клиентов
             </Link>
             <Link href="/favorites" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
               <Heart className="w-4 h-4" /> Избранное
