@@ -2,6 +2,7 @@
 
 import { Suspense } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import { Search, Plus, MapPin, Heart, Menu, Sun, Moon, ShoppingBag } from "lucide-react"
 
@@ -13,6 +14,9 @@ import { HeaderNav } from "@/components/layout/header-nav"
 
 export function Header() {
   const { setTheme, theme } = useTheme()
+
+  const pathname = usePathname()
+  const isAppScreen = pathname?.startsWith("/messages") || pathname?.startsWith("/cart") || pathname?.startsWith("/profile")
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -81,12 +85,14 @@ export function Header() {
       </div>
 
       {/* Mobile Smart Search (Below Header) */}
-      <div className="md:hidden px-4 pb-3">
-        <GlobalSearch 
-          placeholder="Я ищу..."
-          inputClassName="bg-muted border-none rounded-xl shadow-inner text-base"
-        />
-      </div>
+      {!isAppScreen && (
+        <div className="md:hidden px-4 pb-3">
+          <GlobalSearch 
+            placeholder="Я ищу..."
+            inputClassName="bg-muted border-none rounded-xl shadow-inner text-base"
+          />
+        </div>
+      )}
     </header>
   )
 }

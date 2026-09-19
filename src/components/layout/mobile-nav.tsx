@@ -9,6 +9,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 export function MobileBottomNav() {
   const pathname = usePathname()
 
+  // Hide on active conversation screens to give full space to the chat
+  const isInsideChat = pathname?.startsWith("/messages/") && pathname !== "/messages"
+  if (isInsideChat) return null
+
   const navItems = [
     { href: "/", icon: Home, label: "Главная" },
     { href: "/catalog", icon: Search, label: "Каталог" },

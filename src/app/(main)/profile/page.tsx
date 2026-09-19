@@ -120,7 +120,14 @@ export default async function ProfilePage() {
         </div>
         <div className="bg-background sm:border sm:rounded-2xl overflow-hidden shadow-sm divide-y">
           <NavItem href="/settings" icon={Settings} title="Настройки" subtitle="Пароль, уведомления, данные" />
-          <NavItem href="/safety" icon={ShieldCheck} title="Безопасность и правила" />
+        </div>
+
+        <div className="px-4 sm:px-0 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6">
+          Информация
+        </div>
+        <div className="bg-background sm:border sm:rounded-2xl overflow-hidden shadow-sm divide-y">
+          <NavItem href="/about" icon={HelpCircle} title="О BazarGo" subtitle="Как работает платформа" />
+          <NavItem href="/legal" icon={ShieldCheck} title="Документы и правила" subtitle="Политика, правила размещения, безопасность" />
         </div>
 
         <div className="px-4 sm:px-0 pt-4">

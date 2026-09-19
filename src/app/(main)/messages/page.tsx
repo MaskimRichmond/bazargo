@@ -6,13 +6,13 @@ export const metadata = {
 
 export default function MessagesPage() {
   return (
-    <div className="h-full flex flex-col items-center justify-center text-center p-6 text-muted-foreground">
-      <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center mb-4">
-        <MessageSquare className="w-8 h-8 opacity-50" />
+    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 bg-muted/5">
+      <div className="w-20 h-20 bg-primary/5 text-primary rounded-full flex items-center justify-center mb-5">
+        <MessageSquare className="w-10 h-10" strokeWidth={1.5} />
       </div>
-      <h2 className="text-xl font-medium mb-2 text-foreground">Выберите чат</h2>
-      <p className="text-sm max-w-[250px]">
-        Выберите диалог из списка слева, чтобы начать общение
+      <h2 className="text-xl font-semibold mb-2 text-foreground">Выберите диалог</h2>
+      <p className="text-[15px] text-muted-foreground max-w-sm">
+        Здесь появится переписка по вашим объявлениям. Выберите чат слева, чтобы продолжить общение.
       </p>
     </div>
   )

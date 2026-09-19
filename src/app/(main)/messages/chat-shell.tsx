@@ -13,11 +13,11 @@ export function ChatShell({
   const isChatRoom = pathname !== "/messages"
 
   return (
-    <div className="flex h-[calc(100vh-130px)] md:h-[calc(100vh-150px)] max-w-6xl mx-auto md:border md:rounded-2xl overflow-hidden md:mt-6 bg-background shadow-sm">
-      <div className={`w-full md:w-80 md:border-r flex flex-col bg-muted/10 ${isChatRoom ? 'hidden md:flex' : 'flex'}`}>
+    <div className="fixed inset-0 top-[57px] md:top-[65px] flex w-full max-w-[1600px] mx-auto bg-background md:border-x z-30">
+      <div className={`w-full md:w-[340px] lg:w-[380px] border-r flex flex-col bg-muted/10 pb-[60px] md:pb-0 ${isChatRoom ? 'hidden md:flex' : 'flex'}`}>
         {sidebar}
       </div>
-      <div className={`flex-1 flex-col bg-background ${isChatRoom ? 'flex' : 'hidden md:flex items-center justify-center'}`}>
+      <div className={`flex-1 flex flex-col bg-background relative ${isChatRoom ? 'flex' : 'hidden md:flex'}`}>
         {children}
       </div>
     </div>

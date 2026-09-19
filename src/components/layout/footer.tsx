@@ -1,7 +1,21 @@
+"use client"
+
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { ShoppingBag } from "lucide-react"
 
+const APP_SCREENS = [
+  "/messages", "/cart", "/orders", "/profile", 
+  "/settings", "/sell", "/my-listings", "/favorites", "/seller"
+]
+
 export function Footer() {
+  const pathname = usePathname()
+  
+  if (APP_SCREENS.some(path => pathname?.startsWith(path))) {
+    return null
+  }
+
   return (
     <footer className="bg-background border-t pt-8 pb-20 md:pb-8 mt-auto">
       <div className="container mx-auto px-4">
