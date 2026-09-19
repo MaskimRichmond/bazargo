@@ -13,33 +13,31 @@ async function CatalogList({ searchParams, categories }: { searchParams: any, ca
   const supabase = await createClient()
   if (!supabase) return <div>Ошибка базы данных</div>
   
-  let query = supabase
-    .from("listings")
-    .select(`
-      *,
-      profiles!seller_id(id, full_name),
-      categories!inner(id, name, slug),
-      listing_images(url, order_index)
-    `, { count: "exact" })
-    .eq("status", "ACTIVE")
+  let query;
+  const rawQ = searchParams.q?.trim()
+  
+  if (rawQ) {
+    query = supabase
+      .rpc("search_catalog_listings", { query_text: rawQ })
+      .select(`
+        *,
+        profiles!seller_id(id, full_name),
+        categories!inner(id, name, slug),
+        listing_images(url, order_index)
+      `, { count: "exact" })
+  } else {
+    query = supabase
+      .from("listings")
+      .select(`
+        *,
+        profiles!seller_id(id, full_name),
+        categories!inner(id, name, slug),
+        listing_images(url, order_index)
+      `, { count: "exact" })
+      .eq("status", "ACTIVE")
+  }
     
   // Filters
-  if (searchParams.q) {
-    const rawQ = searchParams.q.trim()
-    if (rawQ) {
-      const { data: searchResults } = await supabase
-        .rpc("search_listings", { query_text: rawQ })
-      
-      if (searchResults && searchResults.length > 0) {
-        const ids = searchResults.map((r: any) => r.id)
-        query = query.in("id", ids)
-        // Note: sorting by rank requires custom handling or DB view, but for MVP we rely on the default sort logic or created_at.
-      } else {
-        // Force empty result
-        query = query.eq("id", "00000000-0000-0000-0000-000000000000")
-      }
-    }
-  }
   if (searchParams.category) {
     const targetCat = categories.find(c => c.slug === searchParams.category)
     if (targetCat) {
@@ -69,10 +67,13 @@ async function CatalogList({ searchParams, categories }: { searchParams: any, ca
 
   // Sorting
   const sort = searchParams.sort || "newest"
-  if (sort === "newest") query = query.order("created_at", { ascending: false })
-  else if (sort === "oldest") query = query.order("created_at", { ascending: true })
+  if (sort === "oldest") query = query.order("created_at", { ascending: true })
   else if (sort === "cheapest") query = query.order("price", { ascending: true })
   else if (sort === "expensive") query = query.order("price", { ascending: false })
+  else if (sort === "newest" && !rawQ) {
+    // Only apply default newest sort if not searching, to preserve search relevance ranking
+    query = query.order("created_at", { ascending: false })
+  }
 
   // Pagination (MVP offset-limit is fine with indexes, but cap max page)
   let page = parseInt(searchParams.page || "1")
