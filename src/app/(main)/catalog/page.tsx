@@ -51,6 +51,9 @@ async function CatalogList({ searchParams, categories }: { searchParams: any, ca
       query = query.eq("categories.slug", searchParams.category)
     }
   }
+  if (searchParams.city && searchParams.city !== "all") {
+    query = query.eq("city", searchParams.city)
+  }
   if (searchParams.region && searchParams.region !== "all") {
     query = query.eq("region", searchParams.region)
   }

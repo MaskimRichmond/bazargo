@@ -128,6 +128,7 @@ export function SellFlow({ categories, userStore, initialData = null }: { catego
       formData.append('condition', data.condition)
       formData.append('description', data.description)
       formData.append('quantity', data.quantity?.toString() || "1")
+      formData.append('region', data.region)
       formData.append('city', data.city)
       formData.append('deliveryMethods', JSON.stringify(data.deliveryMethods))
       formData.append('publishAsStore', String(data.publishAsStore || false))

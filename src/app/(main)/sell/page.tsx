@@ -93,6 +93,7 @@ export default async function SellPage(props: { searchParams: Promise<{ edit?: s
         condition: listing.condition,
         description: listing.description,
         quantity: listing.quantity,
+        region: listing.region,
         city: listing.city,
         deliveryMethods: listing.delivery_methods,
         showPhone: listing.show_phone,
