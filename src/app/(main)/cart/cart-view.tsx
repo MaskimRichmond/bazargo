@@ -7,8 +7,10 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Trash2, Minus, Plus, ShoppingBag } from "lucide-react"
 import { updateCartQuantity, removeFromCart, checkoutCart } from "@/app/actions/cart"
+import { toast } from "sonner"
+import { formatPrice } from "@/lib/utils"
 
-export function CartView({ initialItems }: { initialItems: any[] }) {
+export function CartView({ initialItems }: { initialItems: Record<string, any>[] }) {
   const [items, setItems] = useState(initialItems)
   const [isPending, startTransition] = useTransition()
   const [isCheckingOut, setIsCheckingOut] = useState(false)
@@ -34,7 +36,7 @@ export function CartView({ initialItems }: { initialItems: any[] }) {
       return
     }
     if (newQuantity > maxAmount) {
-      alert(`Доступно только ${maxAmount} шт.`)
+      toast.error(`Доступно только ${maxAmount} шт.`)
       return
     }
     
@@ -44,7 +46,7 @@ export function CartView({ initialItems }: { initialItems: any[] }) {
     startTransition(async () => {
       const res = await updateCartQuantity(cartItemId, newQuantity)
       if (res.error) {
-        alert(res.error)
+        toast.error(res.error)
         router.refresh()
       }
     })
@@ -55,7 +57,7 @@ export function CartView({ initialItems }: { initialItems: any[] }) {
     startTransition(async () => {
       const res = await removeFromCart(cartItemId)
       if (res.error) {
-        alert(res.error)
+        toast.error(res.error)
         router.refresh()
       }
     })
@@ -65,9 +67,10 @@ export function CartView({ initialItems }: { initialItems: any[] }) {
     setIsCheckingOut(true)
     const res = await checkoutCart()
     if (res.error) {
-      alert(res.error)
+      toast.error(res.error)
       setIsCheckingOut(false)
     } else {
+      toast.success("Заказ успешно оформлен!")
       router.push("/orders")
     }
   }
@@ -102,7 +105,7 @@ export function CartView({ initialItems }: { initialItems: any[] }) {
                     <p className="text-sm text-muted-foreground mt-1">Продавец: {sellerName}</p>
                   </div>
                   <div className="font-bold whitespace-nowrap">
-                    {listing.price} ₸
+                    {formatPrice(listing.price)}
                   </div>
                 </div>
                 
@@ -159,7 +162,7 @@ export function CartView({ initialItems }: { initialItems: any[] }) {
           <div className="space-y-3 mb-6 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Товары ({items.length})</span>
-              <span>{total} ₸</span>
+              <span>{formatPrice(total)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Оплата</span>
@@ -174,7 +177,7 @@ export function CartView({ initialItems }: { initialItems: any[] }) {
           <div className="border-t pt-4 mb-6">
             <div className="flex justify-between font-bold text-lg">
               <span>Итого</span>
-              <span>{total} ₸</span>
+              <span>{formatPrice(total)}</span>
             </div>
           </div>
           

@@ -9,50 +9,28 @@ export async function updateOrderStatus(orderId: string, newStatus: string) {
   
   if (!session) return { error: "Необходима авторизация" }
 
-  const { data: order } = await supabase
-    .from("orders")
-    .select("status, buyer_id, seller_id")
-    .eq("id", orderId)
-    .single()
-
-  if (!order) return { error: "Заказ не найден" }
-
-  const isSeller = session.user.id === order.seller_id
-  const isBuyer = session.user.id === order.buyer_id
-
-  if (!isSeller && !isBuyer) return { error: "У вас нет доступа к этому заказу" }
-
-  // State machine validations
-  if (order.status === "COMPLETED") return { error: "Завершенный заказ нельзя изменить" }
-  if (order.status === "CANCELLED") return { error: "Отмененный заказ нельзя изменить" }
-  if (order.status === "REJECTED") return { error: "Отклоненный заказ нельзя изменить" }
-
-  let updatePayload: any = { status: newStatus, updated_at: new Date().toISOString() }
+  let error = null
+  let data = null
 
   if (newStatus === "CONFIRMED") {
-    if (!isSeller) return { error: "Только продавец может подтвердить заказ" }
-    if (order.status !== "PENDING") return { error: "Можно подтвердить только новые заказы" }
-    updatePayload.confirmed_at = new Date().toISOString()
+    const res = await supabase.rpc("confirm_order", { order_id_param: orderId })
+    error = res.error
+    data = res.data
   } else if (newStatus === "REJECTED") {
-    if (!isSeller) return { error: "Только продавец может отклонить заказ" }
-    if (order.status !== "PENDING") return { error: "Можно отклонить только новые заказы" }
+    const res = await supabase.rpc("reject_order", { order_id_param: orderId })
+    error = res.error
+    data = res.data
   } else if (newStatus === "CANCELLED") {
-    if (order.status !== "PENDING" && order.status !== "CONFIRMED") {
-      return { error: "Заказ уже нельзя отменить" }
-    }
-    updatePayload.cancelled_at = new Date().toISOString()
+    const res = await supabase.rpc("cancel_order", { order_id_param: orderId })
+    error = res.error
+    data = res.data
   } else {
     return { error: "Недопустимый статус" }
   }
 
-  const { error } = await supabase
-    .from("orders")
-    .update(updatePayload)
-    .eq("id", orderId)
-
   if (error) {
-    console.error(error)
-    return { error: "Ошибка при обновлении статуса" }
+    console.error("RPC error:", error)
+    return { error: error.message || "Ошибка при обновлении статуса" }
   }
 
   revalidatePath(`/orders/${orderId}`)
@@ -71,8 +49,7 @@ export async function completeOrder(orderId: string) {
   // Call the atomic RPC function
   const { data, error } = await supabase
     .rpc("complete_order", {
-      order_id_param: orderId,
-      executing_user: session.user.id
+      order_id_param: orderId
     })
 
   if (error) {

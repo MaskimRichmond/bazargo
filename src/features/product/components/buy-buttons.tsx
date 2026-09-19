@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { ShoppingBag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { addToCart } from "@/app/actions/cart"
+import { toast } from "sonner"
 
 export function BuyButtons({ 
   listingId, 
@@ -47,9 +48,9 @@ export function BuyButtons({
     startTransition(async () => {
       const res = await addToCart(listingId, orderQuantity)
       if (res.error) {
-        alert(res.error)
+        toast.error(res.error)
       } else {
-        alert("Товар добавлен в корзину!")
+        toast.success("Товар добавлен в корзину!")
       }
     })
   }
@@ -63,7 +64,7 @@ export function BuyButtons({
     startTransition(async () => {
       const res = await addToCart(listingId, orderQuantity)
       if (res.error) {
-        alert(res.error)
+        toast.error(res.error)
       } else {
         router.push("/cart")
       }

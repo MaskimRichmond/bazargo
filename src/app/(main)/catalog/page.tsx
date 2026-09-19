@@ -25,37 +25,20 @@ async function CatalogList({ searchParams, categories }: { searchParams: any, ca
     
   // Filters
   if (searchParams.q) {
-    const rawQ = searchParams.q.trim().toLowerCase().replace(/\s+/g, ' ')
-    const safeQ = rawQ.replace(/,/g, ' ')
-
-    // Fetch synonyms
-    let orQuery = `title.ilike.%${safeQ}%,description.ilike.%${safeQ}%`
-    
-    // Quick search for synonyms
-    const { data: synonymsData } = await supabase
-      .from("search_synonyms")
-      .select("keyword, synonyms")
-
-    if (synonymsData) {
-      let matchedKeyword = null
+    const rawQ = searchParams.q.trim()
+    if (rawQ) {
+      const { data: searchResults } = await supabase
+        .rpc("search_listings", { query_text: rawQ })
       
-      // Match rawQ with either a keyword or one of its synonyms
-      for (const row of synonymsData) {
-        if (row.keyword === rawQ || row.synonyms.includes(rawQ)) {
-          matchedKeyword = row.keyword
-          // Add all related terms to search
-          const allTerms = [row.keyword, ...row.synonyms]
-          for (const term of allTerms) {
-            if (term !== safeQ) {
-              orQuery += `,title.ilike.%${term}%,description.ilike.%${term}%`
-            }
-          }
-          break
-        }
+      if (searchResults && searchResults.length > 0) {
+        const ids = searchResults.map((r: any) => r.id)
+        query = query.in("id", ids)
+        // Note: sorting by rank requires custom handling or DB view, but for MVP we rely on the default sort logic or created_at.
+      } else {
+        // Force empty result
+        query = query.eq("id", "00000000-0000-0000-0000-000000000000")
       }
     }
-    
-    query = query.or(orQuery)
   }
   if (searchParams.category) {
     const targetCat = categories.find(c => c.slug === searchParams.category)

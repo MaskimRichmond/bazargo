@@ -71,7 +71,7 @@ export default async function BuyerOrdersPage() {
                     <p className="text-sm">Продавец: <span className="font-medium">{sellerName}</span></p>
                   </div>
                   <div className="text-left sm:text-right">
-                    <p className="font-bold text-lg">{order.total_amount} ₸</p>
+                    <p className="font-bold text-lg">{order.total_amount} сом</p>
                     <p className="text-xs text-muted-foreground">{new Date(order.created_at).toLocaleDateString('ru-RU')}</p>
                   </div>
                 </div>

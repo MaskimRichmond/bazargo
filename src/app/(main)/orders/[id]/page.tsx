@@ -68,8 +68,8 @@ export default async function OrderDetailPage({ params }: { params: { id: string
               <div className="flex-1">
                 <Link href={`/product/${item.listing_id}`} className="font-medium hover:underline line-clamp-1">{item.title_snapshot}</Link>
                 <div className="flex justify-between mt-1 text-sm text-muted-foreground">
-                  <span>{item.quantity} шт. × {item.unit_price} ₸</span>
-                  <span className="font-medium text-foreground">{item.quantity * item.unit_price} ₸</span>
+                  <span>{item.quantity} шт. × {item.unit_price} сом</span>
+                  <span className="font-medium text-foreground">{item.quantity * item.unit_price} сом</span>
                 </div>
               </div>
             </div>
@@ -78,7 +78,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
 
         <div className="border-t pt-4 flex justify-between font-bold text-lg">
           <span>Итого</span>
-          <span>{order.total_amount} ₸</span>
+          <span>{order.total_amount} сом</span>
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 "use client"
 
+import { toast } from "sonner"
 import { useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -16,7 +17,7 @@ export function OrderActions({ orderId, status, isSeller }: { orderId: string, s
       }
       startTransition(async () => {
         const res = await completeOrder(orderId)
-        if (res.error) alert(res.error)
+        if (res.error) toast.error(res.error)
         else router.refresh()
       })
     } else {
@@ -29,7 +30,7 @@ export function OrderActions({ orderId, status, isSeller }: { orderId: string, s
       
       startTransition(async () => {
         const res = await updateOrderStatus(orderId, newStatus)
-        if (res.error) alert(res.error)
+        if (res.error) toast.error(res.error)
         else router.refresh()
       })
     }

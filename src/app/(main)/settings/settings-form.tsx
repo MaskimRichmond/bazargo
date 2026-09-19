@@ -10,13 +10,14 @@ import { updateProfileSettings } from "@/app/actions/settings"
 import { REGIONS } from "@/lib/regions"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createClient } from "@/lib/supabase/client"
+import { toast } from "sonner"
 
 type SettingsData = {
   full_name: string
   city: string
 }
 
-export function SettingsForm({ profile, userId }: { profile: any, userId: string }) {
+export function SettingsForm({ profile, userId }: { profile: Record<string, any>, userId: string }) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const supabase = createClient()
@@ -34,9 +35,9 @@ export function SettingsForm({ profile, userId }: { profile: any, userId: string
     setIsSubmitting(true)
     const res = await updateProfileSettings(data)
     if (res.error) {
-      alert(res.error)
+      toast.error(res.error)
     } else {
-      alert("Настройки сохранены!")
+      toast.success("Настройки сохранены!")
       router.refresh()
     }
     setIsSubmitting(false)
