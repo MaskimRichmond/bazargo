@@ -62,6 +62,11 @@ export function SellFlow({ categories, userStore, initialData = null, requestedS
       try {
         const parsed = JSON.parse(draft)
         // Only load primitive values to avoid breaking file objects
+        // Override publishAsStore if we explicitly entered the flow via a store link
+        if (defaultPublishAsStore) {
+          parsed.publishAsStore = true
+        }
+
         methods.reset({
           ...parsed,
           images: [], // reset images as File objects cannot be stored in localStorage
@@ -70,7 +75,7 @@ export function SellFlow({ categories, userStore, initialData = null, requestedS
         console.error("Failed to load draft", e)
       }
     }
-  }, [methods])
+  }, [methods, defaultPublishAsStore])
 
   // Save Draft on change
   useEffect(() => {

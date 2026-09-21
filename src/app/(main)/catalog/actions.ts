@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { getAllDescendantIds } from "@/lib/categories"
 
 export async function fetchNextCatalogPage(searchParams: any, categories: any[], page: number) {
   const supabase = await createClient()
@@ -33,8 +34,7 @@ export async function fetchNextCatalogPage(searchParams: any, categories: any[],
   if (searchParams.category) {
     const targetCat = categories.find(c => c.slug === searchParams.category)
     if (targetCat) {
-      const children = categories.filter(c => c.parent_id === targetCat.id)
-      const targetIds = [targetCat.id, ...children.map(c => c.id)]
+      const targetIds = [targetCat.id, ...getAllDescendantIds(categories, targetCat.id)]
       query = query.in("category_id", targetIds)
     } else {
       query = query.eq("categories.slug", searchParams.category)

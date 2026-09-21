@@ -2,7 +2,7 @@ import { useFormContext } from "react-hook-form"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CITIES_BY_REGION, guessRegionByCity } from "@/lib/regions"
 
 function renderCategoryOptions(categories: any[], parentId: string | null = null, depth = 0) {
@@ -14,15 +14,15 @@ function renderCategoryOptions(categories: any[], parentId: string | null = null
 
       if (children.length > 0) {
         return (
-          <div key={c.id}>
-            <div 
+          <SelectGroup key={c.id}>
+            <SelectLabel 
               className="px-2 py-1.5 text-sm font-semibold text-muted-foreground" 
               style={{ paddingLeft: `${8 + padding}px` }}
             >
               {c.name}
-            </div>
+            </SelectLabel>
             {renderCategoryOptions(categories, c.id, depth + 1)}
-          </div>
+          </SelectGroup>
         )
       }
       return (
