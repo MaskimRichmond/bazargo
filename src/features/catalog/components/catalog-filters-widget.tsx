@@ -94,6 +94,14 @@ export function CatalogFiltersWidget({ categories }: { categories: Category[] })
 
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsMobileOpen(false)
+    }
+    window.addEventListener("keydown", handleEscape)
+    return () => window.removeEventListener("keydown", handleEscape)
+  }, [])
+
   const updateFilter = (key: string, value: string) => {
     const current = new URLSearchParams(Array.from(searchParams.entries()))
     if (!value || value === "all") {

@@ -1,9 +1,12 @@
 import { Suspense } from "react"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { ProductCard } from "@/components/shared/product-card"
+import { ProductSkeleton } from "@/components/shared/product-skeleton"
 import { Button } from "@/components/ui/button"
 import { CatalogFiltersWidget } from "@/features/catalog/components/catalog-filters-widget"
 import { CatalogSort } from "@/features/catalog/components/catalog-sort"
+import { CatalogActiveFilters } from "@/features/catalog/components/catalog-active-filters"
 
 export const metadata = {
   title: "Каталог товаров | BazarGo"
@@ -99,11 +102,30 @@ async function CatalogList({ searchParams, categories }: { searchParams: any, ca
   }
 
   if (!listings || listings.length === 0) {
+    const isFiltered = Object.keys(searchParams).some(k => k !== 'page' && k !== 'sort')
     return (
-      <div className="text-center py-20 px-4 border rounded-2xl bg-muted/20">
-        <h2 className="text-2xl font-bold mb-2">Ничего не нашли</h2>
-        <p className="text-muted-foreground mb-6">Попробуйте изменить фильтры или создать запрос на нужный товар.</p>
-        <Button asChild><a href="/requests">Создать запрос</a></Button>
+      <div className="flex flex-col items-center justify-center text-center py-24 px-4 border border-dashed rounded-3xl bg-muted/10">
+        <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </div>
+        <h2 className="text-2xl font-bold mb-3">
+          {rawQ ? `По запросу «${rawQ}» ничего не найдено` : "Ничего не нашли"}
+        </h2>
+        <p className="text-muted-foreground mb-8 max-w-md text-lg">
+          {isFiltered 
+            ? "Попробуйте смягчить условия поиска или убрать некоторые фильтры." 
+            : "Попробуйте поискать что-нибудь другое или создайте запрос на покупку."}
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4">
+          {isFiltered && (
+            <Button variant="outline" size="lg" asChild className="rounded-xl">
+              <a href="/catalog">Сбросить все фильтры</a>
+            </Button>
+          )}
+          <Button size="lg" asChild className="rounded-xl">
+            <a href="/requests">Создать запрос</a>
+          </Button>
+        </div>
       </div>
     )
   }
@@ -161,7 +183,7 @@ async function CatalogList({ searchParams, categories }: { searchParams: any, ca
             city: l.city,
             time: new Date(l.created_at).toLocaleDateString(),
             condition: l.condition,
-            seller: { name: l.profiles?.full_name || "Пользователь", rating: 4.5, reviews: 0 },
+            seller: { name: l.profiles?.full_name || "Пользователь" },
             image: images.length > 0 ? images[0].url : "",
             isVerified: false,
             isFavorite: favoriteIds.has(l.id)
@@ -174,9 +196,12 @@ async function CatalogList({ searchParams, categories }: { searchParams: any, ca
       {(count && count > to + 1) ? (
         <div className="mt-8 text-center">
           <Button variant="outline" asChild>
-            <a href={`/catalog?${new URLSearchParams({...searchParams, page: String(page + 1)}).toString()}`}>
-              Загрузить ещё
-            </a>
+            <Link 
+              scroll={false} 
+              href={`/catalog?${new URLSearchParams({...searchParams, page: String(page + 1)}).toString()}`}
+            >
+              Следующая страница
+            </Link>
           </Button>
         </div>
       ) : null}
@@ -200,13 +225,19 @@ export default async function CatalogPage(props: { searchParams: Promise<{ [key:
 
         {/* Main Content */}
         <div className="flex-1 min-w-0">
-          <Suspense fallback={
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-12">
-              {[1,2,3,4,5,6,7,8].map(i => (
-                <div key={i} className="aspect-[3/4] bg-muted animate-pulse rounded-2xl" />
-              ))}
-            </div>
-          }>
+          <Suspense fallback={<div className="h-10" />}>
+            <CatalogActiveFilters categories={categories || []} />
+          </Suspense>
+          <Suspense 
+            key={JSON.stringify(searchParams)}
+            fallback={
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-12">
+                {[1,2,3,4,5,6,7,8].map(i => (
+                  <ProductSkeleton key={i} />
+                ))}
+              </div>
+            }
+          >
             <CatalogList searchParams={searchParams} categories={categories || []} />
           </Suspense>
         </div>

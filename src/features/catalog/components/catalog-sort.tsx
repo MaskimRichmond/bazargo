@@ -10,6 +10,7 @@ export function CatalogSort({ sort }: { sort: string }) {
   const handleSortChange = (val: string) => {
     const current = new URLSearchParams(Array.from(searchParams.entries()))
     current.set("sort", val)
+    current.delete("page")
     router.push(`${pathname}?${current.toString()}`)
   }
 
