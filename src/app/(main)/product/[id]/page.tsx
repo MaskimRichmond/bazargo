@@ -9,7 +9,7 @@ import { ContactSeller } from "@/features/product/components/contact-seller"
 import { BuyButtons } from "@/features/product/components/buy-buttons"
 
 import { FavoriteButton } from "@/components/shared/favorite-button"
-
+import { ProductImageGallery } from "@/components/shared/product-image-gallery"
 export default async function ProductPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const { id } = params;
@@ -94,26 +94,19 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
       <div className="grid md:grid-cols-2 gap-8">
         
         {/* Images */}
-        <div className="space-y-4">
-          <div className="aspect-[4/3] bg-muted rounded-2xl overflow-hidden relative group">
-            <img src={mainImage} alt={listing.title} className="w-full h-full object-cover" />
+        <ProductImageGallery 
+          images={images}
+          title={listing.title}
+          status={listing.status}
+          favoriteButton={
             <FavoriteButton 
               listingId={listing.id}
               initialIsFavorite={isFavorite}
-              className="absolute top-4 right-4 !w-10 !h-10 opacity-100 bg-background/80 hover:bg-background/90"
+              className="!w-10 !h-10 opacity-100 bg-background/80 hover:bg-background/90"
               iconClassName="!w-6 !h-6"
             />
-          </div>
-          {images.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-2 snap-x">
-              {images.slice(1).map((img: any, i: number) => (
-                <div key={i} className="w-24 h-24 rounded-xl bg-muted overflow-hidden shrink-0 snap-start border">
-                  <img src={img.url} className="w-full h-full object-cover" alt="" />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+          }
+        />
 
         {/* Details */}
         <div className="space-y-6">
