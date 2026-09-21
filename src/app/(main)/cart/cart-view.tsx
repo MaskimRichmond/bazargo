@@ -123,7 +123,7 @@ export function CartView({ initialItems }: { initialItems: Record<string, any>[]
                 const isOverStock = item.quantity > maxAmount
                 const hasError = isUnavailable || isOverStock
 
-                const images = listing.listing_images || []
+                const images = (listing.listing_images || []).sort((a: any, b: any) => (a.order_index || 0) - (b.order_index || 0))
                 const imageUrl = images.length > 0 ? images[0].url : "https://placehold.co/400x400?text=No+Image"
                 
                 return (
@@ -207,7 +207,7 @@ export function CartView({ initialItems }: { initialItems: Record<string, any>[]
                           disabled={isPending}
                           aria-label="Удалить из корзины"
                         >
-                          <Trash2 className="w-4.5 h-4.5" />
+                          <Trash2 className="w-5 h-5" />
                         </Button>
                       </div>
                     </div>

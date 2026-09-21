@@ -22,7 +22,7 @@ async function CartFetcher() {
       id, quantity, listing_id,
       listings (
         id, title, price, quantity, listing_type, status, seller_id,
-        listing_images (url),
+        listing_images (url, order_index),
         profiles!seller_id (id, full_name, avatar_url)
       )
     `)

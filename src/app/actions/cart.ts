@@ -85,13 +85,15 @@ export async function updateCartQuantity(cartItemId: string, newQuantity: number
   // Verify listing stock
   const { data: cartItem } = await supabase
     .from("cart_items")
-    .select("listing_id, listings(quantity, listing_type)")
+    .select("listing_id, listings(quantity, listing_type, status)")
     .eq("id", cartItemId)
     .single()
 
   if (!cartItem || !cartItem.listings) return { error: "Товар не найден" }
 
   const listing: any = cartItem.listings
+  if (listing.status !== "ACTIVE") return { error: "Товар больше недоступен" }
+  
   if (listing.listing_type === "SINGLE" && newQuantity > 1) {
     newQuantity = 1
   } else if (listing.listing_type === "INVENTORY" && newQuantity > listing.quantity) {
