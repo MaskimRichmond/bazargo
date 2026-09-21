@@ -59,6 +59,8 @@ export async function createStore(formData: FormData) {
   }
 
   let logoUrl = null
+  let uploadedFileName: string | null = null
+
   if (logo && logo.size > 0) {
     const { validateImage, MAX_STORE_LOGO_SIZE } = await import('@/lib/image-validation');
     const validation = await validateImage(logo, MAX_STORE_LOGO_SIZE);
@@ -84,6 +86,7 @@ export async function createStore(formData: FormData) {
       .getPublicUrl(fileName)
       
     logoUrl = publicUrl
+    uploadedFileName = fileName
   }
 
   const { data: store, error } = await supabase
@@ -105,10 +108,18 @@ export async function createStore(formData: FormData) {
 
   if (error) {
     console.error("Create store error:", error)
+    // Rollback the uploaded file
+    if (uploadedFileName) {
+      const { error: removeError } = await supabase.storage.from('store-images').remove([uploadedFileName])
+      if (removeError) {
+        console.error("Rollback failed for store-images (orphan file):", removeError)
+      }
+    }
+
     if (error.code === '23505') {
       return { error: "У вас уже есть магазин" } // Unique constraint error if we added one (though we didn't, but logic prevents multiple via checking before call)
     }
-    return { error: error.message }
+    return { error: "Ошибка при создании магазина. Пожалуйста, попробуйте еще раз." }
   }
 
   revalidatePath("/stores")
@@ -123,6 +134,19 @@ export async function updateStore(storeId: string, formData: FormData) {
   if (!session) {
     return { error: "Необходима авторизация" }
   }
+
+  // 1. Verify ownership and fetch existing logo URL
+  const { data: existingStore } = await supabase
+    .from("stores")
+    .select("owner_id, logo_url")
+    .eq("id", storeId)
+    .single()
+
+  if (!existingStore || existingStore.owner_id !== session.user.id) {
+    return { error: "У вас нет прав для редактирования этого магазина" }
+  }
+
+  const oldLogoUrl = existingStore.logo_url;
 
   const name = formData.get("name") as string
   const description = formData.get("description") as string
@@ -145,6 +169,8 @@ export async function updateStore(storeId: string, formData: FormData) {
     email: email || null,
     updated_at: new Date().toISOString()
   }
+
+  let uploadedFileName: string | null = null;
 
   if (logo && logo.size > 0) {
     const { validateImage, MAX_STORE_LOGO_SIZE } = await import('@/lib/image-validation');
@@ -171,6 +197,7 @@ export async function updateStore(storeId: string, formData: FormData) {
       .getPublicUrl(fileName)
       
     updates.logo_url = publicUrl
+    uploadedFileName = fileName
   }
 
   const { error } = await supabase
@@ -181,7 +208,28 @@ export async function updateStore(storeId: string, formData: FormData) {
 
   if (error) {
     console.error("Update store error:", error)
-    return { error: error.message }
+    if (uploadedFileName) {
+      const { error: removeError } = await supabase.storage.from('store-images').remove([uploadedFileName])
+      if (removeError) console.error("Rollback failed for new store logo:", removeError)
+    }
+    return { error: "Ошибка при обновлении магазина. Пожалуйста, попробуйте еще раз." }
+  }
+
+  // Cleanup old logo if update was successful and a new logo was uploaded
+  if (uploadedFileName && oldLogoUrl) {
+    try {
+      const urlParts = oldLogoUrl.split('store-images/');
+      if (urlParts.length === 2) {
+        const oldPath = decodeURIComponent(urlParts[1]);
+        // Security check: ensure the path actually belongs to the user before deleting
+        if (oldPath.startsWith(`${session.user.id}/`)) {
+          const { error: removeError } = await supabase.storage.from('store-images').remove([oldPath])
+          if (removeError) console.error("Failed to cleanup old store logo:", removeError)
+        }
+      }
+    } catch (cleanupError) {
+      console.error("Old logo cleanup exception:", cleanupError)
+    }
   }
 
   revalidatePath("/stores")
