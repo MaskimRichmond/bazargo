@@ -27,11 +27,13 @@ const STEPS = [
   { id: "preview", title: "Проверка" },
 ]
 
-export function SellFlow({ categories, userStore, initialData = null }: { categories: any[], userStore?: any, initialData?: any }) {
+export function SellFlow({ categories, userStore, initialData = null, requestedStoreId }: { categories: any[], userStore?: any, initialData?: any, requestedStoreId?: string }) {
   const router = useRouter()
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [isPublishing, setIsPublishing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const defaultPublishAsStore = requestedStoreId === userStore?.id || false
 
   const methods = useForm<SellFormValues>({
     resolver: zodResolver(sellFormSchema),
@@ -47,7 +49,7 @@ export function SellFlow({ categories, userStore, initialData = null }: { catego
       region: "Бишкек",
       city: "Бишкек",
       deliveryMethods: ["PICKUP"],
-      publishAsStore: false,
+      publishAsStore: defaultPublishAsStore,
       showPhone: false
     },
     mode: "onChange",

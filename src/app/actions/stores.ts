@@ -101,7 +101,7 @@ export async function createStore(formData: FormData) {
       phone,
       email: email || null,
       logo_url: logoUrl,
-      status: "APPROVED" // MVP: Auto approve
+      status: "PENDING"
     })
     .select()
     .single()

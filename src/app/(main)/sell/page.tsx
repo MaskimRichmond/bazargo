@@ -6,9 +6,10 @@ export const metadata = {
   title: "Разместить объявление | BazarGo",
 }
 
-export default async function SellPage(props: { searchParams: Promise<{ edit?: string }> }) {
+export default async function SellPage(props: { searchParams: Promise<{ edit?: string, store?: string }> }) {
   const searchParams = await props.searchParams;
   const editId = searchParams.edit;
+  const requestedStoreId = searchParams.store;
 
   const supabase = await createClient()
 
@@ -104,7 +105,7 @@ export default async function SellPage(props: { searchParams: Promise<{ edit?: s
 
   return (
     <div className="min-h-screen bg-background">
-      <SellFlow categories={categories} initialData={initialData} />
+      <SellFlow categories={categories} userStore={store} initialData={initialData} requestedStoreId={requestedStoreId} />
     </div>
   )
 }

@@ -102,7 +102,7 @@ export default async function MyStorePage() {
             </Link>
           </Button>
           <Button asChild className="w-full justify-start rounded-xl">
-            <Link href="/sell?type=INVENTORY">
+            <Link href={`/sell?type=INVENTORY&store=${store.id}`}>
               <PackagePlus className="w-4 h-4 mr-2" />
               Добавить товар
             </Link>
@@ -152,7 +152,7 @@ export default async function MyStorePage() {
             <h3 className="text-lg font-semibold mb-2">В магазине пока нет товаров</h3>
             <p className="text-muted-foreground mb-6">Добавьте первый товар, чтобы начать продажи.</p>
             <Button asChild>
-              <Link href="/sell?type=INVENTORY">Добавить товар</Link>
+              <Link href={`/sell?type=INVENTORY&store=${store.id}`}>Добавить товар</Link>
             </Button>
           </div>
         )}
