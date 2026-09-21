@@ -1,12 +1,14 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { CartView } from "./cart-view"
+import { Suspense } from "react"
+import { CartSkeleton } from "@/components/shared/cart-skeleton"
 
 export const metadata = {
   title: "Корзина | BazarGo",
 }
 
-export default async function CartPage() {
+async function CartFetcher() {
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
 
@@ -27,10 +29,16 @@ export default async function CartPage() {
     .eq("user_id", session.user.id)
     .order("created_at", { ascending: false })
 
+  return <CartView initialItems={cartItems || []} />
+}
+
+export default function CartPage() {
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
+    <div className="container mx-auto px-4 py-8 max-w-5xl">
       <h1 className="text-3xl font-bold mb-8">Корзина</h1>
-      <CartView initialItems={cartItems || []} />
+      <Suspense fallback={<CartSkeleton />}>
+        <CartFetcher />
+      </Suspense>
     </div>
   )
 }
