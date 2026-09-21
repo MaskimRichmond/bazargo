@@ -15,6 +15,7 @@ const STATUS_MAP: Record<string, { label: string, color: string, description: st
   COMPLETED: { label: "Сделка завершена", color: "text-green-600 bg-green-50", description: "Товар успешно передан покупателю." },
   REJECTED: { label: "Отклонен", color: "text-red-600 bg-red-50", description: "Продавец не смог выполнить этот заказ." },
   CANCELLED: { label: "Отменён", color: "text-gray-600 bg-gray-50", description: "Заказ был отменен." },
+  EXPIRED: { label: "Истёк", color: "text-gray-600 bg-gray-50", description: "Время ожидания подтверждения истекло." },
 }
 
 export default async function OrderDetailPage({ params }: { params: { id: string } }) {

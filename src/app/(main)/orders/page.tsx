@@ -10,10 +10,11 @@ export const metadata = {
 
 const STATUS_MAP: Record<string, { label: string, color: string }> = {
   PENDING: { label: "Ожидает подтверждения", color: "text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20" },
-  CONFIRMED: { label: "Подтверждён", color: "text-blue-600 bg-blue-50 dark:bg-blue-900/20" },
-  COMPLETED: { label: "Сделка завершена", color: "text-green-600 bg-green-50 dark:bg-green-900/20" },
-  REJECTED: { label: "Отклонён", color: "text-red-600 bg-red-50 dark:bg-red-900/20" },
-  CANCELLED: { label: "Отменён", color: "text-gray-600 bg-gray-50 dark:bg-gray-900/20" },
+  CONFIRMED: { label: "Подтвержден", color: "text-blue-600 bg-blue-50 dark:bg-blue-900/20" },
+  COMPLETED: { label: "Выполнен", color: "text-green-600 bg-green-50 dark:bg-green-900/20" },
+  REJECTED: { label: "Отклонен", color: "text-red-600 bg-red-50 dark:bg-red-900/20" },
+  CANCELLED: { label: "Отменен", color: "text-gray-600 bg-gray-100 dark:bg-gray-800" },
+  EXPIRED: { label: "Истёк", color: "text-gray-600 bg-gray-100 dark:bg-gray-800" },
 }
 
 export default async function BuyerOrdersPage() {

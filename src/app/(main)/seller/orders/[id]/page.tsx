@@ -11,10 +11,11 @@ export const metadata = {
 
 const STATUS_MAP: Record<string, { label: string, color: string, description: string }> = {
   PENDING: { label: "Новый", color: "text-yellow-600 bg-yellow-50", description: "Покупатель оформил заказ. Подтвердите, что товар есть в наличии." },
-  CONFIRMED: { label: "Подтверждён", color: "text-blue-600 bg-blue-50", description: "Ожидается передача товара покупателю. Нажмите 'Завершить сделку' после продажи." },
-  COMPLETED: { label: "Сделка завершена", color: "text-green-600 bg-green-50", description: "Сделка завершена, остаток на складе обновлен." },
+  CONFIRMED: { label: "Подтверждён", color: "text-blue-600 bg-blue-50", description: "Свяжитесь с покупателем для передачи товара." },
+  COMPLETED: { label: "Сделка завершена", color: "text-green-600 bg-green-50", description: "Товар успешно передан покупателю." },
   REJECTED: { label: "Отклонен", color: "text-red-600 bg-red-50", description: "Вы отклонили этот заказ." },
-  CANCELLED: { label: "Отменён", color: "text-gray-600 bg-gray-50", description: "Заказ отменен покупателем." },
+  CANCELLED: { label: "Отменён", color: "text-gray-600 bg-gray-50", description: "Покупатель отменил этот заказ." },
+  EXPIRED: { label: "Истёк", color: "text-gray-600 bg-gray-50", description: "Вы не подтвердили заказ вовремя." },
 }
 
 export default async function SellerOrderDetailPage({ params }: { params: { id: string } }) {
