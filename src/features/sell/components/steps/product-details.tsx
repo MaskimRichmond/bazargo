@@ -5,6 +5,37 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CITIES_BY_REGION, guessRegionByCity } from "@/lib/regions"
 
+function renderCategoryOptions(categories: any[], parentId: string | null = null, depth = 0) {
+  return categories
+    .filter(c => c.parent_id === parentId)
+    .map(c => {
+      const children = categories.filter(child => child.parent_id === c.id)
+      const padding = depth * 16 // 16px per level
+
+      if (children.length > 0) {
+        return (
+          <div key={c.id}>
+            <div 
+              className="px-2 py-1.5 text-sm font-semibold text-muted-foreground" 
+              style={{ paddingLeft: `${8 + padding}px` }}
+            >
+              {c.name}
+            </div>
+            {renderCategoryOptions(categories, c.id, depth + 1)}
+          </div>
+        )
+      }
+      return (
+        <SelectItem 
+          key={c.id} 
+          value={c.id} 
+        >
+          <div style={{ paddingLeft: `${padding}px` }}>{c.name}</div>
+        </SelectItem>
+      )
+    })
+}
+
 export function ProductDetails({ categories }: { categories: any[] }) {
   const { register, watch, setValue, formState: { errors } } = useFormContext()
   const listingType = watch("type")
@@ -36,20 +67,7 @@ export function ProductDetails({ categories }: { categories: any[] }) {
             <SelectValue placeholder="Выберите категорию" />
           </SelectTrigger>
           <SelectContent>
-            {categories.filter(c => !c.parent_id).map((root) => {
-              const children = categories.filter(c => c.parent_id === root.id)
-              if (children.length > 0) {
-                return (
-                  <div key={root.id}>
-                    <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">{root.name}</div>
-                    {children.map(child => (
-                      <SelectItem key={child.id} value={child.id} className="pl-6">{child.name}</SelectItem>
-                    ))}
-                  </div>
-                )
-              }
-              return <SelectItem key={root.id} value={root.id}>{root.name}</SelectItem>
-            })}
+            {renderCategoryOptions(categories)}
           </SelectContent>
         </Select>
         {errors.categoryId && <p className="text-xs text-destructive">{errors.categoryId.message as string}</p>}

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import { StoreCard } from "@/components/shared/store-card"
 import { ShoppingBag, Search } from "lucide-react"
-
+import { getAllDescendantIds } from "@/lib/categories"
 export const metadata = {
   title: "Магазины | BazarGo"
 }
@@ -18,7 +18,18 @@ export default async function StoresPage(props: { searchParams: Promise<{ [key: 
     .eq("status", "APPROVED")
 
   if (searchParams.category) {
-    query = query.eq("category_id", searchParams.category)
+    const { data: categories } = await supabase.from("categories").select("id, slug, parent_id")
+    if (categories) {
+      const targetCat = categories.find((c: any) => c.slug === searchParams.category || c.id === searchParams.category)
+      if (targetCat) {
+        const targetIds = [targetCat.id, ...getAllDescendantIds(categories, targetCat.id)]
+        query = query.in("category_id", targetIds)
+      } else {
+        query = query.eq("category_id", searchParams.category)
+      }
+    } else {
+      query = query.eq("category_id", searchParams.category)
+    }
   }
   if (searchParams.city) {
     query = query.ilike("city", `%${searchParams.city}%`)

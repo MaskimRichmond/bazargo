@@ -4,6 +4,37 @@ import { Search, ChevronDown, ChevronRight, X } from "lucide-react"
 
 type Category = { id: string; name: string; slug: string; parent_id?: string | null }
 
+function CategoryNode({ category, categories, value, onChange }: { category: Category, categories: Category[], value: string, onChange: (val: string) => void }) {
+  const children = categories.filter(c => c.parent_id === category.id)
+  const isActive = value === category.slug
+
+  return (
+    <div>
+      <button
+        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center justify-between transition-colors ${
+          isActive ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
+        } ${!category.parent_id ? "font-semibold" : ""}`}
+        onClick={() => onChange(category.slug)}
+      >
+        <span>{category.name}</span>
+      </button>
+      {children.length > 0 && (
+        <div className="pl-4 border-l ml-3 mt-1 space-y-1 border-border/50">
+          {children.map(child => (
+            <CategoryNode 
+              key={child.id} 
+              category={child} 
+              categories={categories} 
+              value={value} 
+              onChange={onChange} 
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 interface CategoryPickerProps {
   categories: Category[]
   value: string
@@ -75,37 +106,15 @@ export function CategoryPicker({ categories, value, onChange }: CategoryPickerPr
           ))
         ) : (
           // Hierarchical list
-          roots.map(root => {
-            const children = getChildren(root.id)
-            const isActive = value === root.slug
-            return (
-              <div key={root.id}>
-                <button
-                  className={`w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center justify-between transition-colors ${
-                    isActive ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
-                  }`}
-                  onClick={() => { onChange(root.slug); setIsOpen(false) }}
-                >
-                  <span className="font-semibold">{root.name}</span>
-                </button>
-                {children.length > 0 && (
-                  <div className="pl-4 border-l ml-3 mt-1 space-y-1 border-border/50">
-                    {children.map(child => (
-                      <button
-                        key={child.id}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between transition-colors ${
-                          value === child.slug ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                        }`}
-                        onClick={() => { onChange(child.slug); setIsOpen(false) }}
-                      >
-                        {child.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
-          })
+          roots.map(root => (
+            <CategoryNode 
+              key={root.id} 
+              category={root} 
+              categories={categories} 
+              value={value} 
+              onChange={(val) => { onChange(val); setIsOpen(false) }} 
+            />
+          ))
         )}
 
         {search && filtered.length === 0 && (

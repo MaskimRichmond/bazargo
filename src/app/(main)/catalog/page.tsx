@@ -8,6 +8,7 @@ import { CatalogFiltersWidget } from "@/features/catalog/components/catalog-filt
 import { CatalogSort } from "@/features/catalog/components/catalog-sort"
 import { CatalogActiveFilters } from "@/features/catalog/components/catalog-active-filters"
 import { CatalogLoadMore } from "@/features/catalog/components/catalog-load-more"
+import { getAllDescendantIds, getCategoryBreadcrumbs } from "@/lib/categories"
 
 export const metadata = {
   title: "Каталог товаров | BazarGo"
@@ -45,9 +46,7 @@ async function CatalogList({ searchParams, categories }: { searchParams: any, ca
   if (searchParams.category) {
     const targetCat = categories.find(c => c.slug === searchParams.category)
     if (targetCat) {
-      // Find children of this category
-      const children = categories.filter(c => c.parent_id === targetCat.id)
-      const targetIds = [targetCat.id, ...children.map(c => c.id)]
+      const targetIds = [targetCat.id, ...getAllDescendantIds(categories, targetCat.id)]
       query = query.in("category_id", targetIds)
     } else {
       query = query.eq("categories.slug", searchParams.category)
@@ -150,14 +149,8 @@ async function CatalogList({ searchParams, categories }: { searchParams: any, ca
 
   let breadcrumbs: string[] = []
   if (searchParams.category) {
-    const targetCat = categories.find(c => c.slug === searchParams.category)
-    if (targetCat) {
-      if (targetCat.parent_id) {
-        const parentCat = categories.find(c => c.id === targetCat.parent_id)
-        if (parentCat) breadcrumbs.push(parentCat.name)
-      }
-      breadcrumbs.push(targetCat.name)
-    }
+    const path = getCategoryBreadcrumbs(categories, searchParams.category)
+    breadcrumbs = path.map(c => c.name)
   }
 
   return (
