@@ -12,7 +12,7 @@ interface ProductCardProps {
     city: string
     time: string
     condition: string
-    seller: { name: string; rating: number; reviews: number }
+    seller: { name: string; rating?: number; reviews?: number }
     image: string
     isVerified: boolean
     outOfStock?: boolean
@@ -71,10 +71,12 @@ export function ProductCard({ product }: ProductCardProps) {
           <div className="pt-2.5 border-t border-border/50 flex flex-col gap-2 text-xs">
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground bg-muted px-1.5 py-0.5 rounded text-[10px] font-medium">{product.condition}</span>
-              <div className="flex items-center gap-1 shrink-0">
-                <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                <span className="font-medium text-foreground">{product.seller.rating}</span>
-              </div>
+              {product.seller.rating !== undefined && product.seller.rating > 0 && (
+                <div className="flex items-center gap-1 shrink-0">
+                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                  <span className="font-medium text-foreground">{product.seller.rating}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

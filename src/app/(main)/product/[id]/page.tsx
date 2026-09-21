@@ -10,6 +10,9 @@ import { BuyButtons } from "@/features/product/components/buy-buttons"
 
 import { FavoriteButton } from "@/components/shared/favorite-button"
 import { ProductImageGallery } from "@/components/shared/product-image-gallery"
+import { ShareButton } from "@/components/shared/share-button"
+import { ProductCard } from "@/components/shared/product-card"
+
 export default async function ProductPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const { id } = params;
@@ -89,6 +92,34 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
     if (phoneData) sellerPhone = phoneData;
   }
 
+  // Similar products
+  const { data: similarListings } = await supabase
+    .from("listings")
+    .select(`
+      id, title, price, city, created_at, condition, status,
+      profiles!seller_id(full_name),
+      listing_images(url, order_index)
+    `)
+    .eq("status", "ACTIVE")
+    .eq("category_id", listing.category_id)
+    .neq("id", listing.id)
+    .order("created_at", { ascending: false })
+    .limit(4)
+
+  // Seller products
+  const { data: sellerListings } = await supabase
+    .from("listings")
+    .select(`
+      id, title, price, city, created_at, condition, status,
+      profiles!seller_id(full_name),
+      listing_images(url, order_index)
+    `)
+    .eq("status", "ACTIVE")
+    .eq("seller_id", listing.seller_id)
+    .neq("id", listing.id)
+    .order("created_at", { ascending: false })
+    .limit(4)
+
   return (
     <div className="container max-w-5xl mx-auto px-4 py-8">
       <div className="grid md:grid-cols-2 gap-8">
@@ -99,12 +130,18 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
           title={listing.title}
           status={listing.status}
           favoriteButton={
-            <FavoriteButton 
-              listingId={listing.id}
-              initialIsFavorite={isFavorite}
-              className="!w-10 !h-10 opacity-100 bg-background/80 hover:bg-background/90"
-              iconClassName="!w-6 !h-6"
-            />
+            <div className="flex items-center gap-2">
+              <ShareButton 
+                title={listing.title} 
+                className="w-10 h-10 rounded-full opacity-100 bg-background/80 hover:bg-background/90 text-foreground"
+              />
+              <FavoriteButton 
+                listingId={listing.id}
+                initialIsFavorite={isFavorite}
+                className="!w-10 !h-10 opacity-100 bg-background/80 hover:bg-background/90"
+                iconClassName="!w-6 !h-6"
+              />
+            </div>
           }
         />
 
@@ -197,6 +234,62 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
 
         </div>
       </div>
+
+      {/* Similar Products */}
+      {similarListings && similarListings.length > 0 && (
+        <div className="mt-16 border-t pt-10">
+          <h2 className="text-2xl font-bold mb-6">Похожие товары</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {similarListings.map((l: any) => {
+              const images = l.listing_images?.sort((a: any, b: any) => a.order_index - b.order_index) || []
+              return (
+                <ProductCard 
+                  key={l.id} 
+                  product={{
+                    id: l.id,
+                    title: l.title,
+                    price: l.price,
+                    city: l.city,
+                    time: new Date(l.created_at).toLocaleDateString(),
+                    condition: l.condition,
+                    seller: { name: l.profiles?.full_name || "Пользователь" },
+                    image: images.length > 0 ? images[0].url : "",
+                    isVerified: false,
+                  }} 
+                />
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Seller Products */}
+      {sellerListings && sellerListings.length > 0 && (
+        <div className="mt-16 border-t pt-10">
+          <h2 className="text-2xl font-bold mb-6">Другие товары продавца</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {sellerListings.map((l: any) => {
+              const images = l.listing_images?.sort((a: any, b: any) => a.order_index - b.order_index) || []
+              return (
+                <ProductCard 
+                  key={l.id} 
+                  product={{
+                    id: l.id,
+                    title: l.title,
+                    price: l.price,
+                    city: l.city,
+                    time: new Date(l.created_at).toLocaleDateString(),
+                    condition: l.condition,
+                    seller: { name: seller?.full_name || "Пользователь" },
+                    image: images.length > 0 ? images[0].url : "",
+                    isVerified: false,
+                  }} 
+                />
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Mobile Sticky Action Bar */}
       <div className="md:hidden fixed bottom-14 left-0 right-0 p-3 bg-background/95 backdrop-blur-md border-t border-border shadow-[0_-4px_12px_rgba(0,0,0,0.05)] z-40 flex flex-col gap-2">
