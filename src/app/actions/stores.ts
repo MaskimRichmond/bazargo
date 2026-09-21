@@ -60,11 +60,19 @@ export async function createStore(formData: FormData) {
 
   let logoUrl = null
   if (logo && logo.size > 0) {
-    const ext = logo.name.split('.').pop()
-    const fileName = `${session.user.id}-${Date.now()}.${ext}`
+    const { validateImage, MAX_STORE_LOGO_SIZE } = await import('@/lib/image-validation');
+    const validation = await validateImage(logo, MAX_STORE_LOGO_SIZE);
+    
+    if (!validation.valid || !validation.buffer || !validation.format || !validation.mime) {
+      return { error: `Ошибка изображения: ${validation.error}` }
+    }
+
+    const fileName = `${session.user.id}/${Date.now()}.${validation.format}`
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('store-images')
-      .upload(fileName, logo)
+      .upload(fileName, validation.buffer, {
+        contentType: validation.mime
+      })
 
     if (uploadError) {
       console.error("Upload error:", uploadError)
@@ -139,11 +147,19 @@ export async function updateStore(storeId: string, formData: FormData) {
   }
 
   if (logo && logo.size > 0) {
-    const ext = logo.name.split('.').pop()
-    const fileName = `${session.user.id}-${Date.now()}.${ext}`
+    const { validateImage, MAX_STORE_LOGO_SIZE } = await import('@/lib/image-validation');
+    const validation = await validateImage(logo, MAX_STORE_LOGO_SIZE);
+    
+    if (!validation.valid || !validation.buffer || !validation.format || !validation.mime) {
+      return { error: `Ошибка изображения: ${validation.error}` }
+    }
+
+    const fileName = `${session.user.id}/${Date.now()}.${validation.format}`
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('store-images')
-      .upload(fileName, logo)
+      .upload(fileName, validation.buffer, {
+        contentType: validation.mime
+      })
 
     if (uploadError) {
       console.error("Upload error:", uploadError)

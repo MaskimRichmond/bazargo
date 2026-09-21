@@ -110,16 +110,28 @@ export async function publishListing(formData: FormData) {
     const { data: existingImages } = await supabase.from("listing_images").select("id").eq("listing_id", listingId)
     let totalImages = existingImages ? existingImages.length : 0
     
+    // Import at top level or inline (Next.js server actions handle this fine, but let's dynamically import to avoid breaking client boundaries if any, though it's a server file)
+    const { validateImage, MAX_LISTING_IMAGE_SIZE } = await import('@/lib/image-validation');
+    
     for (let i = 0; i < 10; i++) {
       const file = formData.get(`image_${i}`) as File | null
       if (file && file.size > 0) {
-        const fileExt = file.name.split('.').pop()
-        const fileName = `${session.user.id}/${listingId}/${uuidv4()}.${fileExt}`
+        // Validate
+        const validation = await validateImage(file, MAX_LISTING_IMAGE_SIZE);
+        if (!validation.valid || !validation.buffer || !validation.format || !validation.mime) {
+           uploadFailed = true
+           // We could throw here, but let's break and let the rollback happen
+           throw new Error(`Ошибка изображения: ${validation.error}`);
+        }
+
+        const fileName = `${session.user.id}/${listingId}/${uuidv4()}.${validation.format}`
         
         const { error: uploadError } = await supabase
           .storage
           .from("product-images")
-          .upload(fileName, file)
+          .upload(fileName, validation.buffer, {
+             contentType: validation.mime
+          })
 
         if (uploadError) {
           uploadFailed = true
