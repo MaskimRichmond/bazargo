@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { CatalogFiltersWidget } from "@/features/catalog/components/catalog-filters-widget"
 import { CatalogSort } from "@/features/catalog/components/catalog-sort"
 import { CatalogActiveFilters } from "@/features/catalog/components/catalog-active-filters"
+import { CatalogLoadMore } from "@/features/catalog/components/catalog-load-more"
 
 export const metadata = {
   title: "Каталог товаров | BazarGo"
@@ -192,19 +193,12 @@ async function CatalogList({ searchParams, categories }: { searchParams: any, ca
         })}
       </div>
 
-      {/* Basic Pagination Link (Load More) */}
-      {(count && count > to + 1) ? (
-        <div className="mt-8 text-center">
-          <Button variant="outline" asChild>
-            <Link 
-              scroll={false} 
-              href={`/catalog?${new URLSearchParams({...searchParams, page: String(page + 1)}).toString()}`}
-            >
-              Следующая страница
-            </Link>
-          </Button>
-        </div>
-      ) : null}
+      <CatalogLoadMore 
+        initialPage={page} 
+        searchParams={searchParams} 
+        totalCount={count || 0} 
+        categories={categories} 
+      />
     </div>
   )
 }
