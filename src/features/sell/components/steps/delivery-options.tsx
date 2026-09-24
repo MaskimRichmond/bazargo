@@ -17,7 +17,7 @@ export function DeliveryOptions() {
   const options = [
     { id: "PICKUP", label: "Самовывоз", description: "Покупатель забирает товар сам" },
     { id: "SELLER_DELIVERY", label: "Доставка продавцом", description: "Вы можете доставить товар покупателю" },
-    { id: "THIRD_PARTY", label: "Сторонняя доставка", description: "Доставка через курьерские службы" },
+    { id: "THIRD_PARTY", label: "Сторонняя доставка (по договоренности)", description: "Доставка курьером (условия согласуются в чате)" },
   ]
 
   return (

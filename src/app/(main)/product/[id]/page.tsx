@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Heart, MessageCircle, MapPin, CheckCircle } from "lucide-react"
 
-import { POPULAR_PRODUCTS } from "@/lib/mock-data"
+
 import { ContactSeller } from "@/features/product/components/contact-seller"
 import { BuyButtons } from "@/features/product/components/buy-buttons"
 

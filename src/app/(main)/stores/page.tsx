@@ -48,20 +48,14 @@ export default async function StoresPage(props: { searchParams: Promise<{ [key: 
 
   const { data: stores } = await query
 
-  // We should also fetch products count for each store, but for MVP we can skip or use a simple mapping
-  // To avoid N+1 queries, we fetch counts in one go for these stores
   let storeCounts: Record<string, number> = {}
   if (stores && stores.length > 0) {
     const storeIds = stores.map((s: any) => s.id)
-    const { data: listingsData } = await supabase
-      .from("listings")
-      .select("store_id")
-      .in("store_id", storeIds)
-      .eq("status", "ACTIVE")
-
-    if (listingsData) {
-      listingsData.forEach((l: any) => {
-        storeCounts[l.store_id] = (storeCounts[l.store_id] || 0) + 1
+    const { data: countsData } = await supabase.rpc("get_store_active_listings_counts", { store_ids: storeIds })
+    
+    if (countsData) {
+      countsData.forEach((row: any) => {
+        storeCounts[row.store_id] = parseInt(row.active_count, 10)
       })
     }
   }

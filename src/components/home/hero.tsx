@@ -58,19 +58,15 @@ export function Hero() {
           <div className="hidden lg:block relative h-[500px]">
             {/* Main Product Card */}
             <Card className="absolute top-10 right-20 w-[280px] shadow-2xl border-muted/50 rotate-[-2deg] hover:rotate-0 transition-transform duration-500 z-20">
-              <div className="aspect-[4/3] w-full bg-muted overflow-hidden rounded-t-xl relative">
-                <ImageWithFallback 
-                  src="/demo/products/nike.jpg" 
-                  alt="Nike" 
-                  fallbackText="Nike Air Force 1"
-                />
+              <div className="aspect-[4/3] w-full bg-muted flex items-center justify-center rounded-t-xl relative text-muted-foreground/30">
+                <Search className="w-20 h-20" />
               </div>
               <CardContent className="p-4 bg-background rounded-b-xl">
-                <h3 className="font-semibold text-sm mb-1 truncate">Кроссовки Nike Air Force 1</h3>
-                <div className="font-bold text-lg mb-2">6 500 сом</div>
+                <h3 className="font-semibold text-sm mb-1 truncate">Пример объявления</h3>
+                <div className="font-bold text-lg mb-2">от 0 сом</div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <MapPin className="w-3 h-3" />
-                  <span>Бишкек</span>
+                  <span>Ваш город</span>
                 </div>
               </CardContent>
             </Card>
@@ -78,15 +74,12 @@ export function Hero() {
             {/* Mini Store Card */}
             <Card className="absolute bottom-12 right-0 w-[240px] shadow-xl border-muted/50 rotate-[3deg] hover:rotate-0 transition-transform duration-500 z-30">
               <CardContent className="p-3 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full relative overflow-hidden shrink-0">
-                  <ImageWithFallback 
-                    src="/demo/stores/techstore.jpg" 
-                    alt="Store" 
-                  />
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
-                    <h4 className="font-semibold text-sm truncate">TechStore</h4>
+                    <h4 className="font-semibold text-sm truncate">Магазин</h4>
                     <CheckCircle2 className="w-3 h-3 text-primary shrink-0" />
                   </div>
                   <div className="text-xs text-muted-foreground">Надежный продавец</div>

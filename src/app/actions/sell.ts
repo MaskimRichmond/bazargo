@@ -107,6 +107,9 @@ export async function publishListing(formData: FormData) {
       if (store) storeId = store.id
     }
 
+    const finalQuantity = type === "INVENTORY" ? quantity : 1;
+    const finalStatus = finalQuantity === 0 ? "OUT_OF_STOCK" : "ACTIVE";
+
     const payload = {
       seller_id: session.user.id,
       store_id: storeId,
@@ -115,13 +118,13 @@ export async function publishListing(formData: FormData) {
       category_id: categoryId,
       price,
       condition,
-      quantity: type === "INVENTORY" ? quantity : 1,
+      quantity: finalQuantity,
       listing_type: type,
       region,
       city,
       delivery_methods: deliveryMethods,
       show_phone: showPhone,
-      status: quantity === 0 ? "OUT_OF_STOCK" : "ACTIVE"
+      status: finalStatus
     }
 
     // 1. Create or Update listing record
@@ -194,6 +197,31 @@ export async function publishListing(formData: FormData) {
 
     // 3. Insert listing images
     if (imageUrls.length > 0) {
+      // If it's an edit, we assume a full replacement since the frontend forces re-upload
+      if (id && existingImages && existingImages.length > 0) {
+        // Extract paths from old URLs to delete from storage
+        const { data: oldImages } = await supabase.from("listing_images").select("url").eq("listing_id", listingId);
+        if (oldImages) {
+          const oldPaths = oldImages.map((img: any) => {
+             const parts = img.url.split("/product-images/");
+             return parts.length > 1 ? parts[1] : null;
+          }).filter(Boolean);
+          
+          if (oldPaths.length > 0) {
+            await supabase.storage.from("product-images").remove(oldPaths);
+          }
+          await supabase.from("listing_images").delete().eq("listing_id", listingId);
+        }
+        totalImages = 0; // Reset count since we deleted them
+      }
+
+      if (totalImages + imageUrls.length > 10) {
+        if (uploadedPaths.length > 0) {
+          await supabase.storage.from("product-images").remove(uploadedPaths)
+        }
+        throw new Error("Максимальное количество изображений - 10")
+      }
+
       const imageRecords = imageUrls.map((url, index) => ({
         listing_id: listingId,
         url,

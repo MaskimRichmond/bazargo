@@ -163,7 +163,7 @@ export async function checkoutCart() {
   
   if (!session) return { error: "Необходима авторизация" }
 
-  const { error } = await supabase.rpc("create_orders_from_cart")
+  const { data, error } = await supabase.rpc("create_orders_from_cart")
 
   if (error) {
     console.error("RPC create_orders_from_cart error:", error)
@@ -172,5 +172,5 @@ export async function checkoutCart() {
 
   revalidatePath("/cart")
   revalidatePath("/orders")
-  return { success: true }
+  return { success: true, orderIds: data as string[] }
 }

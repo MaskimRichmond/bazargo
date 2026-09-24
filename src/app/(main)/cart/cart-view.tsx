@@ -88,7 +88,11 @@ export function CartView({ initialItems }: { initialItems: Record<string, any>[]
       setIsCheckingOut(false)
     } else {
       toast.success("Заказ успешно оформлен!")
-      router.push("/orders")
+      if (res.orderIds && res.orderIds.length === 1) {
+        router.push(`/orders/${res.orderIds[0]}`)
+      } else {
+        router.push("/orders")
+      }
     }
   }
 
