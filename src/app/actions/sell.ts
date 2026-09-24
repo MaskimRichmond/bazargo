@@ -197,22 +197,19 @@ export async function publishListing(formData: FormData) {
 
     // 3. Insert listing images
     if (imageUrls.length > 0) {
+      let oldPathsToDelete: string[] = []
+      
       // If it's an edit, we assume a full replacement since the frontend forces re-upload
       if (id && existingImages && existingImages.length > 0) {
-        // Extract paths from old URLs to delete from storage
+        // Extract paths from old URLs to delete from storage AFTER successful DB update
         const { data: oldImages } = await supabase.from("listing_images").select("url").eq("listing_id", listingId);
         if (oldImages) {
-          const oldPaths = oldImages.map((img: any) => {
+          oldPathsToDelete = oldImages.map((img: any) => {
              const parts = img.url.split("/product-images/");
              return parts.length > 1 ? parts[1] : null;
           }).filter(Boolean);
-          
-          if (oldPaths.length > 0) {
-            await supabase.storage.from("product-images").remove(oldPaths);
-          }
-          await supabase.from("listing_images").delete().eq("listing_id", listingId);
         }
-        totalImages = 0; // Reset count since we deleted them
+        totalImages = 0; // We will replace them
       }
 
       if (totalImages + imageUrls.length > 10) {
@@ -228,17 +225,40 @@ export async function publishListing(formData: FormData) {
         order_index: totalImages + index
       }))
 
+      // First delete old DB records if editing
+      if (id && oldPathsToDelete.length > 0) {
+        const { error: deleteError } = await supabase.from("listing_images").delete().eq("listing_id", listingId);
+        if (deleteError) {
+          // If delete fails, new images are orphans. Remove them.
+          if (uploadedPaths.length > 0) {
+            await supabase.storage.from("product-images").remove(uploadedPaths)
+          }
+          throw new Error("Ошибка при обновлении изображений (удаление старых)")
+        }
+      }
+
+      // Then insert new DB records
       const { error: imageError } = await supabase
         .from("listing_images")
         .insert(imageRecords)
 
       if (imageError) {
+        // If insert fails, we already deleted old DB records (if edit). This is a partial DB failure.
+        // However, we remove the newly uploaded storage files so we don't leak storage.
+        // Old files are left in storage (orphaned from DB, but safe).
         if (uploadedPaths.length > 0) {
           await supabase.storage.from("product-images").remove(uploadedPaths)
         }
         if (!id) await supabase.from("listings").delete().eq("id", listingId)
-        throw new Error("Ошибка сохранения изображений")
+        throw new Error("Ошибка сохранения новых изображений")
       }
+      
+      // FINALLY: Only if DB insert succeeds, safely delete old files from storage
+      if (oldPathsToDelete.length > 0) {
+        // Fire and forget, or await. If this fails, it's just an orphan file, no data loss.
+        await supabase.storage.from("product-images").remove(oldPathsToDelete).catch(console.error);
+      }
+      
       totalImages += imageUrls.length
     }
 

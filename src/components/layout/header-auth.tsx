@@ -8,6 +8,7 @@ import { User, LogOut, Package, Store, Heart, MessageCircle, Settings, Clipboard
 
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
+import { NotificationsDropdown } from "@/features/notifications/components/notifications-dropdown"
 
 export function HeaderAuth() {
   const [user, setUser] = useState<any>(null)
@@ -89,21 +90,24 @@ export function HeaderAuth() {
   const initial = displayName.charAt(0).toUpperCase()
 
   return (
-    <div className="relative">
-      <Button 
-        variant="ghost" 
-        className="hidden sm:flex items-center gap-2 pl-2 pr-3 py-1.5 h-auto rounded-full border border-transparent hover:border-border"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium text-xs">
-          {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt="Avatar" className="w-full h-full rounded-full object-cover" />
-          ) : (
-            initial
-          )}
-        </div>
-        <span className="text-sm font-medium truncate max-w-[100px]">{displayName}</span>
-      </Button>
+    <div className="flex items-center gap-2">
+      <NotificationsDropdown />
+      
+      <div className="relative">
+        <Button 
+          variant="ghost" 
+          className="hidden sm:flex items-center gap-2 pl-2 pr-3 py-1.5 h-auto rounded-full border border-transparent hover:border-border"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium text-xs">
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full rounded-full object-cover" />
+            ) : (
+              initial
+            )}
+          </div>
+          <span className="text-sm font-medium truncate max-w-[100px]">{displayName}</span>
+        </Button>
 
       {isOpen && (
         <>
@@ -156,6 +160,7 @@ export function HeaderAuth() {
           </div>
         </>
       )}
+      </div>
     </div>
   )
 }
