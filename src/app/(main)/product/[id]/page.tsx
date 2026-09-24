@@ -33,39 +33,20 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
     .single()
 
   if (error || !listing) {
-    const mock = POPULAR_PRODUCTS.find(p => p.id === id)
-    if (mock) {
-      // Create a mock listing object compatible with the page
-      listing = {
-        id: mock.id,
-        seller_id: mock.seller.name,
-        title: mock.title,
-        price: mock.price,
-        city: mock.city,
-        condition: mock.condition === "Новое" ? "NEW" : "USED_GOOD",
-        description: "Описание для демо-товара.",
-        created_at: new Date().toISOString(),
-        categories: { name: "Разное" },
-        profiles: { full_name: mock.seller.name, created_at: new Date().toISOString() },
-        listing_images: [{ url: mock.image, order_index: 0 }],
-        delivery_methods: ["PICKUP"]
-      }
-    } else {
-      return (
-        <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center text-center min-h-[70vh]">
-          <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>
-          </div>
-          <h1 className="text-3xl font-bold tracking-tight mb-4">Товар не найден</h1>
-          <p className="text-lg text-muted-foreground mb-8 max-w-md">
-            Объявление было удалено или перемещено в архив продавцом.
-          </p>
-          <Button asChild size="lg" className="rounded-xl font-semibold">
-            <a href="/catalog">Вернуться в каталог</a>
-          </Button>
+    return (
+      <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center text-center min-h-[70vh]">
+        <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-6">
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" x2="9.01" y1="9" y2="9"/><line x1="15" x2="15.01" y1="9" y2="9"/></svg>
         </div>
-      )
-    }
+        <h1 className="text-3xl font-bold tracking-tight mb-4">Товар не найден</h1>
+        <p className="text-lg text-muted-foreground mb-8 max-w-md">
+          Объявление было удалено или перемещено в архив продавцом.
+        </p>
+        <Button asChild size="lg" className="rounded-xl font-semibold">
+          <a href="/catalog">Вернуться в каталог</a>
+        </Button>
+      </div>
+    )
   }
 
   let isFavorite = false

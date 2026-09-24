@@ -38,7 +38,7 @@ export async function PopularProducts() {
       city: l.city,
       time: new Date(l.created_at).toLocaleDateString(),
       condition: l.condition,
-      seller: { name: l.profiles?.full_name || "Пользователь", rating: 4.5, reviews: 0 },
+      seller: { name: l.profiles?.full_name || "Пользователь" },
       image: images.length > 0 ? images[0].url : "",
       isVerified: false,
       isFavorite: false // MVP, no favorite check on homepage yet

@@ -44,6 +44,7 @@ export async function publishListing(formData: FormData) {
     if (!title || title.length < 5) throw new Error("Слишком короткое название")
     if (!categoryId) throw new Error("Категория обязательна")
     if (isNaN(price) || price < 0) throw new Error("Некорректная цена")
+    if (quantity < 0) throw new Error("Количество не может быть отрицательным")
     if (!region) throw new Error("Регион обязателен")
     if (!city) throw new Error("Город обязателен")
 
