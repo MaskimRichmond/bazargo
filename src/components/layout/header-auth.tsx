@@ -15,9 +15,11 @@ export function HeaderAuth() {
   const [loading, setLoading] = useState(true)
   const [isOpen, setIsOpen] = useState(false)
   
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabase = supabaseUrl ? createClient() : null
   const router = useRouter()
+  
+  const supabase = React.useMemo(() => {
+    return process.env.NEXT_PUBLIC_SUPABASE_URL ? createClient() : null
+  }, [])
 
   useEffect(() => {
     if (!supabase) {

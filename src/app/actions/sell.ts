@@ -25,28 +25,65 @@ export async function publishListing(formData: FormData) {
     }
 
     // 0. Server-side validation
-    const id = formData.get("id") as string
+    const id = formData.get("id") as string | null
     const type = formData.get("type") as string
     const title = formData.get("title") as string
     const categoryId = formData.get("categoryId") as string
-    const price = parseFloat(formData.get("price") as string)
+    const priceStr = formData.get("price") as string
     const condition = formData.get("condition") as string
     const description = formData.get("description") as string
-    const quantity = parseInt(formData.get("quantity") as string) || 1
+    const quantityStr = formData.get("quantity") as string
     const region = formData.get("region") as string
     const city = formData.get("city") as string
     const showPhone = formData.get("showPhone") === "true"
+
     let deliveryMethods = []
     try {
-      deliveryMethods = JSON.parse(formData.get("deliveryMethods") as string)
+      deliveryMethods = JSON.parse(formData.get("deliveryMethods") as string || "[]")
     } catch (e) {}
 
-    if (!title || title.length < 5) throw new Error("Слишком короткое название")
-    if (!categoryId) throw new Error("Категория обязательна")
-    if (isNaN(price) || price < 0) throw new Error("Некорректная цена")
-    if (quantity < 0) throw new Error("Количество не может быть отрицательным")
-    if (!region) throw new Error("Регион обязателен")
-    if (!city) throw new Error("Город обязателен")
+    const { z } = await import("zod")
+    const schema = z.object({
+      title: z.string().min(5, "Слишком короткое название").max(200, "Слишком длинное название"),
+      categoryId: z.string().uuid("Некорректная категория"),
+      price: z.number().min(0, "Некорректная цена").max(1000000000, "Слишком большая цена"),
+      quantity: z.number().min(0, "Количество не может быть отрицательным").max(100000, "Слишком большое количество"),
+      region: z.string().min(2, "Регион обязателен").max(100),
+      city: z.string().min(2, "Город обязателен").max(100),
+      description: z.string().max(5000, "Слишком длинное описание"),
+      condition: z.enum(["NEW", "USED_LIKE_NEW", "USED_GOOD", "USED_FAIR", "FOR_PARTS"]),
+      type: z.enum(["SINGLE", "INVENTORY"])
+    })
+
+    const parsed = schema.safeParse({
+      title,
+      categoryId,
+      price: parseFloat(priceStr),
+      quantity: quantityStr ? parseInt(quantityStr) : 1,
+      region,
+      city,
+      description: description || "",
+      condition,
+      type
+    })
+
+    if (!parsed.success) {
+      throw new Error(parsed.error.errors[0].message)
+    }
+
+    const price = parsed.data.price
+    const quantity = parsed.data.quantity
+
+    // Rate Limit: 10 listings per hour
+    if (!id) {
+      const { data: rateOk, error: rateErr } = await supabase.rpc("check_rate_limit", { 
+        p_action_type: "create_listing", 
+        p_limit: 10, 
+        p_window_minutes: 60 
+      })
+      if (rateErr) console.error("Rate limit check error:", rateErr)
+      if (rateOk === false) throw new Error("Превышен лимит создания объявлений. Попробуйте позже.")
+    }
 
     const publishAsStore = formData.get("publishAsStore") === "true"
 
@@ -70,7 +107,7 @@ export async function publishListing(formData: FormData) {
       if (store) storeId = store.id
     }
 
-    const payload: any = {
+    const payload = {
       seller_id: session.user.id,
       store_id: storeId,
       title,

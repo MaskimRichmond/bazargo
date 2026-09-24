@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { Send, AlertCircle, ShoppingBag } from "lucide-react"
+import { useState, useEffect, useRef, useCallback } from "react"
+import { Send, AlertCircle, ShoppingBag, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { sendMessage } from "@/app/actions/chats"
 import { Button } from "@/components/ui/button"
@@ -30,29 +30,89 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing }: Ch
   const [error, setError] = useState<string | null>(null)
   const [isConnected, setIsConnected] = useState(true)
   
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(initialMessages.length >= 50)
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const supabase = useRef(createClient()).current
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const supabase = createClient()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "instant" })
   }
 
+  // Load older messages
+  const loadOlderMessages = async () => {
+    if (isLoadingMore || !hasMore || messages.length === 0) return
+    setIsLoadingMore(true)
+    
+    const oldestMessage = messages[0]
+    
+    const { data, error } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("chat_id", chatId)
+      .lt("created_at", oldestMessage.created_at)
+      .order("created_at", { ascending: false })
+      .limit(50)
+
+    if (!error && data) {
+      if (data.length < 50) setHasMore(false)
+      if (data.length > 0) {
+        // Reverse because we queried DESC
+        const olderMessages = data.reverse() as Message[]
+        
+        // Remember scroll position
+        const scrollContainer = scrollContainerRef.current
+        const previousScrollHeight = scrollContainer?.scrollHeight || 0
+
+        setMessages(prev => {
+          // Prevent duplicates
+          const newMsgs = olderMessages.filter(newM => !prev.some(m => m.id === newM.id))
+          return [...newMsgs, ...prev]
+        })
+
+        // Restore scroll position after render
+        setTimeout(() => {
+          if (scrollContainer) {
+            scrollContainer.scrollTop = scrollContainer.scrollHeight - previousScrollHeight
+          }
+        }, 0)
+      }
+    }
+    setIsLoadingMore(false)
+  }
+
+  // Handle read receipts
   useEffect(() => {
-    scrollToBottom()
     const unreadMessages = messages.filter(m => !m.is_read && m.sender_id !== currentUserId)
     if (unreadMessages.length > 0) {
       const unreadIds = unreadMessages.map(m => m.id)
-      supabase.from('messages').update({ is_read: true }).in('id', unreadIds).then()
-      setMessages(prev => prev.map(m => 
-        unreadIds.includes(m.id) ? { ...m, is_read: true } : m
-      ))
+      
+      // Update DB
+      supabase.from('messages')
+        .update({ is_read: true })
+        .in('id', unreadIds)
+        .then((res: { error: any }) => {
+          if (!res.error) {
+            // Update local state only if DB update succeeded
+            setMessages(prev => prev.map(m => 
+              unreadIds.includes(m.id) ? { ...m, is_read: true } : m
+            ))
+          }
+        })
     }
   }, [messages, currentUserId, supabase])
 
+  // Realtime subscription and Reconciliation
   useEffect(() => {
-    const channel = supabase
-      .channel(`chat_${chatId}`)
+    // Initial scroll
+    scrollToBottom()
+
+    let channel = supabase.channel(`chat_${chatId}`)
+
+    channel
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
@@ -60,14 +120,50 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing }: Ch
           const newMessage = payload.new as Message
           setMessages(prev => {
             if (prev.some(m => m.id === newMessage.id)) return prev
+            // if we are at bottom, scroll down after state update
+            setTimeout(() => {
+               scrollToBottom()
+            }, 50)
             return [...prev, newMessage]
           })
         }
       )
-      .subscribe((status: any) => {
+      .subscribe(async (status: any) => {
         setIsConnected(status === 'SUBSCRIBED')
+        
+        if (status === 'SUBSCRIBED') {
+          // Reconciliation: Fetch any messages we might have missed during disconnect
+          setMessages(currentMessages => {
+            if (currentMessages.length === 0) return currentMessages;
+            const lastMsg = currentMessages[currentMessages.length - 1]
+            
+            // Fetch newer messages async
+            supabase
+              .from('messages')
+              .select('*')
+              .eq('chat_id', chatId)
+              .gt('created_at', lastMsg.created_at)
+              .order('created_at', { ascending: true })
+              .then((res: { data: any, error: any }) => {
+                if (!res.error && res.data && res.data.length > 0) {
+                  setMessages(prev => {
+                    const newMsgs = res.data.filter((newM: any) => !prev.some(m => m.id === newM.id))
+                    if (newMsgs.length > 0) {
+                      setTimeout(scrollToBottom, 50)
+                      return [...prev, ...newMsgs]
+                    }
+                    return prev
+                  })
+                }
+              })
+            return currentMessages;
+          })
+        }
       })
-    return () => { supabase.removeChannel(channel) }
+      
+    return () => { 
+      supabase.removeChannel(channel) 
+    }
   }, [chatId, supabase])
 
   const handleSend = async () => {
@@ -89,6 +185,7 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing }: Ch
       setContent("")
       setMessages(prev => {
         if (prev.some(m => m.id === result.message.id)) return prev
+        setTimeout(scrollToBottom, 50)
         return [...prev, result.message as Message]
       })
     }
@@ -148,7 +245,22 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing }: Ch
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto px-2 sm:px-4 py-4 space-y-6 flex flex-col">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-2 sm:px-4 py-4 space-y-6 flex flex-col">
+        {hasMore && (
+          <div className="flex justify-center shrink-0 mb-4">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={loadOlderMessages} 
+              disabled={isLoadingMore}
+              className="text-xs rounded-full h-8 px-4 bg-muted/30"
+            >
+              {isLoadingMore ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null}
+              {isLoadingMore ? "Загрузка..." : "Загрузить старые"}
+            </Button>
+          </div>
+        )}
+
         {listing && (
           <div className="flex justify-center shrink-0">
             <Link href={`/product/${listing.id}`} className="bg-muted/30 hover:bg-muted/50 transition-colors border border-border/50 rounded-2xl p-2 flex items-center gap-3 w-full max-w-[320px] shadow-sm group outline-none">
@@ -208,7 +320,6 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing }: Ch
                       {msg.isLastInGroup && (
                         <div className={`flex items-center justify-end gap-1 mt-1 -mb-1 -mr-1 ${isMe ? 'text-white/70' : 'text-muted-foreground/70'}`}>
                           <span className="text-[9px] leading-none">{time}</span>
-                          {/* If we want to show read receipts, we could add checkmarks here */}
                         </div>
                       )}
                     </div>
@@ -218,7 +329,7 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing }: Ch
             </div>
           ))
         )}
-        <div ref={messagesEndRef} className="h-1" />
+        <div ref={messagesEndRef} className="h-1 shrink-0" />
       </div>
 
       <div className="p-2 sm:p-3 bg-background border-t shrink-0 relative z-10 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
@@ -249,4 +360,3 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing }: Ch
     </div>
   )
 }
-

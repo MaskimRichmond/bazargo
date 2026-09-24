@@ -11,6 +11,19 @@ export async function addToCart(listingId: string, quantity: number = 1) {
     return { error: "Необходима авторизация" }
   }
 
+  const { z } = await import("zod")
+  const parsed = z.object({
+    listingId: z.string().uuid("Некорректный ID"),
+    quantity: z.number().int().min(1).max(100000)
+  }).safeParse({ listingId, quantity })
+
+  if (!parsed.success) {
+    return { error: parsed.error.errors[0].message }
+  }
+
+  listingId = parsed.data.listingId
+  quantity = parsed.data.quantity
+
   // Verify listing exists and is ACTIVE
   const { data: listing, error: listingError } = await supabase
     .from("listings")
@@ -80,6 +93,20 @@ export async function updateCartQuantity(cartItemId: string, newQuantity: number
   const { data: { session } } = await supabase.auth.getSession()
   
   if (!session) return { error: "Необходима авторизация" }
+
+  const { z } = await import("zod")
+  const parsed = z.object({
+    cartItemId: z.string().uuid("Некорректный ID"),
+    newQuantity: z.number().int().min(0).max(100000)
+  }).safeParse({ cartItemId, newQuantity })
+
+  if (!parsed.success) {
+    return { error: parsed.error.errors[0].message }
+  }
+
+  cartItemId = parsed.data.cartItemId
+  newQuantity = parsed.data.newQuantity
+
   if (newQuantity <= 0) return await removeFromCart(cartItemId)
 
   // Verify listing stock
