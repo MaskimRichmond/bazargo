@@ -6,7 +6,8 @@ export const metadata = {
   title: "Мои объявления | BazarGo",
 }
 
-export default async function MyListingsPage() {
+export default async function MyListingsPage(props: { searchParams: Promise<{ [key: string]: string | undefined }> }) {
+  const searchParams = await props.searchParams;
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
 
@@ -14,18 +15,34 @@ export default async function MyListingsPage() {
     redirect("/login?redirect_to=/my-listings")
   }
 
-  const { data: listings, error } = await supabase
+  const page = parseInt(searchParams.page || "1", 10)
+  const limit = 20
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+
+  let query = supabase
     .from("listings")
     .select(`
       *,
       listing_images(url, order_index)
-    `)
+    `, { count: "exact" })
     .eq("seller_id", session.user.id)
     .order("created_at", { ascending: false })
+
+  const status = searchParams.status || "all"
+  if (status !== "all") {
+    query = query.eq("status", status.toUpperCase())
+  }
+
+  query = query.range(from, to)
+
+  const { data: listings, count, error } = await query
 
   if (error) {
     console.error("Failed to fetch my listings:", error)
   }
+  
+  const totalPages = count ? Math.ceil(count / limit) : 1
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
@@ -35,7 +52,7 @@ export default async function MyListingsPage() {
           Вернуться в профиль
         </a>
       </div>
-      <MyListingsClient listings={listings || []} />
+      <MyListingsClient listings={listings || []} status={status} page={page} totalPages={totalPages} totalCount={count || 0} />
     </div>
   )
 }

@@ -9,7 +9,8 @@ export const metadata = {
   title: "Мои запросы | BazarGo"
 }
 
-export default async function MyRequestsPage() {
+export default async function MyRequestsPage(props: { searchParams: Promise<{ [key: string]: string | undefined }> }) {
+  const searchParams = await props.searchParams;
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
 
@@ -17,15 +18,25 @@ export default async function MyRequestsPage() {
     redirect("/login?redirect_to=/my-requests")
   }
 
+  const page = parseInt(searchParams.page || "1", 10)
+  const limit = 20
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+
   // Fetch requests
-  const { data: requests } = await supabase
+  let query = supabase
     .from("requests")
     .select(`
       *,
       categories(name)
-    `)
+    `, { count: "exact" })
     .eq("buyer_id", session.user.id)
     .order("created_at", { ascending: false })
+    .range(from, to)
+
+  const { data: requests, count } = await query
+
+  const totalPages = count ? Math.ceil(count / limit) : 1
 
   // To get offer counts, we can run a separate query
   let offerCounts: Record<string, number> = {}
@@ -75,7 +86,19 @@ export default async function MyRequestsPage() {
           </Button>
         </div>
       ) : (
-        <MyRequestsClient requests={mappedRequests} />
+        <>
+          <MyRequestsClient requests={mappedRequests} />
+          {totalPages > 1 && (
+            <div className="mt-8 flex justify-center gap-2">
+              <Button variant="outline" disabled={page <= 1} asChild={page > 1}>
+                {page > 1 ? <Link href={`/my-requests?page=${page - 1}`}>Назад</Link> : <span>Назад</span>}
+              </Button>
+              <Button variant="outline" disabled={page >= totalPages} asChild={page < totalPages}>
+                {page < totalPages ? <Link href={`/my-requests?page=${page + 1}`}>Вперед</Link> : <span>Вперед</span>}
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

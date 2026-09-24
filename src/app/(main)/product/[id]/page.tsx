@@ -4,7 +4,6 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Heart, MessageCircle, MapPin, CheckCircle } from "lucide-react"
 
-
 import { ContactSeller } from "@/features/product/components/contact-seller"
 import { BuyButtons } from "@/features/product/components/buy-buttons"
 
@@ -12,27 +11,39 @@ import { FavoriteButton } from "@/components/shared/favorite-button"
 import { ProductImageGallery } from "@/components/shared/product-image-gallery"
 import { ShareButton } from "@/components/shared/share-button"
 import { ProductCard } from "@/components/shared/product-card"
+import { getCachedProductData } from "@/features/product/api/get-product"
+
+export async function generateMetadata(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const { id } = params;
+  const data = await getCachedProductData(id)
+  
+  if (!data || !data.listing) {
+    return { title: "Товар не найден | BazarGo" }
+  }
+
+  const { listing } = data
+  const images = listing.listing_images?.sort((a: any, b: any) => a.order_index - b.order_index) || []
+  const mainImage = images.length > 0 ? images[0].url : "/placeholder.png"
+  
+  return {
+    title: `${listing.title} за ${listing.price} сом | BazarGo`,
+    description: listing.description?.substring(0, 160) || `Купить ${listing.title} в ${listing.city}`,
+    openGraph: {
+      title: `${listing.title} - ${listing.price} сом`,
+      description: listing.description?.substring(0, 160) || `Купить ${listing.title} в ${listing.city}`,
+      images: [{ url: mainImage }]
+    }
+  }
+}
 
 export default async function ProductPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const { id } = params;
   
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
+  const data = await getCachedProductData(id)
 
-  // Try to fetch real listing
-  let { data: listing, error } = await supabase
-    .from("listings")
-    .select(`
-      *,
-      profiles!seller_id(id, full_name, avatar_url, created_at),
-      categories(id, name),
-      listing_images(url, order_index)
-    `)
-    .eq("id", id)
-    .single()
-
-  if (error || !listing) {
+  if (!data || !data.listing) {
     return (
       <div className="container mx-auto px-4 py-20 flex flex-col items-center justify-center text-center min-h-[70vh]">
         <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-6">
@@ -48,6 +59,11 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
       </div>
     )
   }
+
+  const { listing, similarListings, sellerListings } = data
+
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
 
   let isFavorite = false
   if (session?.user?.id) {
@@ -72,34 +88,6 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
     const { data: phoneData } = await supabase.rpc("get_listing_phone", { p_listing_id: listing.id })
     if (phoneData) sellerPhone = phoneData;
   }
-
-  // Similar products
-  const { data: similarListings } = await supabase
-    .from("listings")
-    .select(`
-      id, title, price, city, created_at, condition, status,
-      profiles!seller_id(full_name),
-      listing_images(url, order_index)
-    `)
-    .eq("status", "ACTIVE")
-    .eq("category_id", listing.category_id)
-    .neq("id", listing.id)
-    .order("created_at", { ascending: false })
-    .limit(4)
-
-  // Seller products
-  const { data: sellerListings } = await supabase
-    .from("listings")
-    .select(`
-      id, title, price, city, created_at, condition, status,
-      profiles!seller_id(full_name),
-      listing_images(url, order_index)
-    `)
-    .eq("status", "ACTIVE")
-    .eq("seller_id", listing.seller_id)
-    .neq("id", listing.id)
-    .order("created_at", { ascending: false })
-    .limit(4)
 
   return (
     <div className="container max-w-5xl mx-auto px-4 py-8">

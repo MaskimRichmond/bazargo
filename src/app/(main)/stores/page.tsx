@@ -14,7 +14,7 @@ export default async function StoresPage(props: { searchParams: Promise<{ [key: 
 
   let query = supabase
     .from("stores")
-    .select("*, categories(name)")
+    .select("*, categories(name)", { count: "exact" })
     .eq("status", "APPROVED")
 
   if (searchParams.category) {
@@ -46,7 +46,13 @@ export default async function StoresPage(props: { searchParams: Promise<{ [key: 
     query = query.order("created_at", { ascending: false })
   }
 
-  const { data: stores } = await query
+  const page = parseInt(searchParams.page || "1", 10)
+  const limit = 20
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+  query = query.range(from, to)
+
+  const { data: stores, count } = await query
 
   let storeCounts: Record<string, number> = {}
   if (stores && stores.length > 0) {
@@ -58,6 +64,17 @@ export default async function StoresPage(props: { searchParams: Promise<{ [key: 
         storeCounts[row.store_id] = parseInt(row.active_count, 10)
       })
     }
+  }
+  
+  const totalPages = count ? Math.ceil(count / limit) : 1
+  
+  const buildPageUrl = (p: number) => {
+    const params = new URLSearchParams()
+    if (searchParams.category) params.set("category", searchParams.category)
+    if (searchParams.city) params.set("city", searchParams.city)
+    if (searchParams.verified) params.set("verified", searchParams.verified)
+    params.set("page", p.toString())
+    return `/stores?${params.toString()}`
   }
 
   return (
@@ -92,22 +109,35 @@ export default async function StoresPage(props: { searchParams: Promise<{ [key: 
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {stores.map((s: any) => {
-            const mappedStore = {
-              id: s.id,
-              name: s.name,
-              category: s.categories?.name || "Магазин",
-              rating: 0,
-              reviews: 0,
-              itemsCount: storeCounts[s.id] || 0,
-              image: s.logo_url || "",
-              isVerified: s.is_verified,
-              slug: s.slug
-            }
-            return <StoreCard key={s.id} store={mappedStore} />
-          })}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {stores.map((s: any) => {
+              const mappedStore = {
+                id: s.id,
+                name: s.name,
+                category: s.categories?.name || "Магазин",
+                rating: 0,
+                reviews: 0,
+                itemsCount: storeCounts[s.id] || 0,
+                image: s.logo_url || "",
+                isVerified: s.is_verified,
+                slug: s.slug
+              }
+              return <StoreCard key={s.id} store={mappedStore} />
+            })}
+          </div>
+          
+          {totalPages > 1 && (
+            <div className="mt-8 flex justify-center gap-2">
+              <Button variant="outline" disabled={page <= 1} asChild={page > 1}>
+                {page > 1 ? <Link href={buildPageUrl(page - 1)}>Назад</Link> : <span>Назад</span>}
+              </Button>
+              <Button variant="outline" disabled={page >= totalPages} asChild={page < totalPages}>
+                {page < totalPages ? <Link href={buildPageUrl(page + 1)}>Вперед</Link> : <span>Вперед</span>}
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

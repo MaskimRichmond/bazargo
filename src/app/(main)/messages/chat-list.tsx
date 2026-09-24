@@ -1,13 +1,34 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { MessageSquare, Search } from "lucide-react"
+import { MessageSquare, Search, Loader2 } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 
-export function ChatList({ chats, currentUserId }: { chats: any[], currentUserId: string }) {
+export function ChatList({ chats: initialChats, currentUserId }: { chats: any[], currentUserId: string }) {
   const [search, setSearch] = useState("")
+  const [chats, setChats] = useState(initialChats)
+  const [page, setPage] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(initialChats.length === 50)
   const pathname = usePathname()
+  const supabase = createClient()
+
+  const loadMore = async () => {
+    if (loading || !hasMore) return
+    setLoading(true)
+    const nextOffset = page * 50
+    const { data } = await supabase.rpc("get_chats_with_unread", { p_limit: 50, p_offset: nextOffset })
+    if (data && data.length > 0) {
+      setChats(prev => [...prev, ...data])
+      setPage(p => p + 1)
+      if (data.length < 50) setHasMore(false)
+    } else {
+      setHasMore(false)
+    }
+    setLoading(false)
+  }
 
   const filtered = chats.filter((chat) => {
     if (!search) return true
@@ -38,7 +59,7 @@ export function ChatList({ chats, currentUserId }: { chats: any[], currentUserId
         </div>
       </div>
       
-      <div className="flex-1 overflow-y-auto min-h-0">
+      <div className="flex-1 overflow-y-auto min-h-0 pb-16">
         {!chats || chats.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted-foreground">
             <MessageSquare className="w-12 h-12 mb-4 opacity-20" />
@@ -120,6 +141,19 @@ export function ChatList({ chats, currentUserId }: { chats: any[], currentUserId
                 </Link>
               )
             })}
+
+            {hasMore && !search && (
+              <div className="p-4 flex justify-center">
+                <button 
+                  onClick={loadMore} 
+                  disabled={loading}
+                  className="text-sm text-primary hover:underline flex items-center gap-2"
+                >
+                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Загрузить еще
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

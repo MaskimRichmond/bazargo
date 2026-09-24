@@ -7,6 +7,31 @@ import { Store, MapPin, CheckCircle2, Users, Star, Package } from "lucide-react"
 import { ImageWithFallback } from "@/components/shared/image-with-fallback"
 import { FollowButton } from "@/features/stores/components/follow-button"
 
+export async function generateMetadata(props: { params: Promise<{ slug: string }> }) {
+  const params = await props.params;
+  const supabase = await createClient()
+  const { data: store } = await supabase
+    .from("stores")
+    .select("name, description, logo_url, city")
+    .eq("slug", params.slug)
+    .eq("status", "APPROVED")
+    .maybeSingle()
+    
+  if (!store) {
+    return { title: "Магазин не найден | BazarGo" }
+  }
+
+  return {
+    title: `${store.name} на BazarGo`,
+    description: store.description?.substring(0, 160) || `Магазин ${store.name} в ${store.city}`,
+    openGraph: {
+      title: `${store.name} - BazarGo`,
+      description: store.description?.substring(0, 160) || `Магазин ${store.name} в ${store.city}`,
+      images: store.logo_url ? [{ url: store.logo_url }] : []
+    }
+  }
+}
+
 export default async function PublicStorePage(props: { params: Promise<{ slug: string }> }) {
   const params = await props.params;
   const slug = params.slug;

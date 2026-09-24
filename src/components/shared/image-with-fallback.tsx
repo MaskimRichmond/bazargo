@@ -3,8 +3,11 @@
 import { useState } from "react"
 import { ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import Image, { ImageProps } from "next/image"
 
-interface ImageWithFallbackProps extends React.ImgHTMLAttributes<HTMLImageElement> {
+interface ImageWithFallbackProps extends Omit<ImageProps, "src" | "alt"> {
+  src?: string | null
+  alt?: string
   fallbackText?: string
   containerClassName?: string
 }
@@ -15,6 +18,8 @@ export function ImageWithFallback({
   className, 
   containerClassName, 
   fallbackText,
+  priority = false,
+  sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw",
   ...props 
 }: ImageWithFallbackProps) {
   const [error, setError] = useState(false)
@@ -34,20 +39,18 @@ export function ImageWithFallback({
     <div className={cn("relative overflow-hidden w-full h-full", containerClassName)}>
       {/* Loading Skeleton */}
       {!loaded && (
-        <div className="absolute inset-0 bg-muted animate-pulse" />
+        <div className="absolute inset-0 bg-muted animate-pulse z-0" />
       )}
-      <img
+      <Image
         src={src}
         alt={alt || "Image"}
+        fill
+        sizes={sizes}
+        priority={priority}
         onError={() => setError(true)}
         onLoad={() => setLoaded(true)}
-        ref={(el) => {
-          if (el && el.complete) {
-            setLoaded(true)
-          }
-        }}
         className={cn(
-          "w-full h-full object-cover transition-opacity duration-300",
+          "w-full h-full object-cover transition-opacity duration-300 z-10",
           loaded ? "opacity-100" : "opacity-0",
           className
         )}

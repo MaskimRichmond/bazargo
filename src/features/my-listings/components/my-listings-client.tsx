@@ -9,15 +9,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import Link from "next/link"
 
-export function MyListingsClient({ listings }: { listings: any[] }) {
+import { useRouter } from "next/navigation"
+
+export function MyListingsClient({ listings, status = "all", page = 1, totalPages = 1, totalCount = 0 }: { listings: any[], status?: string, page?: number, totalPages?: number, totalCount?: number }) {
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [isUpdating, setIsUpdating] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
-
-  const activeListings = listings.filter(l => l.status === "ACTIVE" || l.status === "OUT_OF_STOCK")
-  const deactivatedListings = listings.filter(l => l.status === "DEACTIVATED")
-  const soldListings = listings.filter(l => l.status === "SOLD")
-  const archivedListings = listings.filter(l => l.status === "ARCHIVED")
+  const router = useRouter()
 
   const handleStatusChange = async (id: string, status: string) => {
     setIsUpdating(id)
@@ -137,45 +135,52 @@ export function MyListingsClient({ listings }: { listings: any[] }) {
     </div>
   )
 
+  const handleTabChange = (val: string) => {
+    router.push(`/my-listings?status=${val}`)
+  }
+
+  const buildPageUrl = (p: number) => {
+    return `/my-listings?status=${status}&page=${p}`
+  }
+
   return (
     <>
-      <Tabs defaultValue="all" className="w-full">
+      <Tabs value={status} onValueChange={handleTabChange} className="w-full">
         {/* Mobile-friendly tabs wrapper */}
         <div className="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto no-scrollbar mb-6">
           <TabsList className="inline-flex w-max min-w-full justify-start rounded-none border-b bg-transparent h-auto p-0 gap-6">
             <TabsTrigger value="all" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 text-sm sm:text-base">
-              Все <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{listings.length}</span>
+              Все {status === "all" && <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{totalCount}</span>}
             </TabsTrigger>
             <TabsTrigger value="active" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 text-sm sm:text-base">
-              Активные <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{activeListings.length}</span>
+              Активные {status === "active" && <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{totalCount}</span>}
             </TabsTrigger>
             <TabsTrigger value="sold" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 text-sm sm:text-base">
-              Проданные <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{soldListings.length}</span>
+              Проданные {status === "sold" && <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{totalCount}</span>}
             </TabsTrigger>
             <TabsTrigger value="deactivated" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 text-sm sm:text-base">
-              Деактивированные <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{deactivatedListings.length}</span>
+              Деактивированные {status === "deactivated" && <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{totalCount}</span>}
             </TabsTrigger>
             <TabsTrigger value="archived" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 text-sm sm:text-base">
-              Архив <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{archivedListings.length}</span>
+              Архив {status === "archived" && <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{totalCount}</span>}
             </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="all" className="space-y-4 outline-none">
-          {listings.length === 0 ? <EmptyState title="У вас пока нет объявлений." /> : listings.map(l => <ListingCard key={l.id} listing={l} />)}
-        </TabsContent>
-        <TabsContent value="active" className="space-y-4 outline-none">
-          {activeListings.length === 0 ? <EmptyState title="У вас пока нет активных объявлений." /> : activeListings.map(l => <ListingCard key={l.id} listing={l} />)}
-        </TabsContent>
-        <TabsContent value="sold" className="space-y-4 outline-none">
-          {soldListings.length === 0 ? <EmptyState title="Проданных товаров пока нет." showCTA={false} /> : soldListings.map(l => <ListingCard key={l.id} listing={l} />)}
-        </TabsContent>
-        <TabsContent value="deactivated" className="space-y-4 outline-none">
-          {deactivatedListings.length === 0 ? <EmptyState title="У вас нет деактивированных объявлений." showCTA={false} /> : deactivatedListings.map(l => <ListingCard key={l.id} listing={l} />)}
-        </TabsContent>
-        <TabsContent value="archived" className="space-y-4 outline-none">
-          {archivedListings.length === 0 ? <EmptyState title="Архив пуст." showCTA={false} /> : archivedListings.map(l => <ListingCard key={l.id} listing={l} />)}
-        </TabsContent>
+        <div className="space-y-4 outline-none">
+          {listings.length === 0 ? <EmptyState title="Нет объявлений." /> : listings.map(l => <ListingCard key={l.id} listing={l} />)}
+        </div>
+        
+        {totalPages > 1 && (
+          <div className="mt-8 flex justify-center gap-2">
+            <Button variant="outline" disabled={page <= 1} asChild={page > 1}>
+              {page > 1 ? <Link href={buildPageUrl(page - 1)}>Назад</Link> : <span>Назад</span>}
+            </Button>
+            <Button variant="outline" disabled={page >= totalPages} asChild={page < totalPages}>
+              {page < totalPages ? <Link href={buildPageUrl(page + 1)}>Вперед</Link> : <span>Вперед</span>}
+            </Button>
+          </div>
+        )}
       </Tabs>
 
       <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
