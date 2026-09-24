@@ -15,7 +15,7 @@ export default async function MessagesLayout({
     redirect("/login?redirect_to=/messages")
   }
 
-  const { data: chats, error } = await supabase.rpc("get_chats_with_unread")
+  const { data: chats, error } = await supabase.rpc("get_chats_with_unread", { p_limit: 50, p_offset: 0 })
 
   if (error) {
     console.error("Error fetching chats:", error)
