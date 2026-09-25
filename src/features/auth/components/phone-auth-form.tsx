@@ -17,6 +17,7 @@ export function PhoneAuthForm() {
   const [otp, setOtp] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isOtpFocused, setIsOtpFocused] = useState(false)
   
   const [countdown, setCountdown] = useState(0)
 
@@ -24,6 +25,17 @@ export function PhoneAuthForm() {
   const searchParams = useSearchParams()
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabase = supabaseUrl ? createClient() : null
+
+  const otpLength = authMethod === "email" ? 8 : 6;
+
+  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value.replace(/[^0-9]/g, "");
+    if (val.length <= otpLength) {
+      setOtp(val);
+    } else {
+      setOtp(val.slice(0, otpLength));
+    }
+  }
 
   useEffect(() => {
     let timer: NodeJS.Timeout
@@ -242,28 +254,50 @@ export function PhoneAuthForm() {
               <Label htmlFor="otp">Введите код</Label>
               <button 
                 type="button" 
-                onClick={() => setStep("input")}
+                onClick={() => {
+                  setStep("input")
+                  setOtp("")
+                }}
                 className="text-xs text-primary hover:underline font-medium"
               >
                 Изменить
               </button>
             </div>
-            <Input
-              id="otp"
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              placeholder="000000"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              disabled={isLoading}
-              required
-              className="h-14 text-center text-2xl tracking-[0.5em] font-bold bg-muted/50 border-border"
-              maxLength={6}
-            />
+            <div className="relative flex justify-between gap-1 sm:gap-2">
+              <Input
+                id="otp"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="one-time-code"
+                value={otp}
+                onChange={handleOtpChange}
+                onFocus={() => setIsOtpFocused(true)}
+                onBlur={() => setIsOtpFocused(false)}
+                disabled={isLoading}
+                required
+                className="absolute inset-0 w-full h-full opacity-0 z-10 cursor-text"
+                maxLength={otpLength}
+                aria-label={`${otpLength}-значный код`}
+              />
+              <div className="flex w-full justify-between gap-1 sm:gap-2" aria-hidden="true">
+                {Array.from({ length: otpLength }).map((_, i) => {
+                  const char = otp[i] || "";
+                  const isFocused = isOtpFocused && (otp.length === i || (otp.length === otpLength && i === otpLength - 1));
+                  return (
+                    <div 
+                      key={i} 
+                      className={`flex-1 h-12 sm:h-14 flex items-center justify-center border-2 rounded-xl text-lg sm:text-xl font-bold transition-all bg-muted/30 ${char ? 'border-primary text-primary' : 'border-border'} ${isFocused ? 'ring-2 ring-primary/50' : ''}`}
+                    >
+                      {char}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </div>
           
-          <Button type="submit" className="w-full h-12 text-base font-semibold shadow-sm rounded-xl" disabled={isLoading || otp.length < 4}>
+          <Button type="submit" className="w-full h-12 text-base font-semibold shadow-sm rounded-xl" disabled={isLoading || otp.length !== otpLength}>
             {isLoading ? "Проверка..." : "Подтвердить"}
           </Button>
 
