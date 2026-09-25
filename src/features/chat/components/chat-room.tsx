@@ -270,9 +270,15 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing }: Ch
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground"><ShoppingBag className="w-5 h-5" /></div>
                 )}
-                {listing.status !== 'ACTIVE' && (
-                  <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-                    <span className="text-[9px] font-bold uppercase">{listing.status === 'SOLD' ? 'Продано' : 'Неактивно'}</span>
+                {listing.status && listing.status !== 'ACTIVE' && (
+                  <div className="absolute inset-0 bg-background/80 flex items-center justify-center text-center px-1">
+                    <span className="text-[9px] font-bold uppercase">
+                      {listing.status === 'SOLD' ? 'Продано' : 
+                       listing.status === 'ARCHIVED' ? 'В архиве' : 
+                       listing.status === 'OUT_OF_STOCK' ? 'Нет в наличии' : 
+                       listing.status === 'BLOCKED' ? 'Заблокировано' : 
+                       'Неактивно'}
+                    </span>
                   </div>
                 )}
               </div>

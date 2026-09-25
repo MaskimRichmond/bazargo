@@ -20,7 +20,7 @@ export default async function ChatPage(props: { params: Promise<{ id: string }> 
     .from("chats")
     .select(`
       *,
-      listings(title, price, listing_images(url)),
+      listings(id, title, price, status, listing_images(url)),
       buyer:buyer_id(id, full_name, avatar_url),
       seller:seller_id(id, full_name, avatar_url)
     `)
@@ -72,16 +72,24 @@ export default async function ChatPage(props: { params: Promise<{ id: string }> 
               <span className="hidden sm:inline-block w-1 h-1 bg-muted-foreground/30 rounded-full" />
               <span className="hidden sm:inline-block text-[13px] text-muted-foreground">{isBuyer ? "Продавец" : "Покупатель"}</span>
             </div>
-            <Link href={`/product/${listing.id}`} className="text-[12px] sm:text-[13px] font-medium text-primary hover:underline truncate mt-0.5">
-              {listing.title} <span className="text-muted-foreground font-normal ml-1">· {listing.price?.toLocaleString("ru-RU")} сом</span>
-            </Link>
+            {listing ? (
+              <Link href={`/product/${listing.id}`} className="text-[12px] sm:text-[13px] font-medium text-primary hover:underline truncate mt-0.5">
+                {listing.title} <span className="text-muted-foreground font-normal ml-1">· {listing.price?.toLocaleString("ru-RU")} сом</span>
+              </Link>
+            ) : (
+              <span className="text-[12px] sm:text-[13px] font-medium text-muted-foreground truncate mt-0.5">
+                Объявление недоступно
+              </span>
+            )}
           </div>
         </div>
         
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-          <Link href={`/product/${listing.id}`} className="hidden sm:flex items-center justify-center h-9 px-3 rounded-lg hover:bg-muted text-sm font-medium transition-colors">
-            К объявлению
-          </Link>
+          {listing && (
+            <Link href={`/product/${listing.id}`} className="hidden sm:flex items-center justify-center h-9 px-3 rounded-lg hover:bg-muted text-sm font-medium transition-colors">
+              К объявлению
+            </Link>
+          )}
           {/* Action Menu (can be a real dropdown later) */}
           <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors">
             <Store className="w-5 h-5" />
