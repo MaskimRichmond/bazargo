@@ -8,14 +8,20 @@ export const metadata = {
   title: "Избранное | BazarGo"
 }
 
-export default async function FavoritesPage() {
+export default async function FavoritesPage(props: { searchParams: Promise<{ page?: string }> }) {
+  const searchParams = await props.searchParams;
+  const page = parseInt(searchParams.page || "1", 10) || 1
+  const limit = 20
+  const offset = (page - 1) * limit
+
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
 
   let listings: any[] = []
+  let count = 0
 
   if (session) {
-    const { data: favs } = await supabase
+    const { data: favs, count: dbCount } = await supabase
       .from("favorites")
       .select(`
         listing_id,
@@ -25,9 +31,12 @@ export default async function FavoritesPage() {
           categories ( name ),
           listing_images ( url, order_index )
         )
-      `)
+      `, { count: "exact" })
       .eq("user_id", session.user.id)
       .order("created_at", { ascending: false })
+      .range(offset, offset + limit - 1)
+      
+    count = dbCount || 0
 
     if (favs) {
       listings = favs
@@ -91,6 +100,20 @@ export default async function FavoritesPage() {
           {listings.map((item) => (
             <ProductCard key={item.id} product={item} />
           ))}
+        </div>
+      )}
+      
+      {session && count > 20 && (
+        <div className="flex justify-center items-center gap-4 mt-8">
+          <Button variant="outline" disabled={page <= 1} asChild={page > 1}>
+            {page > 1 ? <Link href={`/favorites?page=${page - 1}`}>Назад</Link> : <span>Назад</span>}
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Страница {page} из {Math.ceil(count / 20)}
+          </span>
+          <Button variant="outline" disabled={page >= Math.ceil(count / 20)} asChild={page < Math.ceil(count / 20)}>
+            {page < Math.ceil(count / 20) ? <Link href={`/favorites?page=${page + 1}`}>Вперед</Link> : <span>Вперед</span>}
+          </Button>
         </div>
       )}
     </div>

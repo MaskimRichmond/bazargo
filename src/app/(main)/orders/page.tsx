@@ -17,7 +17,12 @@ const STATUS_MAP: Record<string, { label: string, color: string }> = {
   EXPIRED: { label: "Истёк", color: "text-gray-600 bg-gray-100 dark:bg-gray-800" },
 }
 
-export default async function BuyerOrdersPage() {
+export default async function BuyerOrdersPage(props: { searchParams: Promise<{ page?: string }> }) {
+  const searchParams = await props.searchParams;
+  const page = parseInt(searchParams.page || "1", 10) || 1
+  const limit = 20
+  const offset = (page - 1) * limit
+
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
 
@@ -25,15 +30,18 @@ export default async function BuyerOrdersPage() {
     redirect("/login?next=/orders")
   }
 
-  const { data: orders } = await supabase
+  const { data: orders, count } = await supabase
     .from("orders")
     .select(`
       id, status, total_amount, created_at,
       profiles!seller_id (full_name),
       order_items (id, title_snapshot, quantity, image_url_snapshot)
-    `)
+    `, { count: "exact" })
     .eq("buyer_id", session.user.id)
     .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1)
+    
+  const totalPages = count ? Math.ceil(count / limit) : 1
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -99,6 +107,20 @@ export default async function BuyerOrdersPage() {
               </Link>
             )
           })}
+        </div>
+      )}
+      
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 mt-8">
+          <Button variant="outline" disabled={page <= 1} asChild={page > 1}>
+            {page > 1 ? <Link href={`/orders?page=${page - 1}`}>Назад</Link> : <span>Назад</span>}
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Страница {page} из {totalPages}
+          </span>
+          <Button variant="outline" disabled={page >= totalPages} asChild={page < totalPages}>
+            {page < totalPages ? <Link href={`/orders?page=${page + 1}`}>Вперед</Link> : <span>Вперед</span>}
+          </Button>
         </div>
       )}
     </div>

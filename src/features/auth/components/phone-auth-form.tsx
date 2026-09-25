@@ -191,7 +191,7 @@ export function PhoneAuthForm() {
         <Tabs defaultValue="email" onValueChange={(v) => setAuthMethod(v as "email" | "phone")} className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-4 h-12 rounded-xl">
             <TabsTrigger value="email" className="rounded-lg gap-2 text-sm">
-              <Mail className="w-4 h-4" /> Email (Dev)
+              <Mail className="w-4 h-4" /> Email
             </TabsTrigger>
             <TabsTrigger value="phone" className="rounded-lg gap-2 text-sm">
               <PhoneIcon className="w-4 h-4" /> Телефон
