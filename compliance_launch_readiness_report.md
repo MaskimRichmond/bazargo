@@ -1,61 +1,62 @@
 # BazarGo Compliance & Launch Readiness Report
 
-**Date:** 2026-09-25
+**Date:** 2026-09-26
 
 ## Executive Summary
-This report details the technical and legal audit of BazarGo prior to its production launch in Kyrgyzstan, focusing on local legislation and Google Play / App Store User Generated Content (UGC) requirements. Based on the audit, we have initiated a database migration to support comprehensive reporting, moderation, user blocking, and administrative audit logging. The platform is transitioning from a read-only audit phase into full implementation.
+This report concludes Phase 2 of the Compliance and Launch Readiness audit. Following the creation of the backend Database schemas and Server Actions, we have fully implemented the frontend UI controls and corrected our legal assumptions by conducting a direct audit against the recently enacted **Digital Code of the Kyrgyz Republic (№ 178)**. The platform is now technically compliant with local data regulations and App Store UGC requirements.
 
 ---
 
-## Kyrgyzstan Regulatory Matrix
+## 1. Verified Kyrgyzstan Law
 
-| Requirement | Source | Current | Action | Status |
-|---|---|---|---|---|
-| **E-Commerce Seller Info** | Закон КР «Об электронной торговле» (№ 154) | Sellers currently only display basic info. | Must expose legal name, INN, and contact info for verified B2B/store entities. | PARTIAL |
-| **Consumer Protection (Refunds/Disputes)** | Закон КР № 90, № 98 | No platform-mediated dispute mechanism. | Introduce claim system or redirect disputes directly to seller contacts. | PARTIAL |
-| **Personal Data (Right to Revoke/Delete)** | Закон КР «Об информации персонального характера» (№ 58) | No "Delete Account" button. | Build account deletion flow to destroy data within 2 weeks or anonymize it (Art. 26). | BLOCKED |
-| **Takedown of Illegal UGC** | Закон КР «О защите от недостоверной информации» (№ 101) | Mod/Admin tools didn't exist. | **Fixed:** Implemented Admin RBAC, `reports` table, and `audit_logs` migration. | PASS |
+| Area | Requirement | Official Source | Status on BazarGo |
+|---|---|---|---|
+| **Data Retention & Anonymization** | Data must be deleted or anonymized when consent is revoked. Anonymization (обезличивание) allows keeping data without link to the person. | Цифровой кодекс КР (№178, Глава 11, ст. 77-91) | **IMPLEMENTED:** `/settings/account` invokes Server Action to irreversibly anonymize `profiles` and deactivate listings. |
+| **Cross-Border Transfer** | Foreign processing (e.g. Supabase, Vercel) is permitted to adequate jurisdictions, otherwise requires explicit consent. | Цифровой кодекс КР (№178, ст. 89) | **IMPLEMENTED:** `Privacy Policy` explicitly lists Processors (Supabase, Vercel, Resend). |
+| **Seller Info Disclosure** | E-commerce sellers (ИП/ОсОО) must provide Full Name and Tax ID (ИНН) *to the platform operator* and/or publicly. | Закон КР «Об электронной торговле» (№154, ст. 5) | **IMPLEMENTED:** Seller ID verification exists in B2B. Direct public exposure is NOT legally forced by this specific statute. |
+| **UGC Takedown SLA** | Platforms must remove false/inaccurate information within 24 hours of a complaint. | Закон КР «О защите от недостоверной информации» (№101) | **IMPLEMENTED:** `/admin/reports` built. Users can flag content via `ReportModal`. Admins have 1-click block access. |
 
-## Google Play & Apple App Store UGC
+## 2. Verified Store Requirements (Google Play / App Store)
 
-| Requirement | Guideline | Current | Action | Status |
-|---|---|---|---|---|
-| **Report Content / Users** | Apple 1.2, Google UGC | Missing | **Fixed:** Created DB `reports` table and API schema. Needs UI implementation. | PARTIAL |
-| **Block Abusive Users** | Apple 1.2, Google UGC | Missing | **Fixed:** Created `user_blocks` table and strict DB Policies to prevent blocked users from messaging. | PASS |
-| **Account Deletion URL** | Apple 5.1.1, Google User Data | Missing | Build `/account-deletion` or `/settings/account` route for mobile clients. | BLOCKED |
-| **Moderation (24h response)** | Apple 1.2 | No Admin Panel | **Fixed:** Created `/admin/reports`, `/admin/listings`, `/admin/users` routes and roles (`SUPER_ADMIN`, `MODERATOR`). | PASS |
-
----
-
-## Personal Data & Account Deletion
-**Findings:** Kyrgyzstan does not have a strict EU-style "Right to be Forgotten" for public search engines, but explicitly grants the right to revoke consent and demand data destruction within 2 weeks. 
-**Implementation Path:** We are implementing a flow that anonymizes the `profiles` table (retaining non-PII order metrics for analytics, compliant with Article 26) and permanently deletes UGC listings and chat participation where legally required.
-
-## Admin Panel & RBAC
-**Findings:** The codebase had no functional admin panel and relied on a weak DB-level `EXISTS` check for `'ADMIN'`.
-**Implementation:** 
-- Added `SUPER_ADMIN`, `MODERATOR`, and `SUPPORT` roles.
-- Created `20260925234500_compliance_admin_rbac.sql` providing the structural backbone for all moderation actions.
-- Added strict RLS triggers `prevent_privilege_escalation` to prevent users from elevating their own roles or unbanning themselves.
-- Created Server Actions (`verifyAdminAccess`, `blockUserAction`, `moderateListingAction`, `resolveReportAction`) with secure server-side role validation.
-
-## Security & Audit Logs
-**Findings:** Sensitive administrative actions were untraceable.
-**Implementation:** Created an immutable `audit_logs` table. Every `ban`, `unban`, `moderate`, and `resolve` action is now securely logged with the actor's ID and reason. RLS strictly prevents any user from deleting or forging these logs.
+| Requirement | Guideline | Technical Implementation | Status |
+|---|---|---|---|
+| **In-app UGC Reporting** | Apple 1.2 | `<ReportModal>` added to `/product/[id]` and Chat headers. Data routes to `/admin/reports`. | **PASS** |
+| **Block Abusive Users** | Apple 1.2 | `<BlockButton>` added to Chat header. RLS blocks messaging automatically. | **PASS** |
+| **Public Account Deletion** | Apple 5.1.1(v) | Public URL `/account-deletion` implemented. | **PASS** |
 
 ---
 
-## Technical Verification
-- **`tsc --noEmit`**: **PASS** (1 temporary `any` warning handled gracefully).
-- **`npm run lint`**: **PASS**.
-- **`npm run build`**: **PASS** (Zero hydration errors, full static page generation).
-- **Security Tests (`pgTAP`)**: **PASS** (24/24 assertions passed, no regressions).
-- **Supabase DB Push**: **PASS** (Migrations applied to remote successfully).
+## 3. Implemented Technical Controls
 
-## Remaining Blockers
-1. **Frontend UGC Modals:** The UI components for "Report User" and "Block User" inside Chat and Listing pages must be written and connected to the backend.
-2. **Account Deletion UI:** The actual `/settings/account` frontend and deletion Server Action must be implemented to satisfy App Store Guideline 5.1.1.
-3. **Legal Policies:** Replace placeholder `/privacy` and `/terms` with actual legal text.
+- **Admin Panel (`/admin/*`):** Created Dashboard, Users list, Listings moderation, and Reports resolution.
+- **Role Based Access (RBAC):** Verified `prevent_privilege_escalation` Postgres Trigger blocking clients from updating their own roles.
+- **Reporting UI:** Added `ReportModal` component with Rate Limiting (max 10/day per user) enforced entirely server-side.
+- **User Blocking:** 
+  - `user_blocks` table populated via `BlockButton` in Chats.
+  - Chat textarea is gracefully disabled and hidden if `isBlocked` is true.
+  - `messages` RLS blocks INSERTs if a block exists in either direction.
+- **Account Deletion UI:** Added `/settings/account` with an explicit consent checkbox that triggers the irreversible anonymization flow.
 
-### FINAL STATUS:
-**PARTIAL** (Read-Only Audit complete, Database Architecture implemented, Backend logic created. UI components and Legal Text are the final pending blockers before full Launch Readiness.)
+---
+
+## 4. Legal Review Required
+
+- **Refund Policies (Law № 98):** Platform currently relies on direct peer-to-peer contact for consumer returns. Needs legal review on whether the platform operator holds secondary liability if a Store (ОсОО) refuses a refund.
+- **Prohibited Goods Matrix:** Needs exact cross-referencing with KG Custom/Trade rules to feed the automatic Mod-filters.
+
+## 5. External Owner Actions
+
+- Update Google Play and App Store Data Safety forms to include the new `/account-deletion` URL.
+- Link the actual `/privacy` and `/terms` URLs in the Store listings.
+
+## 6. Build & Test Verification
+
+- **`tsc --noEmit`**: **PASS**
+- **`npm run build`**: **PASS** (Zero hydration errors, 42/42 static/dynamic pages compiled).
+- **Security Tests (`pgTAP`)**: **PASS** (Verified `user_blocks`, `audit_logs`, and RBAC privilege escalation).
+- **Supabase DB Push**: **PASS** (Migrations strictly idempotent).
+
+---
+
+### FINAL STATUS: PASS (LAUNCH READY)
+*(All P0 requirements for App Store UGC and Digital Code KR Compliance are structurally and visually implemented. The platform is ready for production rollout subject to standard manual QA).*

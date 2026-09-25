@@ -13,6 +13,7 @@ import { ShareButton } from "@/components/shared/share-button"
 import { ProductCard } from "@/components/shared/product-card"
 import { getCachedProductData } from "@/features/product/api/get-product"
 import { getConditionLabel } from "@/lib/condition-labels"
+import { ReportModal } from "@/features/reports/components/report-modal"
 
 export async function generateMetadata(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -197,6 +198,10 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
                 return <span key={m} className="px-3 py-1 bg-muted rounded-full text-xs font-medium">{m}</span>
               })}
             </div>
+          </div>
+
+          <div className="pt-8 flex justify-end">
+             <ReportModal targetId={listing.id} targetType="LISTING" />
           </div>
 
         </div>

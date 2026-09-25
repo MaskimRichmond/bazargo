@@ -21,9 +21,10 @@ interface ChatRoomProps {
   currentUserId: string
   initialMessages: Message[]
   listing?: any
+  isBlocked?: boolean
 }
 
-export function ChatRoom({ chatId, currentUserId, initialMessages, listing }: ChatRoomProps) {
+export function ChatRoom({ chatId, currentUserId, initialMessages, listing, isBlocked }: ChatRoomProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [content, setContent] = useState("")
   const [isSending, setIsSending] = useState(false)
@@ -340,28 +341,34 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing }: Ch
 
       <div className="p-2 sm:p-3 bg-background border-t shrink-0 relative z-10 shadow-[0_-10px_20px_rgba(0,0,0,0.02)]">
         {error && <p className="text-destructive text-xs mb-2 px-2 text-center font-medium">{error}</p>}
-        <div className="flex items-end gap-2 max-w-4xl mx-auto">
-          <div className="flex-1 bg-muted/40 rounded-[22px] border border-border/60 focus-within:border-primary focus-within:bg-background transition-colors flex items-end shadow-sm overflow-hidden">
-            <textarea
-              ref={textareaRef}
-              value={content}
-              onChange={handleInput}
-              onKeyDown={handleKeyDown}
-              placeholder="Написать сообщение..."
-              className="flex-1 max-h-[120px] min-h-[44px] py-[11px] px-4 bg-transparent outline-none resize-none text-[15px] leading-relaxed no-scrollbar"
-              rows={1}
-              disabled={isSending}
-            />
+        {isBlocked ? (
+          <div className="flex items-center justify-center p-3 text-muted-foreground text-sm font-medium bg-muted/50 rounded-xl">
+            Отправка сообщений ограничена, так как пользователь заблокирован.
           </div>
-          <Button 
-            onClick={handleSend} 
-            disabled={isSending || !content.trim()} 
-            className="h-[44px] w-[44px] shrink-0 rounded-full p-0 flex items-center justify-center shadow-md transition-transform active:scale-95 bg-primary text-primary-foreground hover:bg-primary/90"
-            size="icon"
-          >
-            <Send className="w-5 h-5 -ml-0.5" />
-          </Button>
-        </div>
+        ) : (
+          <div className="flex items-end gap-2 max-w-4xl mx-auto">
+            <div className="flex-1 bg-muted/40 rounded-[22px] border border-border/60 focus-within:border-primary focus-within:bg-background transition-colors flex items-end shadow-sm overflow-hidden">
+              <textarea
+                ref={textareaRef}
+                value={content}
+                onChange={handleInput}
+                onKeyDown={handleKeyDown}
+                placeholder="Написать сообщение..."
+                className="flex-1 max-h-[120px] min-h-[44px] py-[11px] px-4 bg-transparent outline-none resize-none text-[15px] leading-relaxed no-scrollbar"
+                rows={1}
+                disabled={isSending}
+              />
+            </div>
+            <Button 
+              onClick={handleSend} 
+              disabled={isSending || !content.trim()} 
+              className="h-[44px] w-[44px] shrink-0 rounded-full p-0 flex items-center justify-center shadow-md transition-transform active:scale-95 bg-primary text-primary-foreground hover:bg-primary/90"
+              size="icon"
+            >
+              <Send className="w-5 h-5 -ml-0.5" />
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )

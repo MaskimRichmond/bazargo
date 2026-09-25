@@ -3,6 +3,8 @@ import { notFound, redirect } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Store } from "lucide-react"
 import { ChatRoom } from "@/features/chat/components/chat-room"
+import { BlockButton } from "@/features/blocks/components/block-button"
+import { ReportModal } from "@/features/reports/components/report-modal"
 
 export default async function ChatPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -44,12 +46,20 @@ export default async function ChatPage(props: { params: Promise<{ id: string }> 
     .order("created_at", { ascending: false })
     .limit(50)
 
-  // Reverse them so they are in chronological order for the UI
   const messages = rawMessages ? [...rawMessages].reverse() : []
-
   const isBuyer = session.user.id === chat.buyer_id
   const otherUser = isBuyer ? chat.seller : chat.buyer
   const listing = chat.listings
+
+  // Check block status
+  const { data: blockData } = await supabase
+    .from("user_blocks")
+    .select("blocker_id")
+    .or(`and(blocker_id.eq.${session.user.id},blocked_id.eq.${otherUser.id}),and(blocker_id.eq.${otherUser.id},blocked_id.eq.${session.user.id})`)
+
+  const isBlockedByMe = blockData?.some((b: any) => b.blocker_id === session.user.id) || false
+  const isBlockedByThem = blockData?.some((b: any) => b.blocker_id === otherUser.id) || false
+  const isBlocked = isBlockedByMe || isBlockedByThem
 
   return (
     <div className="flex flex-col flex-1 bg-background relative w-full min-w-0 overflow-hidden">
@@ -85,15 +95,8 @@ export default async function ChatPage(props: { params: Promise<{ id: string }> 
         </div>
         
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-          {listing && (
-            <Link href={`/product/${listing.id}`} className="hidden sm:flex items-center justify-center h-9 px-3 rounded-lg hover:bg-muted text-sm font-medium transition-colors">
-              К объявлению
-            </Link>
-          )}
-          {/* Action Menu (can be a real dropdown later) */}
-          <button className="p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors">
-            <Store className="w-5 h-5" />
-          </button>
+          <ReportModal targetId={otherUser.id} targetType="USER" />
+          <BlockButton userId={otherUser.id} isInitiallyBlocked={isBlockedByMe} />
         </div>
       </div>
 
@@ -102,6 +105,7 @@ export default async function ChatPage(props: { params: Promise<{ id: string }> 
         currentUserId={session.user.id} 
         initialMessages={messages || []}
         listing={listing}
+        isBlocked={isBlocked}
       />
     </div>
   )
