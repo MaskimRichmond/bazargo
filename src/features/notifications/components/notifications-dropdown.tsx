@@ -38,29 +38,35 @@ export function NotificationsDropdown() {
     fetchNotifications()
 
     // Realtime subscription specifically for this user's notifications
+    let isMounted = true
     let subscription: any = null
 
     supabase.auth.getSession().then(({ data: { session } }: any) => {
-      if (session) {
-        subscription = supabase
-          .channel(`notifications:${session.user.id}`)
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "notifications",
-              filter: `user_id=eq.${session.user.id}`,
-            },
-            () => {
-              fetchNotifications()
-            }
-          )
-          .subscribe()
-      }
+      if (!isMounted || !session) return
+
+      // Append random string to channel name to prevent "already subscribed" errors 
+      // during React StrictMode or HMR rapid mount/unmount cycles.
+      const channelName = `notifications_${session.user.id}_${Math.random().toString(36).substring(7)}`
+
+      subscription = supabase
+        .channel(channelName)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${session.user.id}`,
+          },
+          () => {
+            fetchNotifications()
+          }
+        )
+        .subscribe()
     })
 
     return () => {
+      isMounted = false
       if (subscription) {
         supabase.removeChannel(subscription)
       }
