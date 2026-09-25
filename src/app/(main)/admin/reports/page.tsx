@@ -8,8 +8,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 export default async function AdminReportsPage() {
-  const isAuthorized = await verifyAdminAccess()
-  if (!isAuthorized) redirect("/")
+  const authRes = await verifyAdminAccess()
+  if (!authRes.authorized) redirect("/")
 
   const supabase = await createClient()
   

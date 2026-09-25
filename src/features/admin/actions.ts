@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache"
 export async function verifyAdminAccess() {
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) throw new Error("Unauthorized")
+  if (authError || !user) return { authorized: false as const }
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -15,25 +15,21 @@ export async function verifyAdminAccess() {
     .single()
 
   if (!profile || !["ADMIN", "SUPER_ADMIN", "MODERATOR"].includes(profile.role)) {
-    throw new Error("Forbidden: Admin access required")
+    return { authorized: false as const }
   }
 
-  return { user, role: profile.role }
+  return { authorized: true as const, user, role: profile.role }
 }
 
 export async function blockUserAction(userId: string, reason: string) {
-  const { user, role } = await verifyAdminAccess()
+  const authRes = await verifyAdminAccess()
+  if (!authRes.authorized) throw new Error("Unauthorized")
+  const { user, role } = authRes
   if (!["ADMIN", "SUPER_ADMIN"].includes(role)) {
     throw new Error("Forbidden: Insufficient privileges")
   }
 
   const supabase = await createClient()
-  
-  // Need to bypass RLS for updating sensitive profile fields, so we use service_role client or secure RPC.
-  // Wait, updating `is_banned` triggers RLS. Our migration added a trigger to allow `service_role` or existing Admin to update it.
-  // Since we are calling from the Server Action with `createClient()` (which runs as the logged in Admin), the trigger:
-  // IF NOT service_role -> check if current user is ADMIN.
-  // We ARE an ADMIN, so the trigger will allow it!
 
   const { error } = await supabase
     .from("profiles")
@@ -54,7 +50,9 @@ export async function blockUserAction(userId: string, reason: string) {
 }
 
 export async function unblockUserAction(userId: string, reason: string) {
-  const { user, role } = await verifyAdminAccess()
+  const authRes = await verifyAdminAccess()
+  if (!authRes.authorized) throw new Error("Unauthorized")
+  const { user, role } = authRes
   if (!["ADMIN", "SUPER_ADMIN"].includes(role)) {
     throw new Error("Forbidden: Insufficient privileges")
   }
@@ -79,7 +77,9 @@ export async function unblockUserAction(userId: string, reason: string) {
 }
 
 export async function moderateListingAction(listingId: string, status: 'ACTIVE' | 'DEACTIVATED' | 'BLOCKED', reason: string) {
-  const { user } = await verifyAdminAccess()
+  const authRes = await verifyAdminAccess()
+  if (!authRes.authorized) throw new Error("Unauthorized")
+  const { user } = authRes
 
   const supabase = await createClient()
   const { error } = await supabase
@@ -102,7 +102,9 @@ export async function moderateListingAction(listingId: string, status: 'ACTIVE' 
 }
 
 export async function resolveReportAction(reportId: string, resolutionStatus: 'RESOLVED' | 'REJECTED', notes: string) {
-  const { user } = await verifyAdminAccess()
+  const authRes = await verifyAdminAccess()
+  if (!authRes.authorized) throw new Error("Unauthorized")
+  const { user } = authRes
 
   const supabase = await createClient()
   const { error } = await supabase

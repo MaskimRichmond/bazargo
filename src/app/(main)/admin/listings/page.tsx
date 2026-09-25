@@ -9,8 +9,8 @@ import Link from "next/link"
 import { ExternalLink } from "lucide-react"
 
 export default async function AdminListingsPage() {
-  const isAuthorized = await verifyAdminAccess()
-  if (!isAuthorized) redirect("/")
+  const authRes = await verifyAdminAccess()
+  if (!authRes.authorized) redirect("/")
 
   const supabase = await createClient()
   
