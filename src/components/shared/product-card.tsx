@@ -3,6 +3,7 @@ import { MapPin, CheckCircle2, Star } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { ImageWithFallback } from "@/components/shared/image-with-fallback"
 import { FavoriteButton } from "@/components/shared/favorite-button"
+import { getConditionLabel } from "@/lib/condition-labels"
 
 interface ProductCardProps {
   product: {
@@ -70,7 +71,7 @@ export function ProductCard({ product }: ProductCardProps) {
           
           <div className="pt-2.5 border-t border-border/50 flex flex-col gap-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground bg-muted px-1.5 py-0.5 rounded text-[10px] font-medium">{product.condition}</span>
+              <span className="text-muted-foreground bg-muted px-1.5 py-0.5 rounded text-[10px] font-medium">{getConditionLabel(product.condition)}</span>
               {product.seller.rating !== undefined && product.seller.rating > 0 && (
                 <div className="flex items-center gap-1 shrink-0">
                   <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />

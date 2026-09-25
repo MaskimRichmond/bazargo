@@ -12,6 +12,7 @@ import { ProductImageGallery } from "@/components/shared/product-image-gallery"
 import { ShareButton } from "@/components/shared/share-button"
 import { ProductCard } from "@/components/shared/product-card"
 import { getCachedProductData } from "@/features/product/api/get-product"
+import { getConditionLabel } from "@/lib/condition-labels"
 
 export async function generateMetadata(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -165,10 +166,7 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
             <div className="grid grid-cols-2 gap-y-2 text-sm">
               <div className="text-muted-foreground">Состояние</div>
               <div className="font-medium">
-                {listing.condition === "NEW" ? "Новое" : 
-                 listing.condition === "USED_LIKE_NEW" ? "Б/у (идеальное)" : 
-                 listing.condition === "USED_GOOD" ? "Б/у (хорошее)" : 
-                 listing.condition === "USED_FAIR" ? "Б/у (нормальное)" : "На запчасти"}
+                {getConditionLabel(listing.condition)}
               </div>
               <div className="text-muted-foreground">Город</div>
               <div className="font-medium flex items-center gap-1"><MapPin className="w-4 h-4 text-muted-foreground"/> {listing.city}</div>

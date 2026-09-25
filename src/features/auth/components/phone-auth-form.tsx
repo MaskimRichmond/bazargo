@@ -58,10 +58,17 @@ export function PhoneAuthForm() {
       let authError;
       
       if (authMethod === "email") {
+        const rawRedirect = searchParams.get("redirect_to")
+        let nextParam = "/profile"
+        if (rawRedirect && rawRedirect.startsWith("/") && !rawRedirect.startsWith("//")) {
+          nextParam = rawRedirect
+        }
+
         const { error } = await supabase.auth.signInWithOtp({
           email: identifier,
           options: {
-            data: { full_name: name.trim() }
+            data: { full_name: name.trim() },
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextParam)}`
           }
         })
         authError = error
