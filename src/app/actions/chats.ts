@@ -76,6 +76,17 @@ export async function sendMessage(chatId: string, content: string) {
     return { success: false, error: "Слишком длинное сообщение (максимум 2000 символов)" }
   }
 
+  // Rate Limit: 100 messages per 15 minutes (reasonable production baseline)
+  const { data: rateOk } = await supabase.rpc("check_rate_limit", { 
+    p_action_type: "send_message",
+    p_limit: 100,
+    p_window_minutes: 15
+  })
+
+  if (rateOk === false) {
+    return { success: false, error: "Превышен лимит отправки сообщений. Пожалуйста, подождите." }
+  }
+
   // Use the RPC to insert message and update chat timestamp atomically
   const { data: message, error } = await supabase
     .rpc("send_message_transaction", {

@@ -163,6 +163,15 @@ export async function checkoutCart() {
   
   if (!session) return { error: "Необходима авторизация" }
 
+  const { count } = await supabase
+    .from("cart_items")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", session.user.id)
+
+  if (count === 0) {
+    return { error: "Корзина пуста. Нечего оформлять." }
+  }
+
   const { data, error } = await supabase.rpc("create_orders_from_cart")
 
   if (error) {
