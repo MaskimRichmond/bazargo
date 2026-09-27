@@ -7,16 +7,6 @@ import { redirect } from "next/navigation"
 
 /**
  * Secure account deletion workflow using a robust retryable state machine approach.
- * 
- * Steps:
- * 1. Authenticate user.
- * 2. Fetch all user-owned files from `storage.objects` (using service_role to query the storage schema).
- * 3. Delete physical files via the official Supabase Storage API. (Retry-safe, fails fast).
- * 4. Atomic DB cleanup via RPC (anonymize profile, deactivate listings, block stores, audit log).
- * 5. Tombstone Auth identity (scramble email/password, revoke sessions).
- * 6. Sign out local session.
- * 
- * If any step fails, the operation throws an error, allowing the user to safely retry.
  */
 export async function deleteAccountAction() {
   const supabase = await createClient()
@@ -28,65 +18,101 @@ export async function deleteAccountAction() {
 
   const adminClient = createAdminClient()
   
-  // Step 2: Storage Cleanup
-  // Fetch all objects owned by the user from the storage schema
-  const { data: storageObjects, error: storageFetchError } = await adminClient
-    .schema('storage')
-    .from('objects')
-    .select('bucket_id, name')
-    .eq('owner', user.id)
+  // Step 1: Initialize or update State Machine
+  const { data: request, error: reqError } = await adminClient
+    .from('account_deletion_requests')
+    .upsert({ 
+      user_id: user.id, 
+      status: 'PROCESSING',
+      error_details: null
+    }, { onConflict: 'user_id' })
+    .select()
+    .single()
 
-  if (storageFetchError) {
-    throw new Error("Не удалось получить список файлов для удаления. Ошибка: " + storageFetchError.message)
+  if (reqError) {
+    throw new Error("Не удалось инициировать процесс удаления. " + reqError.message)
   }
 
-  if (storageObjects && storageObjects.length > 0) {
-    // Group files by bucket
+  try {
+    // Step 2: Storage Cleanup with Pagination
+    let page = 0
+    const limit = 1000
     const bucketFiles: Record<string, string[]> = {}
-    for (const obj of storageObjects) {
-      if (!bucketFiles[obj.bucket_id]) bucketFiles[obj.bucket_id] = []
-      bucketFiles[obj.bucket_id].push(obj.name)
+
+    while (true) {
+      const { data: storageObjects, error: storageFetchError } = await adminClient
+        .schema('storage')
+        .from('objects')
+        .select('bucket_id, name')
+        .eq('owner', user.id)
+        .range(page * limit, (page + 1) * limit - 1)
+
+      if (storageFetchError) throw new Error("Storage fetch error: " + storageFetchError.message)
+      if (!storageObjects || storageObjects.length === 0) break
+
+      for (const obj of storageObjects) {
+        if (!bucketFiles[obj.bucket_id]) bucketFiles[obj.bucket_id] = []
+        bucketFiles[obj.bucket_id].push(obj.name)
+      }
+
+      if (storageObjects.length < limit) break
+      page++
     }
 
-    // Call the official Storage API to remove physical files
     for (const [bucket, files] of Object.entries(bucketFiles)) {
-      const { error: removeError } = await adminClient.storage.from(bucket).remove(files)
-      if (removeError) {
-         // Fails early, safe to retry later (idempotent)
-         throw new Error(`Ошибка при удалении файлов из ${bucket}: ` + removeError.message)
+      // Chunk deletions if there are too many files in one bucket
+      const chunkSize = 100
+      for (let i = 0; i < files.length; i += chunkSize) {
+        const chunk = files.slice(i, i + chunkSize)
+        const { error: removeError } = await adminClient.storage.from(bucket).remove(chunk)
+        if (removeError) throw new Error(`Ошибка при удалении файлов из ${bucket}: ` + removeError.message)
       }
     }
-  }
-  
-  // Step 3: Atomic DB cleanup via RPC
-  const { error: rpcError } = await adminClient.rpc("process_account_deletion", {
-    p_user_id: user.id
-  })
-  
-  if (rpcError) {
-    throw new Error("Не удалось обработать удаление бизнес-данных. Ошибка: " + rpcError.message)
+    
+    // Step 3: Atomic DB cleanup via RPC
+    const { error: rpcError } = await adminClient.rpc("process_account_deletion", {
+      p_user_id: user.id
+    })
+    
+    if (rpcError) throw new Error("DB cleanup error: " + rpcError.message)
+
+    // Step 4: Tombstone Auth identity
+    const scrambledEmail = `deleted-${user.id}@tombstone.bazargo.internal`
+    const scrambledPassword = crypto.randomUUID() + crypto.randomUUID()
+    
+    const { error: tombstoneError } = await adminClient.auth.admin.updateUserById(user.id, {
+      email: scrambledEmail,
+      password: scrambledPassword,
+      email_confirm: true,
+      phone: "",
+      phone_confirm: true,
+      user_metadata: { deleted: true, deleted_at: new Date().toISOString() },
+      app_metadata: { deleted: true, providers: [] },
+      ban_duration: "876000h" // 100 years
+    })
+    
+    if (tombstoneError) {
+      // Even if this fails, DB is clean, but user can still log in. Must be marked FAILED for retry.
+      throw new Error("Auth tombstone error: " + tombstoneError.message)
+    }
+    
+    // Step 5: Mark State Machine as COMPLETED
+    await adminClient
+      .from('account_deletion_requests')
+      .update({ status: 'COMPLETED', completed_at: new Date().toISOString() })
+      .eq('user_id', user.id)
+
+  } catch (err: any) {
+    // Mark FAILED
+    await adminClient
+      .from('account_deletion_requests')
+      .update({ status: 'FAILED', error_details: err.message })
+      .eq('user_id', user.id)
+
+    throw new Error(err.message || "Произошла ошибка при удалении. Пожалуйста, повторите попытку.")
   }
 
-  // Step 4: Tombstone Auth identity
-  const scrambledEmail = `deleted-${user.id}@tombstone.bazargo.internal`
-  const scrambledPassword = crypto.randomUUID() + crypto.randomUUID()
-  
-  const { error: tombstoneError } = await adminClient.auth.admin.updateUserById(user.id, {
-    email: scrambledEmail,
-    password: scrambledPassword,
-    email_confirm: true,
-    phone: "",
-    phone_confirm: true,
-    user_metadata: { deleted: true, deleted_at: new Date().toISOString() },
-    app_metadata: { deleted: true, providers: [] },
-    ban_duration: "87600h" // 10 years
-  })
-  
-  if (tombstoneError) {
-    throw new Error("Данные обезличены, но не удалось заблокировать аутентификацию. Обратитесь в поддержку.")
-  }
-  
-  // Step 5: Global Sign-Out
+  // Step 6: Global Sign-Out
   await supabase.auth.signOut({ scope: 'global' })
 
   revalidatePath("/")
