@@ -86,7 +86,7 @@ export default async function AdminAuditLogsPage(
                   </td>
                 </tr>
               )}
-              {logs?.map((log: any) => (
+              {logs?.map((log: Record<string, any>) => (
                 <tr key={log.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
                     {new Date(log.created_at).toLocaleString('ru-RU')}

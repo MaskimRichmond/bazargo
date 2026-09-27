@@ -84,7 +84,7 @@ export default async function AdminAccountDeletionsPage(
                   </td>
                 </tr>
               )}
-              {requests?.map((req: any) => (
+              {requests?.map((req: Record<string, any>) => (
                 <tr key={req.user_id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 font-medium">
                     {req.profiles?.full_name || "Удален/Аноним"}

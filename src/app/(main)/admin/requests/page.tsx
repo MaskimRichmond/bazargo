@@ -82,7 +82,7 @@ export default async function AdminB2bRequestsPage(
                   </td>
                 </tr>
               )}
-              {apps?.map((app: any) => (
+              {apps?.map((app: Record<string, any>) => (
                 <tr key={app.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 font-medium">
                     {app.company_name}

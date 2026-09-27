@@ -85,7 +85,7 @@ export default async function AdminReportsPage(
                   </td>
                 </tr>
               )}
-              {reports?.map((report: any) => (
+              {reports?.map((report: Record<string, any>) => (
                 <tr key={report.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 font-medium">
                     <div className="text-xs font-mono">{report.id.split('-')[0]}...</div>

@@ -85,7 +85,7 @@ export default async function AdminOrdersPage(
                   </td>
                 </tr>
               )}
-              {orders?.map((order: any) => (
+              {orders?.map((order: Record<string, any>) => (
                 <tr key={order.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 font-medium font-mono text-xs">
                     {order.id.split('-')[0]}...
