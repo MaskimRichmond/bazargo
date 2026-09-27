@@ -47,6 +47,7 @@ export async function blockUserAction(userId: string, reason: string) {
   
   const adminClient = createAdminClient()
   const { data, error } = await adminClient.rpc("admin_block_user", {
+    p_actor_id: authRes.user.id,
     p_target_user_id: userId,
     p_reason: reason.trim()
   })
@@ -68,6 +69,7 @@ export async function unblockUserAction(userId: string, reason: string) {
   
   const adminClient = createAdminClient()
   const { data, error } = await adminClient.rpc("admin_unblock_user", {
+    p_actor_id: authRes.user.id,
     p_target_user_id: userId,
     p_reason: reason.trim()
   })
@@ -89,6 +91,7 @@ export async function moderateListingAction(listingId: string, status: 'ACTIVE' 
 
   const adminClient = createAdminClient()
   const { data, error } = await adminClient.rpc("admin_moderate_listing", {
+    p_actor_id: authRes.user.id,
     p_listing_id: listingId,
     p_new_status: status,
     p_reason: reason.trim()
@@ -111,6 +114,7 @@ export async function resolveReportAction(reportId: string, resolutionStatus: 'R
 
   const adminClient = createAdminClient()
   const { data, error } = await adminClient.rpc("admin_resolve_report", {
+    p_actor_id: authRes.user.id,
     p_report_id: reportId,
     p_resolution: resolutionStatus,
     p_notes: notes.trim()
