@@ -1,16 +1,27 @@
 BEGIN;
-SELECT plan(3);
+SELECT plan(4);
 
 -- Test cleanup_user_storage
 INSERT INTO auth.users (id, email) VALUES
     ('00000000-0000-0000-0000-000000000999', 'storage-test@example.com');
 
 -- We can't insert directly into storage.objects easily without satisfying its FKs to storage.buckets
--- Let's just make sure the function executes without crashing
+-- Let's just make sure the function executes without crashing under service_role
+SET ROLE service_role;
 SELECT lives_ok(
     $$ SELECT public.cleanup_user_storage('00000000-0000-0000-0000-000000000999') $$,
-    'cleanup_user_storage executes without error'
+    'cleanup_user_storage executes without error as service_role'
 );
+RESET ROLE;
+
+SET ROLE authenticated;
+SELECT throws_ok(
+    $$ SELECT public.cleanup_user_storage('00000000-0000-0000-0000-000000000999') $$,
+    'P0001',
+    'Unauthorized to clean up storage for this user',
+    'cleanup_user_storage throws unauthorized for arbitrary user'
+);
+RESET ROLE;
 
 -- Test report immutable fields
 INSERT INTO auth.users (id, email) VALUES ('00000000-0000-0000-0000-000000000998', 'reporter@example.com');

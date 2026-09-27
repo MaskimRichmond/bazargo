@@ -67,13 +67,26 @@ export async function deleteAccountAction() {
     })
 
   // 5. Clean up Storage files owned by user (RPC)
-  await adminAuthClient.rpc("cleanup_user_storage", { uid: user.id })
+  const { error: storageError } = await adminAuthClient.rpc("cleanup_user_storage", { uid: user.id })
+  if (storageError) {
+    throw new Error("Failed to cleanup user storage: " + storageError.message)
+  }
 
-  // 6. Delete the actual Auth User (App Store Guideline 5.1.1(v) requirement)
-  const { error: deleteError } = await adminAuthClient.auth.admin.deleteUser(user.id)
+  // 6. Tombstone the Auth User to prevent catastrophic CASCADE data loss
+  // If we call deleteUser(), ON DELETE CASCADE destroys orders and chats, breaking platform integrity.
+  // We satisfy account deletion by fully anonymizing the identity and severing access.
+  const scrambledEmail = `deleted-${user.id}@banned.local`
+  const scrambledPassword = crypto.randomUUID() + crypto.randomUUID()
+  
+  const { error: deleteError } = await adminAuthClient.auth.admin.updateUserById(user.id, {
+    email: scrambledEmail,
+    password: scrambledPassword,
+    user_metadata: { deleted: true, deleted_at: new Date().toISOString() },
+    app_metadata: { providers: ['email'] } // Clear oauth providers if any
+  })
   
   if (deleteError) {
-    throw new Error("Failed to delete auth account. Please contact support. " + deleteError.message)
+    throw new Error("Failed to tombstone auth account. Please contact support. " + deleteError.message)
   }
   
   // 7. Sign out the local session
