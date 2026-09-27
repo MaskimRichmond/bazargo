@@ -1,71 +1,67 @@
-import { createClient } from "@/lib/supabase/server"
-import { ShieldCheck, Users, AlertTriangle, Package } from "lucide-react"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { verifyAdminAccess } from "@/features/admin/actions"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Users, Package, AlertTriangle, Store, ShoppingCart, Activity } from "lucide-react"
 
-export default async function AdminDashboard() {
-  const supabase = await createClient()
+export const metadata = {
+  title: "Admin Dashboard | BazarGo",
+}
 
-  // For a real dashboard, we would run these concurrently with Promise.all
-  // and use exact counts without pulling data.
-  const { count: usersCount } = await supabase.from("profiles").select("*", { count: "exact", head: true })
-  const { count: listingsCount } = await supabase.from("listings").select("*", { count: "exact", head: true })
-  const { count: reportsCount } = await supabase.from("reports").select("*", { count: "exact", head: true }).eq("status", "OPEN")
-  const { count: storesCount } = await supabase.from("stores").select("*", { count: "exact", head: true })
+export default async function AdminDashboardPage() {
+  const authRes = await verifyAdminAccess()
+  if (!authRes.authorized) return null
+
+  const adminClient = createAdminClient()
+
+  // We can run these counts concurrently
+  const [
+    { count: usersCount },
+    { count: listingsCount },
+    { count: reportsCount },
+    { count: storesCount },
+    { count: ordersCount },
+  ] = await Promise.all([
+    adminClient.from('profiles').select('*', { count: 'exact', head: true }),
+    adminClient.from('listings').select('*', { count: 'exact', head: true }),
+    adminClient.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'PENDING'),
+    adminClient.from('stores').select('*', { count: 'exact', head: true }),
+    adminClient.from('orders').select('*', { count: 'exact', head: true })
+  ])
+
+  const stats = [
+    { label: "Total Users", value: usersCount || 0, icon: Users, color: "text-blue-500" },
+    { label: "Active Listings", value: listingsCount || 0, icon: Package, color: "text-green-500" },
+    { label: "Pending Reports", value: reportsCount || 0, icon: AlertTriangle, color: "text-orange-500" },
+    { label: "Total Stores", value: storesCount || 0, icon: Store, color: "text-pink-500" },
+    { label: "Total Orders", value: ordersCount || 0, icon: ShoppingCart, color: "text-purple-500" }
+  ]
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of BazarGo platform metrics.</p>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Activity className="w-6 h-6 text-primary" />
+          Dashboard Overview
+        </h1>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-card border rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-500/10 text-blue-500 rounded-xl">
-              <Users className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Users</p>
-              <p className="text-2xl font-bold">{usersCount || 0}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-card border rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-green-500/10 text-green-500 rounded-xl">
-              <Package className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Active Listings</p>
-              <p className="text-2xl font-bold">{listingsCount || 0}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-card border rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-orange-500/10 text-orange-500 rounded-xl">
-              <AlertTriangle className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Pending Reports</p>
-              <p className="text-2xl font-bold">{reportsCount || 0}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-card border rounded-2xl p-6 shadow-sm">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-purple-500/10 text-purple-500 rounded-xl">
-              <ShieldCheck className="w-6 h-6" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Stores</p>
-              <p className="text-2xl font-bold">{storesCount || 0}</p>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {stats.map((s, idx) => {
+          const Icon = s.icon
+          return (
+            <Card key={idx}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {s.label}
+                </CardTitle>
+                <Icon className={`w-4 h-4 ${s.color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold">{s.value.toLocaleString('ru-RU')}</div>
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
     </div>
   )
