@@ -17,8 +17,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     .eq("id", user.id)
     .single()
 
-  if (!profile || !["ADMIN", "SUPER_ADMIN", "MODERATOR"].includes(profile.role)) {
-    redirect("/") // Or an unauthorized page
+  if (!profile || !["ADMIN", "SUPER_ADMIN", "MODERATOR", "SUPPORT"].includes(profile.role)) {
+    redirect("/")
   }
 
   return (

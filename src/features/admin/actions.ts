@@ -3,8 +3,12 @@
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
-import { hasPermission, Role, Permission } from "@/lib/rbac"
+import { hasPermission, type Role, type Permission } from "@/lib/rbac"
 
+/**
+ * Verifies the current user has admin-area access and optionally a specific permission.
+ * Returns structured result — never throws, so callers can redirect gracefully.
+ */
 export async function verifyAdminAccess(requiredPermission?: Permission) {
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -20,146 +24,100 @@ export async function verifyAdminAccess(requiredPermission?: Permission) {
 
   const role = profile.role as Role
 
-  if (requiredPermission && !hasPermission(role, requiredPermission)) {
+  // Minimum bar for admin area access
+  if (!["SUPPORT", "MODERATOR", "ADMIN", "SUPER_ADMIN"].includes(role)) {
     return { authorized: false as const }
   }
 
-  // Ensure minimum access for general admin area
-  if (!["ADMIN", "SUPER_ADMIN", "MODERATOR"].includes(role)) {
+  if (requiredPermission && !hasPermission(role, requiredPermission)) {
     return { authorized: false as const }
   }
 
   return { authorized: true as const, user, role }
 }
 
+/**
+ * Block a user. Uses atomic DB RPC — mutation + audit in one transaction.
+ */
 export async function blockUserAction(userId: string, reason: string) {
   const authRes = await verifyAdminAccess('USERS_BAN')
   if (!authRes.authorized) throw new Error("Unauthorized: Insufficient privileges")
   
+  if (!userId || !reason?.trim()) throw new Error("Invalid input: userId and reason are required")
+  
   const adminClient = createAdminClient()
-
-  // Verify target user exists
-  const { data: targetProfile, error: targetError } = await adminClient
-    .from("profiles")
-    .select("id, role")
-    .eq("id", userId)
-    .single()
-
-  if (targetError || !targetProfile) throw new Error("Target user not found")
-  
-  // Prevent escalation: Admin cannot ban a Super Admin
-  if (targetProfile.role === 'SUPER_ADMIN' && authRes.role !== 'SUPER_ADMIN') {
-    throw new Error("Forbidden: Cannot modify SUPER_ADMIN")
-  }
-
-  const { data, error } = await adminClient
-    .from("profiles")
-    .update({ is_banned: true, ban_reason: reason, banned_at: new Date().toISOString() })
-    .eq("id", userId)
-    .select()
-    .single()
-
-  if (error || !data) throw new Error(error?.message || "Failed to block user (no rows affected)")
-    
-  const { error: auditError } = await adminClient.from("audit_logs").insert({
-    actor_id: authRes.user.id,
-    action: "BLOCK_USER",
-    target_id: userId,
-    target_type: "USER",
-    reason
+  const { data, error } = await adminClient.rpc("admin_block_user", {
+    p_target_user_id: userId,
+    p_reason: reason.trim()
   })
-  
-  if (auditError) throw new Error("Failed to write audit log")
+
+  if (error) throw new Error(error.message)
 
   revalidatePath("/admin/users")
+  return { success: true, auditId: data }
 }
 
+/**
+ * Unblock a user. Uses atomic DB RPC.
+ */
 export async function unblockUserAction(userId: string, reason: string) {
-  const authRes = await verifyAdminAccess('USERS_BAN') // Unban uses same perm level
+  const authRes = await verifyAdminAccess('USERS_BAN')
   if (!authRes.authorized) throw new Error("Unauthorized: Insufficient privileges")
   
+  if (!userId || !reason?.trim()) throw new Error("Invalid input: userId and reason are required")
+  
   const adminClient = createAdminClient()
-
-  const { data, error } = await adminClient
-    .from("profiles")
-    .update({ is_banned: false, ban_reason: null, banned_at: null })
-    .eq("id", userId)
-    .select()
-    .single()
-
-  if (error || !data) throw new Error(error?.message || "Failed to unblock user (no rows affected)")
-
-  const { error: auditError } = await adminClient.from("audit_logs").insert({
-    actor_id: authRes.user.id,
-    action: "UNBLOCK_USER",
-    target_id: userId,
-    target_type: "USER",
-    reason
+  const { data, error } = await adminClient.rpc("admin_unblock_user", {
+    p_target_user_id: userId,
+    p_reason: reason.trim()
   })
 
-  if (auditError) throw new Error("Failed to write audit log")
+  if (error) throw new Error(error.message)
 
   revalidatePath("/admin/users")
+  return { success: true, auditId: data }
 }
 
+/**
+ * Moderate a listing (change status). Uses atomic DB RPC.
+ */
 export async function moderateListingAction(listingId: string, status: 'ACTIVE' | 'DEACTIVATED' | 'BLOCKED', reason: string) {
   const authRes = await verifyAdminAccess('LISTINGS_MODERATE')
   if (!authRes.authorized) throw new Error("Unauthorized: Insufficient privileges")
 
+  if (!listingId || !reason?.trim()) throw new Error("Invalid input: listingId and reason are required")
+
   const adminClient = createAdminClient()
-  
-  const { data, error } = await adminClient
-    .from("listings")
-    .update({ status })
-    .eq("id", listingId)
-    .select()
-    .single()
-
-  if (error || !data) throw new Error(error?.message || "Failed to moderate listing (no rows affected)")
-
-  const { error: auditError } = await adminClient.from("audit_logs").insert({
-    actor_id: authRes.user.id,
-    action: "MODERATE_LISTING",
-    target_id: listingId,
-    target_type: "LISTING",
-    metadata: { new_status: status },
-    reason
+  const { data, error } = await adminClient.rpc("admin_moderate_listing", {
+    p_listing_id: listingId,
+    p_new_status: status,
+    p_reason: reason.trim()
   })
 
-  if (auditError) throw new Error("Failed to write audit log")
+  if (error) throw new Error(error.message)
 
   revalidatePath("/admin/listings")
+  return { success: true, auditId: data }
 }
 
+/**
+ * Resolve/reject a report. Uses atomic DB RPC.
+ */
 export async function resolveReportAction(reportId: string, resolutionStatus: 'RESOLVED' | 'REJECTED', notes: string) {
   const authRes = await verifyAdminAccess('REPORTS_RESOLVE')
   if (!authRes.authorized) throw new Error("Unauthorized: Insufficient privileges")
 
+  if (!reportId || !notes?.trim()) throw new Error("Invalid input: reportId and notes are required")
+
   const adminClient = createAdminClient()
-  const { data, error } = await adminClient
-    .from("reports")
-    .update({ 
-      status: resolutionStatus, 
-      moderator_id: authRes.user.id, 
-      resolution_notes: notes,
-      resolved_at: new Date().toISOString()
-    })
-    .eq("id", reportId)
-    .select()
-    .single()
-
-  if (error || !data) throw new Error(error?.message || "Failed to resolve report (no rows affected)")
-
-  const { error: auditError } = await adminClient.from("audit_logs").insert({
-    actor_id: authRes.user.id,
-    action: "RESOLVE_REPORT",
-    target_id: reportId,
-    target_type: "REPORT",
-    metadata: { resolution: resolutionStatus },
-    reason: notes
+  const { data, error } = await adminClient.rpc("admin_resolve_report", {
+    p_report_id: reportId,
+    p_resolution: resolutionStatus,
+    p_notes: notes.trim()
   })
 
-  if (auditError) throw new Error("Failed to write audit log")
+  if (error) throw new Error(error.message)
 
   revalidatePath("/admin/reports")
+  return { success: true, auditId: data }
 }
