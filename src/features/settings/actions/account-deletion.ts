@@ -18,19 +18,14 @@ export async function deleteAccountAction() {
 
   const adminClient = createAdminClient()
   
-  // Step 1: Initialize or update State Machine
-  const { data: request, error: reqError } = await adminClient
-    .from('account_deletion_requests')
-    .upsert({ 
-      user_id: user.id, 
-      status: 'PROCESSING',
-      error_details: null
-    }, { onConflict: 'user_id' })
-    .select()
-    .single()
+  // Step 1: Atomic State Machine Lock
+  // Prevents concurrent executions and safely handles stuck PROCESS states via timeout.
+  const { data: lock, error: lockError } = await adminClient.rpc("acquire_deletion_lock", {
+    p_user_id: user.id
+  })
 
-  if (reqError) {
-    throw new Error("Не удалось инициировать процесс удаления. " + reqError.message)
+  if (lockError) {
+    throw new Error("Не удалось инициировать процесс удаления. " + lockError.message)
   }
 
   try {
@@ -92,7 +87,6 @@ export async function deleteAccountAction() {
     })
     
     if (tombstoneError) {
-      // Even if this fails, DB is clean, but user can still log in. Must be marked FAILED for retry.
       throw new Error("Auth tombstone error: " + tombstoneError.message)
     }
     
@@ -103,16 +97,16 @@ export async function deleteAccountAction() {
       .eq('user_id', user.id)
 
   } catch (err: any) {
-    // Mark FAILED
+    // Step 6 (Fallback): Mark FAILED. We log a generic message to DB to avoid PII leaks.
     await adminClient
       .from('account_deletion_requests')
-      .update({ status: 'FAILED', error_details: err.message })
+      .update({ status: 'FAILED', error_details: "System deletion error occurred." })
       .eq('user_id', user.id)
 
     throw new Error(err.message || "Произошла ошибка при удалении. Пожалуйста, повторите попытку.")
   }
 
-  // Step 6: Global Sign-Out
+  // Step 7: Global Sign-Out
   await supabase.auth.signOut({ scope: 'global' })
 
   revalidatePath("/")
