@@ -18,15 +18,16 @@ export async function deleteAccountAction() {
 
   const adminClient = createAdminClient()
   
-  // Step 1: Atomic State Machine Lock
-  // Prevents concurrent executions and safely handles stuck PROCESS states via timeout.
+  // Step 1: Atomic State Machine Lock with Fencing Token
   const { data: lock, error: lockError } = await adminClient.rpc("acquire_deletion_lock", {
     p_user_id: user.id
   })
 
-  if (lockError) {
-    throw new Error("Не удалось инициировать процесс удаления. " + lockError.message)
+  if (lockError || !lock) {
+    throw new Error("Не удалось инициировать процесс удаления. " + (lockError?.message || ""))
   }
+
+  const fencingToken = lock.fencing_token
 
   try {
     // Step 2: Storage Cleanup with Pagination
@@ -55,7 +56,6 @@ export async function deleteAccountAction() {
     }
 
     for (const [bucket, files] of Object.entries(bucketFiles)) {
-      // Chunk deletions if there are too many files in one bucket
       const chunkSize = 100
       for (let i = 0; i < files.length; i += chunkSize) {
         const chunk = files.slice(i, i + chunkSize)
@@ -64,14 +64,26 @@ export async function deleteAccountAction() {
       }
     }
     
-    // Step 3: Atomic DB cleanup via RPC
+    // Step 3: Atomic DB cleanup via RPC (Requires Fencing Token)
     const { error: rpcError } = await adminClient.rpc("process_account_deletion", {
-      p_user_id: user.id
+      p_user_id: user.id,
+      p_fencing_token: fencingToken
     })
     
     if (rpcError) throw new Error("DB cleanup error: " + rpcError.message)
 
     // Step 4: Tombstone Auth identity
+    // Check lock one last time before destroying Auth (using single check)
+    const { data: verifyLock } = await adminClient
+        .from('account_deletion_requests')
+        .select('fencing_token')
+        .eq('user_id', user.id)
+        .single()
+        
+    if (verifyLock?.fencing_token !== fencingToken) {
+        throw new Error("Fencing token mismatch before Auth Tombstone.")
+    }
+
     const scrambledEmail = `deleted-${user.id}@tombstone.bazargo.internal`
     const scrambledPassword = crypto.randomUUID() + crypto.randomUUID()
     
@@ -90,18 +102,20 @@ export async function deleteAccountAction() {
       throw new Error("Auth tombstone error: " + tombstoneError.message)
     }
     
-    // Step 5: Mark State Machine as COMPLETED
+    // Step 5: Mark State Machine as COMPLETED (Requires Fencing Token)
     await adminClient
       .from('account_deletion_requests')
       .update({ status: 'COMPLETED', completed_at: new Date().toISOString() })
       .eq('user_id', user.id)
+      .eq('fencing_token', fencingToken)
 
   } catch (err: any) {
-    // Step 6 (Fallback): Mark FAILED. We log a generic message to DB to avoid PII leaks.
+    // Step 6 (Fallback): Mark FAILED. Only update if our fencing token still owns the lock.
     await adminClient
       .from('account_deletion_requests')
       .update({ status: 'FAILED', error_details: "System deletion error occurred." })
       .eq('user_id', user.id)
+      .eq('fencing_token', fencingToken)
 
     throw new Error(err.message || "Произошла ошибка при удалении. Пожалуйста, повторите попытку.")
   }
