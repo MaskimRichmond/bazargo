@@ -4,6 +4,8 @@ import { Package, Search } from "lucide-react"
 import { ListingActions } from "@/features/admin/components/listing-actions"
 import { Input } from "@/components/ui/input"
 
+type ListingRow = { id: string, title: string, price: number, status: string, created_at: string, profiles: { full_name: string | null } | null };
+
 export const metadata = {
   title: "Управление объявлениями | BazarGo Admin",
 }
@@ -38,7 +40,8 @@ export default async function AdminListingsPage(
     dbQuery = dbQuery.ilike('title', `%${query}%`)
   }
 
-  const { data: listings, error } = await dbQuery
+  const { data, error } = await dbQuery;
+  const listings = data as unknown as ListingRow[]
 
   if (error) {
     return <div className="text-destructive p-4">Ошибка загрузки объявлений: {error.message}</div>
@@ -84,7 +87,7 @@ export default async function AdminListingsPage(
                   </td>
                 </tr>
               )}
-              {listings?.map((listing: Record<string, any>) => (
+              {listings?.map((listing: ListingRow) => (
                 <tr key={listing.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 font-medium">
                     <div className="truncate max-w-[200px]" title={listing.title}>

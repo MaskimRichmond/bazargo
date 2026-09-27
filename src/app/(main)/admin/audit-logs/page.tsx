@@ -3,6 +3,8 @@ import { verifyAdminAccess } from "@/features/admin/actions"
 import { ScrollText, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
+type LogRow = { id: string, action: string, target_type: string, target_id: string, reason: string, created_at: string, actor: { full_name: string | null, role: string | null } | null };
+
 export const metadata = {
   title: "Audit Logs | BazarGo Admin",
 }
@@ -40,7 +42,8 @@ export default async function AdminAuditLogsPage(
     dbQuery = dbQuery.ilike('action', `%${query}%`)
   }
 
-  const { data: logs, error } = await dbQuery
+  const { data, error } = await dbQuery;
+  const logs = data as unknown as LogRow[]
 
   if (error) {
     return <div className="text-destructive p-4">Ошибка загрузки Audit Logs: {error.message}</div>
@@ -86,7 +89,7 @@ export default async function AdminAuditLogsPage(
                   </td>
                 </tr>
               )}
-              {logs?.map((log: Record<string, any>) => (
+              {logs?.map((log: LogRow) => (
                 <tr key={log.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">
                     {new Date(log.created_at).toLocaleString('ru-RU')}

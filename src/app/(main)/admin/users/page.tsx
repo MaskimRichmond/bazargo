@@ -4,6 +4,8 @@ import { Users as UsersIcon, Search } from "lucide-react"
 import { UserActions } from "@/features/admin/components/user-actions"
 import { Input } from "@/components/ui/input"
 
+type UserRow = { id: string, full_name: string | null, role: string, is_banned: boolean, created_at: string };
+
 export const metadata = {
   title: "Управление пользователями | BazarGo Admin",
 }
@@ -31,7 +33,8 @@ export default async function AdminUsersPage(
     dbQuery = dbQuery.ilike('full_name', `%${query}%`)
   }
 
-  const { data: users, error } = await dbQuery
+  const { data, error } = await dbQuery;
+  const users = data as unknown as UserRow[]
 
   if (error) {
     return <div className="text-destructive p-4">Ошибка загрузки пользователей: {error.message}</div>

@@ -3,6 +3,8 @@ import { verifyAdminAccess } from "@/features/admin/actions"
 import { Trash2, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
+type ReqRow = { user_id: string, status: string, started_at: string | null, completed_at: string | null, error_details: string | undefined, profiles: { full_name: string | null } | null };
+
 export const metadata = {
   title: "Удаления Аккаунтов | BazarGo Admin",
 }
@@ -39,7 +41,8 @@ export default async function AdminAccountDeletionsPage(
     dbQuery = dbQuery.eq('status', query.toUpperCase()) // Filter by status instead of text search
   }
 
-  const { data: requests, error } = await dbQuery
+  const { data, error } = await dbQuery;
+  const requests = data as unknown as ReqRow[]
 
   if (error) {
     return <div className="text-destructive p-4">Ошибка загрузки удалений: {error.message}</div>
@@ -84,7 +87,7 @@ export default async function AdminAccountDeletionsPage(
                   </td>
                 </tr>
               )}
-              {requests?.map((req: Record<string, any>) => (
+              {requests?.map((req: ReqRow) => (
                 <tr key={req.user_id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 font-medium">
                     {req.profiles?.full_name || "Удален/Аноним"}

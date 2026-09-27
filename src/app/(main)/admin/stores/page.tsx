@@ -3,6 +3,8 @@ import { verifyAdminAccess } from "@/features/admin/actions"
 import { Store, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
+type StoreRow = { id: string, name: string, status: string, created_at: string, owner: { full_name: string | null } | null };
+
 export const metadata = {
   title: "Магазины | BazarGo Admin",
 }
@@ -36,7 +38,8 @@ export default async function AdminStoresPage(
     dbQuery = dbQuery.ilike('name', `%${query}%`)
   }
 
-  const { data: stores, error } = await dbQuery
+  const { data, error } = await dbQuery;
+  const stores = data as unknown as StoreRow[]
 
   if (error) {
     return <div className="text-destructive p-4">Ошибка загрузки магазинов: {error.message}</div>
@@ -80,7 +83,7 @@ export default async function AdminStoresPage(
                   </td>
                 </tr>
               )}
-              {stores?.map((store: Record<string, any>) => (
+              {stores?.map((store: StoreRow) => (
                 <tr key={store.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 font-medium">
                     {store.name}

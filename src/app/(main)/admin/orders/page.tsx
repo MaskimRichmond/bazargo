@@ -4,6 +4,8 @@ import { ShoppingCart, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 
+type OrderRow = { id: string, status: string, total_amount: number, created_at: string, buyer: { full_name: string | null } | null, store: { name: string | null } | null };
+
 export const metadata = {
   title: "Заказы | BazarGo Admin",
 }
@@ -39,7 +41,8 @@ export default async function AdminOrdersPage(
     dbQuery = dbQuery.eq('id', query) // Usually search by order ID
   }
 
-  const { data: orders, error } = await dbQuery
+  const { data, error } = await dbQuery;
+  const orders = data as unknown as OrderRow[]
 
   if (error) {
     return <div className="text-destructive p-4">Ошибка загрузки заказов: {error.message}</div>
@@ -85,7 +88,7 @@ export default async function AdminOrdersPage(
                   </td>
                 </tr>
               )}
-              {orders?.map((order: Record<string, any>) => (
+              {orders?.map((order: OrderRow) => (
                 <tr key={order.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 font-medium font-mono text-xs">
                     {order.id.split('-')[0]}...

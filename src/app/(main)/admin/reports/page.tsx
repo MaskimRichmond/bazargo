@@ -5,6 +5,8 @@ import { ReportActions } from "@/features/admin/components/report-actions"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
+type ReportRow = { id: string, target_type: string, target_id: string, reason: string, status: string, created_at: string, reporter: { full_name: string | null } | null };
+
 export const metadata = {
   title: "Жалобы и Модерация | BazarGo Admin",
 }
@@ -40,7 +42,8 @@ export default async function AdminReportsPage(
     dbQuery = dbQuery.eq('status', statusFilter)
   }
 
-  const { data: reports, error } = await dbQuery
+  const { data, error } = await dbQuery;
+  const reports = data as unknown as ReportRow[]
 
   if (error) {
     return <div className="text-destructive p-4">Ошибка загрузки жалоб: {error.message}</div>
@@ -85,7 +88,7 @@ export default async function AdminReportsPage(
                   </td>
                 </tr>
               )}
-              {reports?.map((report: Record<string, any>) => (
+              {reports?.map((report: ReportRow) => (
                 <tr key={report.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 font-medium">
                     <div className="text-xs font-mono">{report.id.split('-')[0]}...</div>

@@ -3,6 +3,8 @@ import { verifyAdminAccess } from "@/features/admin/actions"
 import { Handshake, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
+type AppRow = { id: string, company_name: string, tax_id: string, status: string, created_at: string, applicant: { full_name: string | null } | null };
+
 export const metadata = {
   title: "B2B Заявки | BazarGo Admin",
 }
@@ -37,7 +39,8 @@ export default async function AdminB2bRequestsPage(
     dbQuery = dbQuery.ilike('company_name', `%${query}%`)
   }
 
-  const { data: apps, error } = await dbQuery
+  const { data, error } = await dbQuery;
+  const apps = data as unknown as AppRow[]
 
   if (error) {
     return <div className="text-destructive p-4">Ошибка загрузки B2B заявок: {error.message}</div>
@@ -82,7 +85,7 @@ export default async function AdminB2bRequestsPage(
                   </td>
                 </tr>
               )}
-              {apps?.map((app: Record<string, any>) => (
+              {apps?.map((app: AppRow) => (
                 <tr key={app.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="px-4 py-3 font-medium">
                     {app.company_name}
