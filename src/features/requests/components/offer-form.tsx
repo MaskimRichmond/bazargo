@@ -8,8 +8,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2 } from "lucide-react"
 import Link from "next/link"
+import { useTranslations } from "next-intl";
 
 export function OfferForm({ requestId, sellerListings }: { requestId: string, sellerListings: any[] }) {
+    const t = useTranslations();
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -43,12 +45,12 @@ export function OfferForm({ requestId, sellerListings }: { requestId: string, se
   if (sellerListings.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-muted-foreground mb-4">У вас нет активных товаров для предложения.</p>
+        <p className="text-muted-foreground mb-4">{t("u_vas_net_aktivnyh")}</p>
         <Button asChild className="rounded-xl">
-          <Link href="/sell">Разместить товар</Link>
+          <Link href="/sell">{t("razmestit_tovar")}</Link>
         </Button>
       </div>
-    )
+    );
   }
 
   return (
@@ -60,35 +62,33 @@ export function OfferForm({ requestId, sellerListings }: { requestId: string, se
       )}
 
       <div className="space-y-2">
-        <Label>Выберите товар</Label>
+        <Label>{t("vyberite_tovar")}</Label>
         <Select value={listingId} onValueChange={setListingId}>
           <SelectTrigger className="h-12 bg-background border-primary/20">
-            <SelectValue placeholder="Ваши активные объявления" />
+            <SelectValue placeholder={t("vashi_aktivnye_obyavleniya")} />
           </SelectTrigger>
           <SelectContent>
             {sellerListings.map(l => (
               <SelectItem key={l.id} value={l.id}>
-                {l.title} — {l.price.toLocaleString("ru-RU")} сом
-              </SelectItem>
+                {l.title} — {l.price.toLocaleString("ru-RU")} {t("som")}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-2">
-        <Label>Сообщение (опционально)</Label>
+        <Label>{t("soobschenie_optsionalno")}</Label>
         <Textarea 
           value={message} 
           onChange={(e) => setMessage(e.target.value)} 
           className="bg-background border-primary/20 min-h-[80px]" 
-          placeholder="Напишите короткое сообщение покупателю..." 
+          placeholder={t("napishite_korotkoe_soobschenie_pokupatelyu")} 
         />
       </div>
 
       <Button type="submit" className="w-full h-12 rounded-xl text-lg font-semibold" disabled={isLoading}>
         {isLoading && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
-        Отправить предложение
-      </Button>
+        {t("otpravit_predlozhenie")}</Button>
     </form>
-  )
+  );
 }

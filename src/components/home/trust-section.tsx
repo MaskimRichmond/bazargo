@@ -1,6 +1,8 @@
 import { ShieldCheck, UserCheck, MessageSquareWarning, Eye } from "lucide-react"
+import { useTranslations } from "next-intl";
 
 export function TrustSection() {
+    const t = useTranslations();
   const features = [
     {
       title: "Проверенные продавцы",
@@ -28,10 +30,9 @@ export function TrustSection() {
     <section className="py-12 md:py-16 bg-muted/30 border-t">
       <div className="container mx-auto px-4">
         <div className="text-center mb-10">
-          <h2 className="text-2xl font-bold mb-4">Безопаснее покупать и продавать</h2>
+          <h2 className="text-2xl font-bold mb-4">{t("bezopasnee_pokupat_i_prodavat")}</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Мы строим доверительную платформу, где каждый участник может быть уверен в безопасности сделки.
-          </p>
+            {t("my_stroim_doveritelnuyu_platformu")}</p>
         </div>
         
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
@@ -49,5 +50,5 @@ export function TrustSection() {
         </div>
       </div>
     </section>
-  )
+  );
 }

@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { fetchNextCatalogPage } from "@/app/(main)/catalog/actions"
+import { fetchNextCatalogPage } from "@/app/[locale]/(main)/catalog/actions"
 import { ProductCard } from "@/components/shared/product-card"
 import { Button } from "@/components/ui/button"
+import { useTranslations } from "next-intl"
 
 interface CatalogLoadMoreProps {
   initialPage: number;
@@ -13,6 +14,7 @@ interface CatalogLoadMoreProps {
 }
 
 export function CatalogLoadMore({ initialPage, searchParams, totalCount, categories }: CatalogLoadMoreProps) {
+  const t = useTranslations()
   const [page, setPage] = useState(initialPage)
   const [listings, setListings] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -42,14 +44,14 @@ export function CatalogLoadMore({ initialPage, searchParams, totalCount, categor
            {listings.map((l: any) => <ProductCard key={l.id} product={l} />)}
          </div>
       )}
-      
+
       {hasMore && (
          <div className="mt-8 text-center">
             <Button onClick={handleLoadMore} disabled={loading} variant="outline" className="min-w-[200px]">
-              {loading ? "Загрузка..." : "Загрузить ещё"}
+              {loading ? t("zagruzka_1") : t("zagruzit_eschyo")}
             </Button>
          </div>
       )}
     </>
-  )
+  );
 }

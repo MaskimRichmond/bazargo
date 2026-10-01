@@ -10,9 +10,12 @@ import { Button } from "@/components/ui/button"
 import { HeaderAuth } from "@/components/layout/header-auth"
 import { GlobalSearch } from "@/components/shared/global-search"
 import { HeaderLocationSelector } from "@/components/layout/header-location-selector"
-import { HeaderNav } from "@/components/layout/header-nav"
+import { HeaderNav } from "@/components/layout/header-nav";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useTranslations } from "next-intl";
 
 export function Header() {
+    const t = useTranslations();
   const { setTheme, theme } = useTheme()
 
   const pathname = usePathname()
@@ -54,20 +57,20 @@ export function Header() {
             size="icon"
             onClick={() => setTheme(theme === "light" ? "dark" : "light")}
             className="hidden sm:flex h-9 w-9 text-muted-foreground hover:text-foreground"
-            aria-label="Сменить тему"
+            aria-label={t("theme_switch")}
           >
             <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           </Button>
 
           <Button variant="ghost" size="icon" className="hidden lg:flex h-9 w-9 text-muted-foreground hover:text-foreground" asChild>
-            <Link href="/favorites" aria-label="Избранное">
+            <Link href="/favorites" aria-label={t("nav_favorites")}>
               <Heart className="w-5 h-5" />
             </Link>
           </Button>
 
           <Button variant="ghost" size="icon" className="hidden lg:flex h-9 w-9 text-muted-foreground hover:text-foreground" asChild>
-            <Link href="/cart" aria-label="Корзина">
+            <Link href="/cart" aria-label={t("nav_cart")}>
               <ShoppingBag className="w-5 h-5" />
             </Link>
           </Button>
@@ -76,10 +79,11 @@ export function Header() {
 
           <div className="hidden sm:block w-px h-6 bg-border mx-1" />
 
+          <LanguageSwitcher />
           <HeaderAuth />
           
           <Button className="hidden md:flex bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-5 shadow-sm font-medium" asChild>
-            <Link href="/sell">Разместить</Link>
+            <Link href="/sell">{t("nav_sell")}</Link>
           </Button>
         </div>
       </div>
@@ -88,7 +92,7 @@ export function Header() {
       {!isAppScreen && (
         <div className="md:hidden px-4 pb-3">
           <GlobalSearch 
-            placeholder="Я ищу..."
+            placeholder={t("search_placeholder")}
             inputClassName="bg-muted border-none rounded-xl shadow-inner text-base"
           />
         </div>

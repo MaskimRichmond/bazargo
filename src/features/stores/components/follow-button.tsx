@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { useTranslations } from "next-intl"
 import { toggleFollowStore } from "@/app/actions/stores"
 import { Loader2, UserPlus, UserCheck } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -10,6 +11,7 @@ export function FollowButton({ storeId, initialIsFollowing }: { storeId: string,
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const t = useTranslations()
 
   const handleFollow = async () => {
     setIsLoading(true)
@@ -43,7 +45,7 @@ export function FollowButton({ storeId, initialIsFollowing }: { storeId: string,
       ) : (
         <UserPlus className="w-4 h-4 mr-2" />
       )}
-      {isFollowing ? "Вы подписаны" : "Подписаться"}
+      {isFollowing ? t("vy_podpisany") : t("podpisatsya")}
     </Button>
-  )
+  );
 }

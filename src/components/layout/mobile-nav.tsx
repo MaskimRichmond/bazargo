@@ -5,8 +5,10 @@ import { usePathname } from "next/navigation"
 import { Home, Search, Plus, MessageCircle, User, Store, ClipboardList } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useTranslations } from "next-intl";
 
 export function MobileBottomNav() {
+    const t = useTranslations();
   const pathname = usePathname()
 
   // Hide on active conversation screens to give full space to the chat
@@ -43,22 +45,19 @@ export function MobileBottomNav() {
                 <DropdownMenuContent align="center" className="w-56 mb-2 rounded-2xl p-2" sideOffset={12}>
                   <DropdownMenuItem asChild className="p-3 text-base">
                     <Link href="/sell" className="flex items-center w-full">
-                      <Plus className="w-5 h-5 mr-3 text-primary" /> Продать товар
-                    </Link>
+                      <Plus className="w-5 h-5 mr-3 text-primary" /> {t("prodat_tovar")}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="p-3 text-base">
                     <Link href="/my-store" className="flex items-center w-full">
-                      <Store className="w-5 h-5 mr-3 text-primary" /> Мой магазин
-                    </Link>
+                      <Store className="w-5 h-5 mr-3 text-primary" /> {t("my_store")}</Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild className="p-3 text-base">
                     <Link href="/requests/create" className="flex items-center w-full">
-                      <ClipboardList className="w-5 h-5 mr-3 text-primary" /> Нужен товар
-                    </Link>
+                      <ClipboardList className="w-5 h-5 mr-3 text-primary" /> {t("need_product")}</Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )
+            );
           }
 
           if (item.href) {
@@ -88,5 +87,5 @@ export function MobileBottomNav() {
         })}
       </nav>
     </div>
-  )
+  );
 }

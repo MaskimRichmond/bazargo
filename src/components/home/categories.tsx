@@ -1,8 +1,11 @@
 import Link from "next/link"
 import * as Icons from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
+import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 
 export async function Categories() {
+    const t = await getTranslations();
   const supabase = await createClient()
   const { data: categories } = await supabase
     .from("categories")
@@ -18,7 +21,7 @@ export async function Categories() {
   return (
     <section className="py-8 md:py-12 bg-background">
       <div className="container mx-auto px-4">
-        <h2 className="text-xl md:text-2xl font-bold mb-6 text-foreground tracking-tight">Популярные категории</h2>
+        <h2 className="text-xl md:text-2xl font-bold mb-6 text-foreground tracking-tight">{t("populyarnye_kategorii")}</h2>
         
         {/* Mobile: Horizontal scroll, Desktop: Grid */}
         <div className="flex overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-5 lg:grid-cols-8 gap-3 md:gap-4 snap-x snap-mandatory scrollbar-none md:overflow-visible no-scrollbar">
@@ -44,5 +47,5 @@ export async function Categories() {
         </div>
       </div>
     </section>
-  )
+  );
 }

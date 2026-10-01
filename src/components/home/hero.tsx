@@ -5,10 +5,12 @@ import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { ImageWithFallback } from "@/components/shared/image-with-fallback"
 import { GlobalSearch } from "@/components/shared/global-search"
+import { useTranslations } from "next-intl";
 
 const QUICK_LINKS = ["iPhone 13", "Авто", "Квартиры", "Одежда", "Мебель"]
 
 export function Hero() {
+    const t = useTranslations();
   return (
     <section className="relative overflow-hidden bg-background py-10 md:py-16 lg:py-24 border-b">
       {/* Glow Effects */}
@@ -21,19 +23,17 @@ export function Hero() {
           {/* Left Side: Content */}
           <div className="max-w-2xl mx-auto lg:mx-0 text-center lg:text-left">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 text-foreground leading-[1.1]">
-              Покупай. Продавай. <br />
+              {t("pokupay_prodavay")}<br />
               <span className="text-primary bg-clip-text text-transparent bg-gradient-to-r from-primary to-emerald-600">
-                Развивайся с BazarGo.
-              </span>
+                {t("razvivaysya_s_bazargo")}</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed max-w-xl mx-auto lg:mx-0">
-              Больше, чем объявления. Это платформа, где ты найдешь нужный товар, проверенных продавцов и возможности для роста твоего бизнеса.
-            </p>
+              {t("bolshe_chem_obyavleniya_eto")}</p>
 
             {/* Smart Search */}
             <div className="bg-background rounded-2xl p-2 shadow-lg border border-border/50 max-w-xl mx-auto lg:mx-0">
               <GlobalSearch 
-                placeholder="Например: iPhone 13 128GB до 30000"
+                placeholder={t("naprimer_iphone_13_128gb")}
                 inputClassName="h-12 text-base border-none shadow-none focus-visible:ring-0 bg-transparent"
                 button
               />
@@ -41,7 +41,7 @@ export function Hero() {
 
             {/* Quick Links */}
             <div className="mt-6 flex flex-wrap items-center justify-center lg:justify-start gap-2 md:gap-3 text-sm">
-              <span className="text-muted-foreground mr-1 hidden sm:inline-block">Ищут сейчас:</span>
+              <span className="text-muted-foreground mr-1 hidden sm:inline-block">{t("ischut_seychas")}</span>
               {QUICK_LINKS.map((link) => (
                 <Link 
                   key={link} 
@@ -62,11 +62,11 @@ export function Hero() {
                 <Search className="w-20 h-20" />
               </div>
               <CardContent className="p-4 bg-background rounded-b-xl">
-                <h3 className="font-semibold text-sm mb-1 truncate">Пример объявления</h3>
-                <div className="font-bold text-lg mb-2">от 0 сом</div>
+                <h3 className="font-semibold text-sm mb-1 truncate">{t("primer_obyavleniya")}</h3>
+                <div className="font-bold text-lg mb-2">{t("ot_0_som")}</div>
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <MapPin className="w-3 h-3" />
-                  <span>Ваш город</span>
+                  <span>{t("vash_gorod")}</span>
                 </div>
               </CardContent>
             </Card>
@@ -79,10 +79,10 @@ export function Hero() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
-                    <h4 className="font-semibold text-sm truncate">Магазин</h4>
+                    <h4 className="font-semibold text-sm truncate">{t("magazin")}</h4>
                     <CheckCircle2 className="w-3 h-3 text-primary shrink-0" />
                   </div>
-                  <div className="text-xs text-muted-foreground">Надежный продавец</div>
+                  <div className="text-xs text-muted-foreground">{t("nadezhnyy_prodavets")}</div>
                 </div>
               </CardContent>
             </Card>
@@ -94,10 +94,10 @@ export function Hero() {
                   <div className="p-1.5 bg-orange-500/10 rounded-md text-orange-600">
                     <FileQuestion className="w-4 h-4" />
                   </div>
-                  <span className="text-xs font-semibold text-orange-600 uppercase tracking-wider">Запрос</span>
+                  <span className="text-xs font-semibold text-orange-600 uppercase tracking-wider">{t("zapros")}</span>
                 </div>
-                <h4 className="font-semibold text-sm mb-1">Ищу MacBook Pro M2</h4>
-                <p className="text-xs text-muted-foreground">до 90 000 сом • Готов купить сегодня</p>
+                <h4 className="font-semibold text-sm mb-1">{t("ischu_macbook_pro_m2")}</h4>
+                <p className="text-xs text-muted-foreground">{t("do_90_000_som")}</p>
               </CardContent>
             </Card>
 
@@ -110,5 +110,5 @@ export function Hero() {
         </div>
       </div>
     </section>
-  )
+  );
 }

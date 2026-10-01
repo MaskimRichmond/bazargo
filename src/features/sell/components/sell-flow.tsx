@@ -16,6 +16,7 @@ import { DeliveryOptions } from "./steps/delivery-options"
 import { PreviewStep } from "./steps/preview-step"
 
 import { publishListing } from "@/app/actions/sell"
+import { useTranslations } from "next-intl";
 
 const DRAFT_KEY = "bazargo_sell_draft"
 
@@ -28,6 +29,7 @@ const STEPS = [
 ]
 
 export function SellFlow({ categories, userStore, initialData = null, requestedStoreId }: { categories: any[], userStore?: any, initialData?: any, requestedStoreId?: string }) {
+    const t = useTranslations();
   const router = useRouter()
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [isPublishing, setIsPublishing] = useState(false)
@@ -50,7 +52,10 @@ export function SellFlow({ categories, userStore, initialData = null, requestedS
       city: "Бишкек",
       deliveryMethods: ["PICKUP"],
       publishAsStore: defaultPublishAsStore,
-      showPhone: false
+      showPhone: false,
+      isB2b: false,
+      wholesalePrice: undefined,
+      minOrderQuantity: undefined
     },
     mode: "onChange",
   })
@@ -140,6 +145,9 @@ export function SellFlow({ categories, userStore, initialData = null, requestedS
       formData.append('deliveryMethods', JSON.stringify(data.deliveryMethods))
       formData.append('publishAsStore', String(data.publishAsStore || false))
       formData.append('showPhone', String(data.showPhone || false))
+      formData.append('isB2b', String(data.isB2b || false))
+      if (data.wholesalePrice) formData.append('wholesalePrice', data.wholesalePrice.toString())
+      if (data.minOrderQuantity) formData.append('minOrderQuantity', data.minOrderQuantity.toString())
       
       // Append images
       data.images.forEach((img, index) => {
@@ -184,7 +192,7 @@ export function SellFlow({ categories, userStore, initialData = null, requestedS
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
-            <h1 className="text-xl font-bold">Разместить объявление</h1>
+            <h1 className="text-xl font-bold">{t("razmestit_obyavlenie")}</h1>
           </div>
           
           <div className="flex items-center gap-2">
@@ -219,14 +227,12 @@ export function SellFlow({ categories, userStore, initialData = null, requestedS
           <div className="max-w-2xl mx-auto flex gap-3">
             {currentStepIndex > 0 && (
               <Button type="button" variant="outline" className="w-1/3 h-12 rounded-xl font-semibold" onClick={handleBack} disabled={isPublishing}>
-                Назад
-              </Button>
+                {t("nazad")}</Button>
             )}
             
             {currentStepIndex < STEPS.length - 1 ? (
               <Button type="button" className="flex-1 h-12 rounded-xl font-semibold" onClick={handleNext}>
-                Далее
-              </Button>
+                {t("dalee")}</Button>
             ) : (
               <Button type="button" className="flex-1 h-12 rounded-xl font-semibold" disabled={isPublishing} onClick={methods.handleSubmit(onSubmit)}>
                 {isPublishing ? "Публикация..." : "Опубликовать"}
@@ -237,5 +243,5 @@ export function SellFlow({ categories, userStore, initialData = null, requestedS
 
       </form>
     </FormProvider>
-  )
+  );
 }

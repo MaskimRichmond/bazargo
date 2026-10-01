@@ -110,6 +110,12 @@ export async function publishListing(formData: FormData) {
     const finalQuantity = type === "INVENTORY" ? quantity : 1;
     const finalStatus = finalQuantity === 0 ? "OUT_OF_STOCK" : "ACTIVE";
 
+    const isB2b = formData.get("isB2b") === "true";
+    const wholesalePriceStr = formData.get("wholesalePrice");
+    const minOrderQuantityStr = formData.get("minOrderQuantity");
+    const wholesalePrice = wholesalePriceStr ? parseFloat(wholesalePriceStr.toString()) : null;
+    const minOrderQuantity = minOrderQuantityStr ? parseInt(minOrderQuantityStr.toString(), 10) : 1;
+
     const payload = {
       seller_id: session.user.id,
       store_id: storeId,
@@ -124,7 +130,10 @@ export async function publishListing(formData: FormData) {
       city,
       delivery_methods: deliveryMethods,
       show_phone: showPhone,
-      status: finalStatus
+      status: finalStatus,
+      is_b2b: isB2b,
+      wholesale_price: wholesalePrice,
+      min_order_quantity: minOrderQuantity
     }
 
     // 1. Create or Update listing record

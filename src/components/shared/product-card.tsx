@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { ImageWithFallback } from "@/components/shared/image-with-fallback"
 import { FavoriteButton } from "@/components/shared/favorite-button"
 import { getConditionLabel } from "@/lib/condition-labels"
+import { useTranslations } from "next-intl";
 
 interface ProductCardProps {
   product: {
@@ -18,10 +19,14 @@ interface ProductCardProps {
     isVerified: boolean
     outOfStock?: boolean
     isFavorite?: boolean
+    isB2b?: boolean
+    wholesalePrice?: number
+    minOrderQuantity?: number
   }
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+    const t = useTranslations();
   return (
     <Card className={`overflow-hidden group hover:shadow-lg transition-all duration-300 border-border/50 flex flex-col h-full relative outline-none focus-within:ring-2 focus-within:ring-primary rounded-2xl ${product.outOfStock ? 'opacity-70 grayscale-[0.5]' : ''}`}>
       <FavoriteButton 
@@ -29,7 +34,7 @@ export function ProductCard({ product }: ProductCardProps) {
         initialIsFavorite={!!product.isFavorite} 
         className="absolute top-3 right-3"
       />
-      
+
       <Link href={`/product/${product.id}`} className="block relative aspect-square sm:aspect-[4/3] bg-muted overflow-hidden outline-none">
         <ImageWithFallback 
           src={product.image} 
@@ -39,17 +44,17 @@ export function ProductCard({ product }: ProductCardProps) {
         />
         {product.outOfStock && (
           <div className="absolute inset-0 bg-background/40 flex items-center justify-center backdrop-blur-[2px]">
-            <span className="bg-background/90 text-foreground px-3 py-1.5 rounded-lg font-bold text-sm shadow-sm border">Нет в наличии</span>
+            <span className="bg-background/90 text-foreground px-3 py-1.5 rounded-lg font-bold text-sm shadow-sm border">{t("net_v_nalichii")}</span>
           </div>
         )}
         {product.isVerified && !product.outOfStock && (
           <div className="absolute bottom-2 left-2 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-md flex items-center gap-1 shadow-sm">
             <CheckCircle2 className="w-3 h-3 text-primary" />
-            <span className="text-[10px] font-semibold">Проверен</span>
+            <span className="text-[10px] font-semibold">{t("proveren")}</span>
           </div>
         )}
       </Link>
-      
+
       <CardContent className="p-3 sm:p-4 flex flex-col flex-1 bg-card">
         <Link href={`/product/${product.id}`} className="hover:text-primary transition-colors block mb-1 outline-none">
           <h3 className="font-semibold text-sm sm:text-base line-clamp-2 leading-tight" title={product.title}>
@@ -57,9 +62,15 @@ export function ProductCard({ product }: ProductCardProps) {
           </h3>
         </Link>
         
-        <div className="font-bold text-lg sm:text-xl mb-3 text-foreground">
-          {new Intl.NumberFormat("ru-RU").format(product.price)} <span className="text-sm font-normal text-muted-foreground">сом</span>
+        <div className="font-bold text-lg sm:text-xl mb-1 text-foreground">
+          {new Intl.NumberFormat("ru-RU").format(product.price)} <span className="text-sm font-normal text-muted-foreground">{t("som")}</span>
         </div>
+        
+        {product.isB2b && product.wholesalePrice && (
+          <div className="text-xs text-primary font-medium mb-2">
+            Опт: от {new Intl.NumberFormat("ru-RU").format(product.wholesalePrice)} {t("som")}
+          </div>
+        )}
 
         <div className="mt-auto space-y-2.5">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -83,5 +94,5 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

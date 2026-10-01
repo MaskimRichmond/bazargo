@@ -1,18 +1,19 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import createMiddleware from 'next-intl/middleware';
+import { routing } from './i18n/routing';
+
+const handleI18nRouting = createMiddleware(routing);
 
 export async function proxy(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseKey) {
-    // If not configured, just let the request pass through for static pages
-    return NextResponse.next({ request })
+    return handleI18nRouting(request)
   }
 
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+  let supabaseResponse = handleI18nRouting(request)
 
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
@@ -21,9 +22,7 @@ export async function proxy(request: NextRequest) {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-        supabaseResponse = NextResponse.next({
-          request,
-        })
+        // Instead of overriding supabaseResponse entirely, we just mutate its cookies
         cookiesToSet.forEach(({ name, value, options }) =>
           supabaseResponse.cookies.set(name, value, options)
         )
@@ -35,12 +34,14 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const protectedRoutes = ['/profile', '/messages', '/favorites', '/my-listings', '/settings']
-  const isProtectedRoute = protectedRoutes.some((route) => request.nextUrl.pathname.startsWith(route))
+  // Protect routes, but account for locale prefix!
+  const protectedRoutes = ['/profile', '/messages', '/favorites', '/my-listings', '/settings', '/ru/profile', '/ky/profile', '/ru/messages', '/ky/messages', '/ru/favorites', '/ky/favorites', '/ru/my-listings', '/ky/my-listings', '/ru/settings', '/ky/settings']
+  const isProtectedRoute = protectedRoutes.some((route) => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(`${route}/`))
 
   if (isProtectedRoute && !user) {
     const url = request.nextUrl.clone()
-    url.pathname = '/login'
+    const locale = request.nextUrl.pathname.startsWith('/ky') ? '/ky' : '/ru';
+    url.pathname = `${locale}/login`
     url.searchParams.set('redirect_to', request.nextUrl.pathname)
     return NextResponse.redirect(url)
   }
@@ -50,6 +51,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/',
+    '/(ru|ky)/:path*',
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

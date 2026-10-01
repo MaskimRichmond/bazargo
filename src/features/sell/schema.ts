@@ -10,24 +10,27 @@ export const photosSchema = z.object({
       file: z.any().optional(), // File object for new uploads
       url: z.string().url(),     // Object URL for preview, or Supabase URL
     })
-  ).min(1, "Добавьте хотя бы одну фотографию").max(10, "Максимум 10 фотографий"),
+  ).min(1, "zod.min_1_photo").max(10, "zod.max_10_photos"),
 })
 
 export const productDetailsSchema = z.object({
-  title: z.string().min(3, "Минимум 3 символа").max(100, "Максимум 100 символов"),
-  categoryId: z.string().uuid("Выберите категорию"),
-  price: z.coerce.number().min(0, "Цена не может быть отрицательной").max(1000000000, "Слишком большая цена"),
+  title: z.string().min(3, "zod.min_3_chars").max(100, "zod.max_100_chars"),
+  categoryId: z.string().uuid("zod.select_category"),
+  price: z.coerce.number().min(0, "zod.positive_price").max(1000000000, "zod.too_big_price"),
   condition: z.enum(["NEW", "USED_LIKE_NEW", "USED_GOOD", "USED_FAIR", "FOR_PARTS"], {
-    required_error: "Укажите состояние товара"
+    required_error: "zod.select_condition"
   }),
-  description: z.string().min(10, "Опишите товар подробнее (минимум 10 символов)").max(2000, "Слишком длинное описание"),
-  quantity: z.coerce.number().min(1, "Минимум 1").optional(), // Only for INVENTORY
-  region: z.string().min(2, "Выберите регион"),
-  city: z.string().min(2, "Выберите город"),
+  description: z.string().min(10, "zod.min_10_chars_desc").max(2000, "zod.too_long_desc"),
+  quantity: z.coerce.number().min(1, "zod.min_1").optional(), // Only for INVENTORY
+  region: z.string().min(2, "zod.select_region"),
+  city: z.string().min(2, "zod.select_city"),
+  isB2b: z.boolean().optional(),
+  wholesalePrice: z.coerce.number().min(0, "zod.positive_price").optional(),
+  minOrderQuantity: z.coerce.number().min(1, "zod.min_1").optional(),
 })
 
 export const deliverySchema = z.object({
-  deliveryMethods: z.array(z.string()).min(1, "Выберите хотя бы один способ"),
+  deliveryMethods: z.array(z.string()).min(1, "zod.min_1_method"),
   publishAsStore: z.boolean().optional(),
   showPhone: z.boolean().optional(),
 })

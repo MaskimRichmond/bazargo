@@ -10,8 +10,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import Link from "next/link"
 
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl";
 
 export function MyListingsClient({ listings, status = "all", page = 1, totalPages = 1, totalCount = 0 }: { listings: any[], status?: string, page?: number, totalPages?: number, totalCount?: number }) {
+    const t = useTranslations();
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [isUpdating, setIsUpdating] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
@@ -41,7 +43,7 @@ export function MyListingsClient({ listings, status = "all", page = 1, totalPage
         <div className="w-24 h-24 sm:w-32 sm:h-32 shrink-0 rounded-xl overflow-hidden bg-muted">
           <img src={mainImage} className="w-full h-full object-cover" alt="" />
         </div>
-        
+
         <div className="flex-1 flex flex-col justify-between min-w-0">
           <div>
             <div className="flex items-start justify-between gap-2">
@@ -57,68 +59,58 @@ export function MyListingsClient({ listings, status = "all", page = 1, totalPage
                   <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem asChild>
                       <Link href={`/sell?edit=${listing.id}`}>
-                        <Edit2 className="w-4 h-4 mr-2" /> Редактировать
-                      </Link>
+                        <Edit2 className="w-4 h-4 mr-2" /> {t("redaktirovat")}</Link>
                     </DropdownMenuItem>
                     {listing.status === "ACTIVE" || listing.status === "OUT_OF_STOCK" ? (
                       <DropdownMenuItem onClick={() => handleStatusChange(listing.id, "DEACTIVATED")}>
-                        <PowerOff className="w-4 h-4 mr-2" /> Деактивировать
-                      </DropdownMenuItem>
+                        <PowerOff className="w-4 h-4 mr-2" /> {t("deaktivirovat")}</DropdownMenuItem>
                     ) : (
                       <DropdownMenuItem onClick={() => handleStatusChange(listing.id, "ACTIVE")}>
-                        <Power className="w-4 h-4 mr-2" /> Активировать
-                      </DropdownMenuItem>
+                        <Power className="w-4 h-4 mr-2" /> {t("aktivirovat")}</DropdownMenuItem>
                     )}
                     <DropdownMenuItem onClick={() => handleStatusChange(listing.id, "SOLD")}>
-                      <CheckCircle2 className="w-4 h-4 mr-2" /> Отметить проданным
-                    </DropdownMenuItem>
+                      <CheckCircle2 className="w-4 h-4 mr-2" /> {t("otmetit_prodannym")}</DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteConfirmId(listing.id)}>
-                      <Archive className="w-4 h-4 mr-2" /> Удалить
-                    </DropdownMenuItem>
+                      <Archive className="w-4 h-4 mr-2" /> {t("udalit")}</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
             </div>
-            <p className="font-bold whitespace-nowrap text-sm sm:text-lg text-primary">{listing.price.toLocaleString("ru-RU")} сом</p>
+            <p className="font-bold whitespace-nowrap text-sm sm:text-lg text-primary">{listing.price.toLocaleString("ru-RU")} {t("som")}</p>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 truncate">
               {new Date(listing.created_at).toLocaleDateString()} • {listing.city}
             </p>
             {listing.listing_type === "INVENTORY" && (
-              <p className="text-xs text-muted-foreground mt-0.5">В наличии: {listing.quantity} шт.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{t("v_nalichii")}{listing.quantity} {t("sht_1")}</p>
             )}
           </div>
 
           <div className="flex items-center mt-3">
             {listing.status === "SOLD" && (
               <span className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-green-600 bg-green-500/10 px-2 py-1 sm:px-2.5 rounded-full">
-                <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" /> Продано
-              </span>
+                <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" /> {t("prodano")}</span>
             )}
             {listing.status === "ARCHIVED" && (
               <span className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-muted-foreground bg-muted px-2 py-1 sm:px-2.5 rounded-full">
-                <Archive className="w-3 h-3 sm:w-4 sm:h-4" /> В архиве
-              </span>
+                <Archive className="w-3 h-3 sm:w-4 sm:h-4" /> {t("v_arhive")}</span>
             )}
             {listing.status === "OUT_OF_STOCK" && (
               <span className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-orange-600 bg-orange-500/10 px-2 py-1 sm:px-2.5 rounded-full">
-                Нет в наличии
-              </span>
+                {t("net_v_nalichii")}</span>
             )}
             {listing.status === "ACTIVE" && (
               <span className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-primary bg-primary/10 px-2 py-1 sm:px-2.5 rounded-full">
-                Активно
-              </span>
+                {t("aktivno")}</span>
             )}
             {listing.status === "DEACTIVATED" && (
               <span className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-muted-foreground bg-muted px-2 py-1 sm:px-2.5 rounded-full">
-                Деактивировано
-              </span>
+                {t("deaktivirovano")}</span>
             )}
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   const EmptyState = ({ title, showCTA = true }: { title: string, showCTA?: boolean }) => (
@@ -128,8 +120,7 @@ export function MyListingsClient({ listings, status = "all", page = 1, totalPage
         <Button asChild>
           <Link href="/sell">
             <Plus className="w-4 h-4 mr-2" />
-            Разместить товар
-          </Link>
+            {t("razmestit_tovar")}</Link>
         </Button>
       )}
     </div>
@@ -150,34 +141,34 @@ export function MyListingsClient({ listings, status = "all", page = 1, totalPage
         <div className="-mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto no-scrollbar mb-6">
           <TabsList className="inline-flex w-max min-w-full justify-start rounded-none border-b bg-transparent h-auto p-0 gap-6">
             <TabsTrigger value="all" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 text-sm sm:text-base">
-              Все {status === "all" && <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{totalCount}</span>}
+              {t("vse")}{status === "all" && <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{totalCount}</span>}
             </TabsTrigger>
             <TabsTrigger value="active" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 text-sm sm:text-base">
-              Активные {status === "active" && <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{totalCount}</span>}
+              {t("aktivnye")}{status === "active" && <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{totalCount}</span>}
             </TabsTrigger>
             <TabsTrigger value="sold" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 text-sm sm:text-base">
-              Проданные {status === "sold" && <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{totalCount}</span>}
+              {t("prodannye")}{status === "sold" && <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{totalCount}</span>}
             </TabsTrigger>
             <TabsTrigger value="deactivated" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 text-sm sm:text-base">
-              Деактивированные {status === "deactivated" && <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{totalCount}</span>}
+              {t("deaktivirovannye")}{status === "deactivated" && <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{totalCount}</span>}
             </TabsTrigger>
             <TabsTrigger value="archived" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-3 text-sm sm:text-base">
-              Архив {status === "archived" && <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{totalCount}</span>}
+              {t("arhiv")}{status === "archived" && <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">{totalCount}</span>}
             </TabsTrigger>
           </TabsList>
         </div>
 
         <div className="space-y-4 outline-none">
-          {listings.length === 0 ? <EmptyState title="Нет объявлений." /> : listings.map(l => <ListingCard key={l.id} listing={l} />)}
+          {listings.length === 0 ? <EmptyState title={t("net_obyavleniy")} /> : listings.map(l => <ListingCard key={l.id} listing={l} />)}
         </div>
         
         {totalPages > 1 && (
           <div className="mt-8 flex justify-center gap-2">
             <Button variant="outline" disabled={page <= 1} asChild={page > 1}>
-              {page > 1 ? <Link href={buildPageUrl(page - 1)}>Назад</Link> : <span>Назад</span>}
+              {page > 1 ? <Link href={buildPageUrl(page - 1)}>{t("nazad")}</Link> : <span>{t("nazad")}</span>}
             </Button>
             <Button variant="outline" disabled={page >= totalPages} asChild={page < totalPages}>
-              {page < totalPages ? <Link href={buildPageUrl(page + 1)}>Вперед</Link> : <span>Вперед</span>}
+              {page < totalPages ? <Link href={buildPageUrl(page + 1)}>{t("vpered")}</Link> : <span>{t("vpered")}</span>}
             </Button>
           </div>
         )}
@@ -186,13 +177,12 @@ export function MyListingsClient({ listings, status = "all", page = 1, totalPage
       <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
         <AlertDialogContent className="w-[90vw] max-w-md rounded-2xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Удалить объявление?</AlertDialogTitle>
+            <AlertDialogTitle>{t("udalit_obyavlenie")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Оно перестанет отображаться покупателям, но сохранится в вашем архиве.
-            </AlertDialogDescription>
+              {t("ono_perestanet_otobrazhatsya_pokupatelyam")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex-col sm:flex-row gap-2 mt-2">
-            <AlertDialogCancel className="mt-0 w-full sm:w-auto">Отмена</AlertDialogCancel>
+            <AlertDialogCancel className="mt-0 w-full sm:w-auto">{t("otmena")}</AlertDialogCancel>
             <AlertDialogAction 
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 w-full sm:w-auto" 
               onClick={(e) => { e.preventDefault(); handleDelete(); }}
@@ -204,5 +194,5 @@ export function MyListingsClient({ listings, status = "all", page = 1, totalPage
         </AlertDialogContent>
       </AlertDialog>
     </>
-  )
+  );
 }

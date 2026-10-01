@@ -3,6 +3,7 @@
 import { Share } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { useTranslations } from "next-intl";
 
 interface ShareButtonProps {
   title: string
@@ -11,6 +12,7 @@ interface ShareButtonProps {
 }
 
 export function ShareButton({ title, text, className }: ShareButtonProps) {
+    const t = useTranslations();
   const handleShare = async () => {
     const url = window.location.href
 
@@ -48,9 +50,9 @@ export function ShareButton({ title, text, className }: ShareButtonProps) {
       size="icon" 
       onClick={handleShare}
       className={className}
-      aria-label="Поделиться"
+      aria-label={t("podelitsya")}
     >
       <Share className="w-5 h-5" />
     </Button>
-  )
+  );
 }

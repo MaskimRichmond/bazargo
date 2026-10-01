@@ -83,7 +83,7 @@ export async function unblockUserAction(userId: string, reason: string) {
 /**
  * Moderate a listing (change status). Uses atomic DB RPC.
  */
-export async function moderateListingAction(listingId: string, status: 'ACTIVE' | 'DEACTIVATED' | 'BLOCKED', reason: string) {
+export async function moderateListingAction(listingId: string, status: 'ACTIVE' | 'DEACTIVATED' | 'BLOCKED' | 'REJECTED', reason: string) {
   const authRes = await verifyAdminAccess('LISTINGS_MODERATE')
   if (!authRes.authorized) throw new Error("Unauthorized: Insufficient privileges")
 
@@ -123,5 +123,52 @@ export async function resolveReportAction(reportId: string, resolutionStatus: 'R
   if (error) throw new Error(error.message)
 
   revalidatePath("/admin/reports")
+  return { success: true, auditId: data }
+}
+
+/**
+ * Change a user's role.
+ */
+export async function changeUserRoleAction(userId: string, newRole: string, reason: string) {
+  const authRes = await verifyAdminAccess('ROLES_MANAGE') 
+  if (!authRes.authorized) throw new Error("Unauthorized: Insufficient privileges")
+
+  if (!userId || !newRole || !reason?.trim()) throw new Error("Invalid input")
+
+  const adminClient = createAdminClient()
+  const { data, error } = await adminClient.rpc("admin_change_user_role", {
+    p_actor_id: authRes.user.id,
+    p_target_user_id: userId,
+    p_new_role: newRole,
+    p_reason: reason.trim()
+  })
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath("/admin/users")
+  revalidatePath(`/admin/users/${userId}`)
+  return { success: true, auditId: data }
+}
+
+/**
+ * Moderate a B2B Application.
+ */
+export async function adminModerateB2BAction(appId: string, status: 'APPROVED' | 'REJECTED', reason: string) {
+  const authRes = await verifyAdminAccess('ROLES_MANAGE') 
+  if (!authRes.authorized) throw new Error("Unauthorized: Insufficient privileges")
+
+  if (!appId || !status || !reason?.trim()) throw new Error("Invalid input")
+
+  const adminClient = createAdminClient()
+  const { data, error } = await adminClient.rpc("admin_moderate_b2b", {
+    p_actor_id: authRes.user.id,
+    p_app_id: appId,
+    p_new_status: status,
+    p_reason: reason.trim()
+  })
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath("/admin/requests")
   return { success: true, auditId: data }
 }

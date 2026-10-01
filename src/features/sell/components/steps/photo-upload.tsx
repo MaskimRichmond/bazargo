@@ -1,8 +1,10 @@
 import { useCallback, useRef } from "react"
 import { useFormContext, useFieldArray } from "react-hook-form"
 import { ImagePlus, X, GripVertical } from "lucide-react"
+import { useTranslations } from "next-intl";
 
 export function PhotoUpload() {
+    const t = useTranslations();
   const { control, formState: { errors } } = useFormContext()
   const { fields, append, remove, move } = useFieldArray({
     control,
@@ -59,8 +61,8 @@ export function PhotoUpload() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold tracking-tight mb-2">Фотографии</h2>
-        <p className="text-sm text-muted-foreground">Первое фото будет главным. Максимум 10 фото.</p>
+        <h2 className="text-2xl font-bold tracking-tight mb-2">{t("fotografii")}</h2>
+        <p className="text-sm text-muted-foreground">{t("pervoe_foto_budet_glavnym")}</p>
       </div>
 
       {error && <p className="text-sm font-medium text-destructive">{error}</p>}
@@ -72,8 +74,7 @@ export function PhotoUpload() {
             
             {index === 0 && (
               <div className="absolute bottom-0 left-0 right-0 bg-primary/90 text-primary-foreground text-[10px] font-medium text-center py-1">
-                Главное
-              </div>
+                {t("glavnoe")}</div>
             )}
 
             <button
@@ -104,7 +105,7 @@ export function PhotoUpload() {
             className="aspect-square rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/50 transition-colors flex flex-col items-center justify-center gap-2 cursor-pointer text-muted-foreground hover:text-foreground"
           >
             <ImagePlus className="w-8 h-8 opacity-50" />
-            <span className="text-xs font-medium">Добавить</span>
+            <span className="text-xs font-medium">{t("dobavit")}</span>
           </div>
         )}
       </div>
@@ -118,5 +119,5 @@ export function PhotoUpload() {
         onChange={handleFileChange}
       />
     </div>
-  )
+  );
 }

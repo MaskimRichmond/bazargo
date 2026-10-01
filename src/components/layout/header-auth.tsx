@@ -9,8 +9,10 @@ import { User, LogOut, Package, Store, Heart, MessageCircle, Settings, Clipboard
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { NotificationsDropdown } from "@/features/notifications/components/notifications-dropdown"
+import { useTranslations } from "next-intl";
 
 export function HeaderAuth() {
+    const t = useTranslations();
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -81,9 +83,9 @@ export function HeaderAuth() {
   if (!user) {
     return (
       <Button variant="default" className="hidden sm:flex rounded-full font-medium" asChild>
-        <Link href="/login">Войти</Link>
+        <Link href="/login">{t("voyti")}</Link>
       </Button>
-    )
+    );
   }
 
   const displayName = profile?.full_name || user.phone || user.email || "Пользователь"
@@ -92,7 +94,7 @@ export function HeaderAuth() {
   return (
     <div className="flex items-center gap-2">
       <NotificationsDropdown />
-      
+
       <div className="relative">
         <Button 
           variant="ghost" 
@@ -119,35 +121,25 @@ export function HeaderAuth() {
             </div>
             
             <Link href="/profile" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <User className="w-4 h-4" /> Профиль
-            </Link>
+              <User className="w-4 h-4" /> {t("profil")}</Link>
             <Link href="/my-listings" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <Package className="w-4 h-4" /> Мои объявления
-            </Link>
+              <Package className="w-4 h-4" /> {t("moi_obyavleniya")}</Link>
             <Link href="/my-store" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors text-primary font-medium">
-              <Store className="w-4 h-4" /> Мой магазин
-            </Link>
+              <Store className="w-4 h-4" /> {t("moy_magazin")}</Link>
             <Link href="/my-requests" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <ClipboardList className="w-4 h-4" /> Мои запросы
-            </Link>
+              <ClipboardList className="w-4 h-4" /> {t("moi_zaprosy")}</Link>
             <Link href="/cart" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors text-primary">
-              <ShoppingBag className="w-4 h-4" /> Корзина
-            </Link>
+              <ShoppingBag className="w-4 h-4" /> {t("korzina")}</Link>
             <Link href="/orders" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <Package className="w-4 h-4" /> Мои покупки
-            </Link>
+              <Package className="w-4 h-4" /> {t("moi_pokupki")}</Link>
             <Link href="/seller/orders" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <Store className="w-4 h-4" /> Заказы клиентов
-            </Link>
+              <Store className="w-4 h-4" /> {t("zakazy_klientov")}</Link>
             <Link href="/favorites" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <Heart className="w-4 h-4" /> Избранное
-            </Link>
+              <Heart className="w-4 h-4" /> {t("izbrannoe")}</Link>
             <Link href="/messages" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <MessageCircle className="w-4 h-4" /> Чаты
-            </Link>
+              <MessageCircle className="w-4 h-4" /> {t("chaty_1")}</Link>
             <Link href="/settings" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <Settings className="w-4 h-4" /> Настройки
-            </Link>
+              <Settings className="w-4 h-4" /> {t("nastroyki")}</Link>
             
             <div className="h-px bg-border my-1" />
             
@@ -155,12 +147,11 @@ export function HeaderAuth() {
               onClick={handleLogout}
               className="flex items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-md transition-colors w-full text-left"
             >
-              <LogOut className="w-4 h-4" /> Выйти
-            </button>
+              <LogOut className="w-4 h-4" /> {t("vyyti")}</button>
           </div>
         </>
       )}
       </div>
     </div>
-  )
+  );
 }

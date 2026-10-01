@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { Loader2, CheckCircle, XCircle } from "lucide-react"
+import { useTranslations } from "next-intl";
 
 type Report = {
   id: string
@@ -13,6 +14,7 @@ type Report = {
 }
 
 export function ReportActions({ report }: { report: Report }) {
+    const t = useTranslations();
   const [isPending, setIsPending] = useState(false)
   const [notes, setNotes] = useState("")
   const [actionType, setActionType] = useState<'RESOLVED' | 'REJECTED' | null>(null)
@@ -41,12 +43,11 @@ export function ReportActions({ report }: { report: Report }) {
     }
   }
 
-  if (report.status !== 'PENDING') {
+  if (report.status === 'RESOLVED' || report.status === 'REJECTED') {
     return (
       <span className="text-xs text-muted-foreground">
-        Обработано
-      </span>
-    )
+        {t("obrabotano")}</span>
+    );
   }
 
   if (actionType) {
@@ -55,7 +56,7 @@ export function ReportActions({ report }: { report: Report }) {
         <Input 
           size={1} 
           className="w-32 h-8 text-xs" 
-          placeholder="Примечание..." 
+          placeholder={t("primechanie")} 
           value={notes} 
           onChange={(e) => setNotes(e.target.value)}
           disabled={isPending}
@@ -67,10 +68,9 @@ export function ReportActions({ report }: { report: Report }) {
           setActionType(null)
           setNotes("")
         }}>
-          Отмена
-        </Button>
+          {t("otmena")}</Button>
       </div>
-    )
+    );
   }
 
   return (
@@ -81,16 +81,14 @@ export function ReportActions({ report }: { report: Report }) {
         className="h-8 text-xs text-green-600 border-green-600 hover:bg-green-50 dark:hover:bg-green-950"
         onClick={() => setActionType('RESOLVED')}
       >
-        <CheckCircle className="w-3 h-3 mr-1" /> Принять
-      </Button>
+        <CheckCircle className="w-3 h-3 mr-1" /> {t("prinyat")}</Button>
       <Button 
         size="sm" 
         variant="outline" 
         className="h-8 text-xs text-red-600 border-red-600 hover:bg-red-50 dark:hover:bg-red-950"
         onClick={() => setActionType('REJECTED')}
       >
-        <XCircle className="w-3 h-3 mr-1" /> Отклонить
-      </Button>
+        <XCircle className="w-3 h-3 mr-1" /> {t("otklonit")}</Button>
     </div>
-  )
+  );
 }

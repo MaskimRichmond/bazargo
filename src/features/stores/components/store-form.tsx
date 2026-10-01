@@ -12,8 +12,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ImagePlus, Loader2 } from "lucide-react"
 import { ImageWithFallback } from "@/components/shared/image-with-fallback"
+import { useTranslations } from "next-intl";
 
 export function StoreForm({ categories, initialData = null, isEditing = false }: { categories: any[], initialData?: any, isEditing?: boolean }) {
+    const t = useTranslations();
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -87,7 +89,7 @@ export function StoreForm({ categories, initialData = null, isEditing = false }:
 
       <div className="space-y-4">
         <div>
-          <Label>Логотип магазина</Label>
+          <Label>{t("logotip_magazina")}</Label>
           <div className="mt-2 flex items-center gap-6">
             <div className="relative w-24 h-24 rounded-2xl overflow-hidden bg-muted border">
               {previewLogo ? (
@@ -100,28 +102,27 @@ export function StoreForm({ categories, initialData = null, isEditing = false }:
             </div>
             <div>
               <Label htmlFor="logo-upload" className="cursor-pointer inline-flex items-center justify-center h-10 px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg text-sm font-medium transition-colors">
-                Загрузить логотип
-              </Label>
+                {t("zagruzit_logotip")}</Label>
               <input id="logo-upload" type="file" accept="image/png, image/jpeg, image/webp" className="hidden" onChange={handleLogoChange} />
-              <p className="text-xs text-muted-foreground mt-2">JPG, PNG, WEBP (рекомендуется 1:1)</p>
+              <p className="text-xs text-muted-foreground mt-2">{t("jpg_png_webp_rekomenduetsya")}</p>
             </div>
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="name">Название магазина <span className="text-destructive">*</span></Label>
-          <Input id="name" {...register("name")} className="h-12 bg-muted/50" placeholder="Например: TechStore" />
-          {errors.name && <p className="text-xs text-destructive">{errors.name.message as string}</p>}
+          <Label htmlFor="name">{t("nazvanie_magazina")}<span className="text-destructive">*</span></Label>
+          <Input id="name" {...register("name")} className="h-12 bg-muted/50" placeholder={t("naprimer_techstore")} />
+          {errors.name && <p className="text-xs text-destructive">{t(errors.name.message as any)}</p>}
         </div>
 
         <div className="space-y-2">
-          <Label>Категория <span className="text-destructive">*</span></Label>
+          <Label>{t("kategoriya")}<span className="text-destructive">*</span></Label>
           <Select 
             value={currentCategory} 
             onValueChange={(val) => setValue("categoryId", val, { shouldValidate: true })}
           >
             <SelectTrigger className="h-12 bg-muted/50">
-              <SelectValue placeholder="Выберите категорию" />
+              <SelectValue placeholder={t("vyberite_kategoriyu")} />
             </SelectTrigger>
             <SelectContent>
               {categories.filter(c => !c.parent_id).map((root) => {
@@ -140,30 +141,30 @@ export function StoreForm({ categories, initialData = null, isEditing = false }:
               })}
             </SelectContent>
           </Select>
-          {errors.categoryId && <p className="text-xs text-destructive">{errors.categoryId.message as string}</p>}
+          {errors.categoryId && <p className="text-xs text-destructive">{t(errors.categoryId.message as any)}</p>}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="city">Город <span className="text-destructive">*</span></Label>
+          <Label htmlFor="city">{t("gorod")}<span className="text-destructive">*</span></Label>
           <Input id="city" {...register("city")} className="h-12 bg-muted/50" readOnly />
-          {errors.city && <p className="text-xs text-destructive">{errors.city.message as string}</p>}
+          {errors.city && <p className="text-xs text-destructive">{t(errors.city.message as any)}</p>}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="description">Описание</Label>
-          <Textarea id="description" {...register("description")} className="bg-muted/50 min-h-[120px]" placeholder="Расскажите о вашем магазине..." />
-          {errors.description && <p className="text-xs text-destructive">{errors.description.message as string}</p>}
+          <Label htmlFor="description">{t("opisanie")}</Label>
+          <Textarea id="description" {...register("description")} className="bg-muted/50 min-h-[120px]" placeholder={t("rasskazhite_o_vashem_magazine")} />
+          {errors.description && <p className="text-xs text-destructive">{t(errors.description.message as any)}</p>}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="phone">Телефон</Label>
+            <Label htmlFor="phone">{t("telefon")}</Label>
             <Input id="phone" {...register("phone")} className="h-12 bg-muted/50" placeholder="+996..." />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" {...register("email")} className="h-12 bg-muted/50" placeholder="store@example.com" />
-            {errors.email && <p className="text-xs text-destructive">{errors.email.message as string}</p>}
+            {errors.email && <p className="text-xs text-destructive">{t(errors.email.message as any)}</p>}
           </div>
         </div>
       </div>
@@ -171,9 +172,9 @@ export function StoreForm({ categories, initialData = null, isEditing = false }:
       <div className="pt-4 border-t">
         <Button type="submit" className="w-full h-12 rounded-xl text-lg font-semibold" disabled={isLoading}>
           {isLoading && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
-          {isEditing ? "Сохранить изменения" : "Создать магазин"}
+          {isEditing ? t("forms.save_changes") : t("forms.create_store")}
         </Button>
       </div>
     </form>
-  )
+  );
 }

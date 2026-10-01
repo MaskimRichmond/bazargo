@@ -5,8 +5,10 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { MapPin } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { REGIONS } from "@/lib/regions"
+import { useTranslations } from "next-intl";
 
 export function HeaderLocationSelector() {
+    const t = useTranslations();
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -77,7 +79,7 @@ export function HeaderLocationSelector() {
       <DropdownMenuTrigger asChild>
         <div className="hidden lg:flex items-center gap-1 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-muted">
           <MapPin className="w-4 h-4 text-primary" />
-          <span className="font-medium">{selectedLocation}</span>
+          <span className="font-medium">{selectedLocation === "Все регионы" ? t("vse_regiony") : t(`regions.${selectedLocation}` as any)}</span>
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
@@ -85,8 +87,7 @@ export function HeaderLocationSelector() {
           onClick={() => handleSelect("Все регионы")}
           className={selectedLocation === "Все регионы" ? "bg-primary/10 text-primary font-medium" : ""}
         >
-          Все регионы
-        </DropdownMenuItem>
+          {t("vse_regiony")}</DropdownMenuItem>
         {REGIONS.map(region => (
           <DropdownMenuItem 
             key={region} 
@@ -98,5 +99,5 @@ export function HeaderLocationSelector() {
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

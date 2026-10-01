@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Heart } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toggleFavorite } from "@/app/actions/favorites"
+import { useTranslations } from "next-intl"
 
 interface FavoriteButtonProps {
   listingId: string
@@ -14,6 +15,7 @@ interface FavoriteButtonProps {
 
 export function FavoriteButton({ listingId, initialIsFavorite, className, iconClassName }: FavoriteButtonProps) {
   const router = useRouter()
+  const t = useTranslations()
   const [isFavorite, setIsFavorite] = useState(initialIsFavorite)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -51,11 +53,11 @@ export function FavoriteButton({ listingId, initialIsFavorite, className, iconCl
   return (
     <button 
       className={`z-10 bg-background/80 backdrop-blur-md hover:bg-background rounded-full w-8 h-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all focus-visible:opacity-100 outline-none shadow-sm disabled:opacity-50 ${isFavorite ? "opacity-100" : ""} ${className || ""}`}
-      aria-label={isFavorite ? "Удалить из избранного" : "Добавить в избранное"}
+      aria-label={isFavorite ? t("udalit_iz_izbrannogo") : t("dobavit_v_izbrannoe")}
       onClick={handleClick}
       disabled={isLoading}
     >
       <Heart className={`w-4 h-4 transition-colors ${isFavorite ? "fill-red-500 text-red-500" : "text-foreground"} ${iconClassName || ""}`} />
     </button>
-  )
+  );
 }

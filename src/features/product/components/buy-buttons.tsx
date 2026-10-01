@@ -6,6 +6,7 @@ import { ShoppingBag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { addToCart } from "@/app/actions/cart"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl";
 
 export function BuyButtons({ 
   listingId, 
@@ -22,6 +23,7 @@ export function BuyButtons({
   quantity: number, 
   listingType: string 
 }) {
+    const t = useTranslations();
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
@@ -30,13 +32,13 @@ export function BuyButtons({
   if (currentUserId === sellerId) return null
 
   if (status === "SOLD") {
-    return <Button variant="secondary" className="w-full h-12" disabled>Продано</Button>
+    return <Button variant="secondary" className="w-full h-12" disabled>{t("prodano")}</Button>;
   }
   if (status === "OUT_OF_STOCK") {
-    return <Button variant="secondary" className="w-full h-12" disabled>Нет в наличии</Button>
+    return <Button variant="secondary" className="w-full h-12" disabled>{t("net_v_nalichii")}</Button>;
   }
   if (status !== "ACTIVE") {
-    return <Button variant="secondary" className="w-full h-12" disabled>Недоступно</Button>
+    return <Button variant="secondary" className="w-full h-12" disabled>{t("nedostupno")}</Button>;
   }
 
   const handleAddToCart = () => {
@@ -75,7 +77,7 @@ export function BuyButtons({
     <div className="space-y-4">
       {listingType === "INVENTORY" && (
         <div className="flex items-center gap-4">
-          <span className="text-sm font-medium">Количество:</span>
+          <span className="text-sm font-medium">{t("kolichestvo")}</span>
           <div className="flex items-center border rounded-full overflow-hidden w-fit">
             <button 
               disabled={orderQuantity <= 1 || isPending}
@@ -93,28 +95,27 @@ export function BuyButtons({
               +
             </button>
           </div>
-          <span className="text-sm text-muted-foreground">В наличии: {quantity}</span>
+          <span className="text-sm text-muted-foreground">{t("v_nalichii")}{quantity}</span>
         </div>
       )}
-      
+
       <div className="flex gap-3">
         <Button 
           onClick={handleBuyNow} 
           disabled={isPending}
           className="flex-1 h-12 text-base rounded-xl"
         >
-          Купить сейчас
-        </Button>
+          {t("kupit_seychas")}</Button>
         <Button 
           variant="secondary"
           onClick={handleAddToCart} 
           disabled={isPending}
           className="flex-none h-12 px-4 rounded-xl"
-          title="Добавить в корзину"
+          title={t("dobavit_v_korzinu")}
         >
           <ShoppingBag className="w-5 h-5" />
         </Button>
       </div>
     </div>
-  )
+  );
 }

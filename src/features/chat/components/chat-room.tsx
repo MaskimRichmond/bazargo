@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client"
 import { sendMessage } from "@/app/actions/chats"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { useTranslations } from "next-intl";
 
 interface Message {
   id: string
@@ -16,16 +17,21 @@ interface Message {
   created_at: string
 }
 
+import { B2BOfferCard } from "@/features/b2b/components/offer-card"
+
 interface ChatRoomProps {
   chatId: string
   currentUserId: string
   initialMessages: Message[]
-  listing?: any
+  b2bOffers?: unknown[]
+  listing?: Record<string, unknown>
   isBlocked?: boolean
 }
 
-export function ChatRoom({ chatId, currentUserId, initialMessages, listing, isBlocked }: ChatRoomProps) {
+export function ChatRoom({ chatId, currentUserId, initialMessages, b2bOffers = [], listing, isBlocked }: ChatRoomProps) {
+    const t = useTranslations();
   const [messages, setMessages] = useState<Message[]>(initialMessages)
+  const [offers, setOffers] = useState<any[]>(b2bOffers)
   const [content, setContent] = useState("")
   const [isSending, setIsSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -95,7 +101,7 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing, isBl
       supabase.from('messages')
         .update({ is_read: true })
         .in('id', unreadIds)
-        .then((res: { error: any }) => {
+        .then((res: { error: unknown }) => {
           if (!res.error) {
             // Update local state only if DB update succeeded
             setMessages(prev => prev.map(m => 
@@ -117,7 +123,7 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing, isBl
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
-        (payload: any) => {
+        (payload: { new: Message }) => {
           const newMessage = payload.new as Message
           setMessages(prev => {
             if (prev.some(m => m.id === newMessage.id)) return prev
@@ -129,7 +135,7 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing, isBl
           })
         }
       )
-      .subscribe(async (status: any) => {
+      .subscribe(async (status: string) => {
         setIsConnected(status === 'SUBSCRIBED')
         
         if (status === 'SUBSCRIBED') {
@@ -145,10 +151,10 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing, isBl
               .eq('chat_id', chatId)
               .gt('created_at', lastMsg.created_at)
               .order('created_at', { ascending: true })
-              .then((res: { data: any, error: any }) => {
+              .then((res: { data: Message[], error: unknown }) => {
                 if (!res.error && res.data && res.data.length > 0) {
                   setMessages(prev => {
-                    const newMsgs = res.data.filter((newM: any) => !prev.some(m => m.id === newM.id))
+                    const newMsgs = res.data.filter((newM: Message) => !prev.some(m => m.id === newM.id))
                     if (newMsgs.length > 0) {
                       setTimeout(scrollToBottom, 50)
                       return [...prev, ...newMsgs]
@@ -208,33 +214,41 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing, isBl
     }
   }
 
-  // Group messages
-  const grouped: { date: string, messages: (Message & { isFirstInGroup: boolean, isLastInGroup: boolean })[] }[] = []
+  // Group timeline
+  const timeline = [
+    ...messages.map(m => ({ ...m, _type: 'message' })),
+    ...offers.map(o => ({ ...o, _type: 'offer' }))
+  ].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+
+  const grouped: { date: string, items: (Message & { _type?: string, isFirstInGroup?: boolean, isLastInGroup?: boolean } | Record<string, unknown> & { _type?: string })[] }[] = []
   
-  messages.forEach((msg, idx) => {
-    const d = new Date(msg.created_at)
+  timeline.forEach((item, idx) => {
+    const d = new Date(item.created_at)
     const dateStr = d.toLocaleDateString("ru-RU", { day: 'numeric', month: 'long' })
     
     let currentGroup = grouped.find(g => g.date === dateStr)
     if (!currentGroup) {
-      currentGroup = { date: dateStr, messages: [] }
+      currentGroup = { date: dateStr, items: [] }
       grouped.push(currentGroup)
     }
     
-    const prevMsg = idx > 0 ? messages[idx - 1] : null
-    const nextMsg = idx < messages.length - 1 ? messages[idx + 1] : null
-    
-    const isSameSenderAsPrev = prevMsg && prevMsg.sender_id === msg.sender_id
-    const isSameSenderAsNext = nextMsg && nextMsg.sender_id === msg.sender_id
-    
-    // Time diff in minutes
-    const isSameTimeAsPrev = prevMsg && (d.getTime() - new Date(prevMsg.created_at).getTime() < 60000)
-    const isSameTimeAsNext = nextMsg && (new Date(nextMsg.created_at).getTime() - d.getTime() < 60000)
+    if (item._type === 'offer') {
+      currentGroup.items.push(item)
+    } else {
+      const prevItem = idx > 0 ? timeline[idx - 1] : null
+      const nextItem = idx < timeline.length - 1 ? timeline[idx + 1] : null
+      
+      const isSameSenderAsPrev = prevItem && prevItem._type === 'message' && prevItem.sender_id === item.sender_id
+      const isSameSenderAsNext = nextItem && nextItem._type === 'message' && nextItem.sender_id === item.sender_id
+      
+      const isSameTimeAsPrev = prevItem && (d.getTime() - new Date(prevItem.created_at).getTime() < 60000)
+      const isSameTimeAsNext = nextItem && (new Date(nextItem.created_at).getTime() - d.getTime() < 60000)
 
-    const isFirstInGroup = !(isSameSenderAsPrev && isSameTimeAsPrev)
-    const isLastInGroup = !(isSameSenderAsNext && isSameTimeAsNext)
+      const isFirstInGroup = !(isSameSenderAsPrev && isSameTimeAsPrev)
+      const isLastInGroup = !(isSameSenderAsNext && isSameTimeAsNext)
 
-    currentGroup.messages.push({ ...msg, isFirstInGroup, isLastInGroup })
+      currentGroup.items.push({ ...item, isFirstInGroup, isLastInGroup })
+    }
   })
 
   return (
@@ -242,7 +256,7 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing, isBl
       {!isConnected && (
         <div className="bg-destructive/10 text-destructive px-3 py-1.5 text-[11px] font-medium flex items-center justify-center gap-1.5 shrink-0">
           <AlertCircle className="w-3 h-3" />
-          <span>Переподключение...</span>
+          <span>{t("perepodklyuchenie")}</span>
         </div>
       )}
 
@@ -285,15 +299,15 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing, isBl
               </div>
               <div className="flex-1 min-w-0 pr-1">
                 <p className="text-[13px] font-semibold leading-tight truncate text-foreground group-hover:text-primary transition-colors">{listing.title}</p>
-                <p className="text-[12px] font-bold text-muted-foreground mt-0.5">{listing.price?.toLocaleString("ru-RU")} сом</p>
+                <p className="text-[12px] font-bold text-muted-foreground mt-0.5">{listing.price?.toLocaleString("ru-RU")} {t("som")}</p>
               </div>
             </Link>
           </div>
         )}
 
-        {messages.length === 0 ? (
+        {messages.length === 0 && offers.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-muted-foreground text-sm flex-1 opacity-60">
-            <p>Диалог начат</p>
+            <p>{t("dialog_nachat")}</p>
           </div>
         ) : (
           grouped.map((group) => (
@@ -304,7 +318,16 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing, isBl
                 </span>
               </div>
               
-              {group.messages.map((msg) => {
+              {group.items.map((item) => {
+                if (item._type === 'offer') {
+                  return (
+                    <div key={`offer-${item.id}`} className="flex justify-center w-full my-4">
+                      <B2BOfferCard offer={item} currentUserId={currentUserId} />
+                    </div>
+                  )
+                }
+
+                const msg = item
                 const isMe = msg.sender_id === currentUserId
                 const time = new Date(msg.created_at).toLocaleTimeString("ru-RU", { hour: '2-digit', minute: '2-digit' })
                 
@@ -343,8 +366,7 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing, isBl
         {error && <p className="text-destructive text-xs mb-2 px-2 text-center font-medium">{error}</p>}
         {isBlocked ? (
           <div className="flex items-center justify-center p-3 text-muted-foreground text-sm font-medium bg-muted/50 rounded-xl">
-            Отправка сообщений ограничена, так как пользователь заблокирован.
-          </div>
+            {t("otpravka_soobscheniy_ogranichena_tak")}</div>
         ) : (
           <div className="flex items-end gap-2 max-w-4xl mx-auto">
             <div className="flex-1 bg-muted/40 rounded-[22px] border border-border/60 focus-within:border-primary focus-within:bg-background transition-colors flex items-end shadow-sm overflow-hidden">
@@ -353,7 +375,7 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing, isBl
                 value={content}
                 onChange={handleInput}
                 onKeyDown={handleKeyDown}
-                placeholder="Написать сообщение..."
+                placeholder={t("napisat_soobschenie")}
                 className="flex-1 max-h-[120px] min-h-[44px] py-[11px] px-4 bg-transparent outline-none resize-none text-[15px] leading-relaxed no-scrollbar"
                 rows={1}
                 disabled={isSending}
@@ -371,5 +393,5 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, listing, isBl
         )}
       </div>
     </div>
-  )
+  );
 }

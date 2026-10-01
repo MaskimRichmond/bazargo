@@ -6,6 +6,7 @@ import { Search, X, Clock } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useTranslations } from "next-intl";
 
 interface GlobalSearchProps {
   className?: string;
@@ -17,6 +18,7 @@ interface GlobalSearchProps {
 const RECENT_SEARCHES_KEY = "bazargo_recent_searches"
 
 function GlobalSearchInner({ className, inputClassName, placeholder = "Поиск по миллионам товаров...", button = false }: GlobalSearchProps) {
+    const t = useTranslations();
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialQ = searchParams.get("q") || ""
@@ -108,14 +110,14 @@ function GlobalSearchInner({ className, inputClassName, placeholder = "Поис�
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onFocus={() => setIsFocused(true)}
-          aria-label="Поиск товаров"
+          aria-label={t("search_products")}
         />
         {q && (
           <button
             type="button"
             onClick={handleClear}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-full"
-            aria-label="Очистить поиск"
+            aria-label={t("ochistit_poisk")}
           >
             <X className="w-4 h-4" />
           </button>
@@ -125,14 +127,13 @@ function GlobalSearchInner({ className, inputClassName, placeholder = "Поис�
         {isFocused && recentSearches.length > 0 && (
           <div className="absolute top-full left-0 right-0 mt-1 bg-background border rounded-xl shadow-lg z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="flex items-center justify-between px-4 py-2 bg-muted/30 border-b text-xs text-muted-foreground font-medium">
-              <span>Недавние запросы</span>
+              <span>{t("nedavnie_zaprosy")}</span>
               <button 
                 type="button" 
                 onClick={clearHistory}
                 className="hover:text-foreground transition-colors px-1"
               >
-                Очистить
-              </button>
+                {t("ochistit")}</button>
             </div>
             <ul className="py-1">
               {recentSearches.map((search, i) => (
@@ -153,7 +154,7 @@ function GlobalSearchInner({ className, inputClassName, placeholder = "Поис�
                       role="button"
                       onClick={(e) => removeRecentSearch(search, e)}
                       className="p-1 text-muted-foreground/50 hover:text-foreground shrink-0"
-                      aria-label="Удалить из истории"
+                      aria-label={t("udalit_iz_istorii")}
                     >
                       <X className="w-3.5 h-3.5" />
                     </span>
@@ -166,11 +167,10 @@ function GlobalSearchInner({ className, inputClassName, placeholder = "Поис�
       </div>
       {button && (
         <Button type="submit" className="h-12 px-8 text-base font-medium rounded-xl shrink-0">
-          Найти
-        </Button>
+          {t("nayti")}</Button>
       )}
     </form>
-  )
+  );
 }
 
 export function GlobalSearch(props: GlobalSearchProps) {

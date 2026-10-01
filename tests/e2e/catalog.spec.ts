@@ -11,6 +11,7 @@ test.describe('Catalog and Search', () => {
     
     // Execute a search
     await searchInput.fill('iphone');
+    await expect(searchInput).toHaveValue('iphone');
     await searchInput.press('Enter');
 
     // It should navigate and append ?q=iphone

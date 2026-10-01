@@ -1,0 +1,110 @@
+import { createClient } from "@/lib/supabase/server"
+import { notFound, redirect } from "next/navigation"
+import Link from "next/link"
+import Image from "next/image"
+import { ChevronLeft } from "lucide-react"
+import { OrderActions } from "@/app/[locale]/(main)/orders/order-actions"
+import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
+
+export const metadata = {
+  title: "Детали заказа клиента | BazarGo",
+}
+
+const STATUS_MAP: Record<string, { label: string, color: string, description: string }> = {
+  PENDING: { label: "Новый", color: "text-yellow-600 bg-yellow-50", description: "Покупатель оформил заказ. Подтвердите, что товар есть в наличии." },
+  CONFIRMED: { label: "Подтверждён", color: "text-blue-600 bg-blue-50", description: "Свяжитесь с покупателем для передачи товара." },
+  COMPLETED: { label: "Сделка завершена", color: "text-green-600 bg-green-50", description: "Товар успешно передан покупателю." },
+  REJECTED: { label: "Отклонен", color: "text-red-600 bg-red-50", description: "Вы отклонили этот заказ." },
+  CANCELLED: { label: "Отменён", color: "text-gray-600 bg-gray-50", description: "Покупатель отменил этот заказ." },
+  EXPIRED: { label: "Истёк", color: "text-gray-600 bg-gray-50", description: "Вы не подтвердили заказ вовремя." },
+}
+
+export default async function SellerOrderDetailPage({ params }: { params: { id: string } }) {
+    const t = await getTranslations();
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (!session) redirect("/login?next=/seller/orders/" + params.id)
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select(`
+      *,
+      profiles!buyer_id (id, full_name, avatar_url),
+      order_items (*)
+    `)
+    .eq("id", params.id)
+    .eq("seller_id", session.user.id)
+    .single()
+
+  if (!order) notFound()
+
+  const { data: buyerPhone } = await supabase.rpc("get_order_buyer_phone", { p_order_id: order.id })
+
+  const statusInfo = STATUS_MAP[order.status] || { label: order.status, color: "bg-muted text-muted-foreground", description: "" }
+  const buyer = order.profiles
+
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-3xl">
+      <Link href="/seller/orders" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6">
+        <ChevronLeft className="w-4 h-4 mr-1" /> {t("vernutsya_k_spisku")}</Link>
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">{t("zakaz")}{order.id.split('-')[0]}</h1>
+          <p className="text-muted-foreground text-sm mt-1">{new Date(order.created_at).toLocaleString('ru-RU')}</p>
+        </div>
+        <div className={`px-4 py-2 rounded-xl text-sm font-semibold inline-flex w-fit ${statusInfo.color}`}>
+          {statusInfo.label}
+        </div>
+      </div>
+
+      <div className="bg-card border rounded-3xl p-6 mb-6">
+        <p className="text-sm mb-6 pb-6 border-b">{statusInfo.description}</p>
+        
+        <h3 className="font-bold mb-4">{t("sostav_zakaza")}</h3>
+        <div className="space-y-4 mb-6">
+          {order.order_items.map((item: any) => (
+            <div key={item.id} className="flex gap-4">
+              <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted shrink-0">
+                {item.image_url_snapshot && <Image src={item.image_url_snapshot} alt={item.title_snapshot} fill className="object-cover" />}
+              </div>
+              <div className="flex-1">
+                <Link href={`/product/${item.listing_id}`} className="font-medium hover:underline line-clamp-1">{item.title_snapshot}</Link>
+                <div className="flex justify-between mt-1 text-sm text-muted-foreground">
+                  <span>{item.quantity} {t("sht")}{item.unit_price} {t("som")}</span>
+                  <span className="font-medium text-foreground">{item.quantity * item.unit_price} {t("som")}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="border-t pt-4 flex justify-between font-bold text-lg">
+          <span>{t("itogo")}</span>
+          <span>{order.total_amount} {t("som")}</span>
+        </div>
+      </div>
+
+      <div className="bg-card border rounded-3xl p-6">
+        <h3 className="font-bold mb-4">{t("informatsiya_o_pokupatele")}</h3>
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-muted overflow-hidden">
+            {buyer.avatar_url && <img src={buyer.avatar_url} alt="" className="w-full h-full object-cover" />}
+          </div>
+          <div>
+            <p className="font-medium">{buyer.full_name || "Неизвестно"}</p>
+            {buyerPhone ? (
+              <a href={`tel:${buyerPhone}`} className="text-sm text-primary hover:underline">{buyerPhone}</a>
+            ) : (
+              <p className="text-xs text-muted-foreground">{t("telefon_ne_dostupen")}</p>
+            )}
+          </div>
+        </div>
+
+        <OrderActions orderId={order.id} status={order.status} isSeller={true} />
+      </div>
+    </div>
+  );
+}

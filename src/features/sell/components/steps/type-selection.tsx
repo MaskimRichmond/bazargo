@@ -2,30 +2,32 @@ import { useFormContext } from "react-hook-form"
 import { Package, Copy } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { useTranslations } from "next-intl";
 
 export function TypeSelection({ userStore }: { userStore?: any }) {
+    const t = useTranslations();
   const { watch, setValue } = useFormContext()
   const currentType = watch("type")
 
   const types = [
     {
       id: "SINGLE",
-      title: "Простой товар",
-      description: "Один экземпляр. Подходит для личных вещей (например: iPhone 13, 1 шт).",
+      title: t("type_selection.single_title"),
+      description: t("type_selection.single_desc"),
       icon: Package
     },
     {
       id: "INVENTORY",
-      title: "Товар с количеством",
-      description: "Несколько одинаковых единиц. Подходит для магазинов (например: AirPods Pro, 15 шт).",
+      title: t("type_selection.inventory_title"),
+      description: t("type_selection.inventory_desc"),
       icon: Copy
     }
   ]
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold tracking-tight">Что вы продаёте?</h2>
-      
+      <h2 className="text-2xl font-bold tracking-tight">{t("chto_vy_prodayote")}</h2>
+
       <div className="grid gap-4">
         {types.map((type) => {
           const isSelected = currentType === type.id
@@ -62,8 +64,8 @@ export function TypeSelection({ userStore }: { userStore?: any }) {
         <Card className="border-primary/20 bg-primary/5 mt-6 animate-in fade-in">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <h4 className="font-semibold text-sm">Публикация от магазина</h4>
-              <p className="text-xs text-muted-foreground">Объявление будет опубликовано от имени "{userStore.name}"</p>
+              <h4 className="font-semibold text-sm">{t("publikatsiya_ot_magazina")}</h4>
+              <p className="text-xs text-muted-foreground">{t("obyavlenie_budet_opublikovano_ot")}{userStore.name}"</p>
             </div>
             <div className="flex items-center">
               <label className="flex items-center cursor-pointer gap-2">
@@ -79,5 +81,5 @@ export function TypeSelection({ userStore }: { userStore?: any }) {
         </Card>
       )}
     </div>
-  )
+  );
 }

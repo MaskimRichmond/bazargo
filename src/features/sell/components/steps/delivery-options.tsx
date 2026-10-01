@@ -1,8 +1,10 @@
 import { useFormContext } from "react-hook-form"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
+import { useTranslations } from "next-intl";
 
 export function DeliveryOptions() {
+    const t = useTranslations();
   const { watch, setValue, formState: { errors } } = useFormContext()
   const currentMethods = watch("deliveryMethods") || []
 
@@ -22,10 +24,10 @@ export function DeliveryOptions() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold tracking-tight mb-2">Способ получения</h2>
-      <p className="text-sm text-muted-foreground mb-6">Выберите один или несколько вариантов</p>
+      <h2 className="text-2xl font-bold tracking-tight mb-2">{t("sposob_polucheniya")}</h2>
+      <p className="text-sm text-muted-foreground mb-6">{t("vyberite_odin_ili_neskolko")}</p>
 
-      {errors.deliveryMethods && <p className="text-sm text-destructive font-medium">{errors.deliveryMethods.message as string}</p>}
+      {errors.deliveryMethods && <p className="text-sm text-destructive font-medium">{t(errors.deliveryMethods.message as any)}</p>}
 
       <div className="space-y-3 mb-8">
         {options.map((opt) => (
@@ -49,9 +51,9 @@ export function DeliveryOptions() {
         ))}
       </div>
 
-      <h2 className="text-2xl font-bold tracking-tight mb-2 mt-8">Контактный телефон</h2>
-      <p className="text-sm text-muted-foreground mb-4">Настройте видимость вашего номера телефона в объявлении</p>
-      
+      <h2 className="text-2xl font-bold tracking-tight mb-2 mt-8">{t("kontaktnyy_telefon")}</h2>
+      <p className="text-sm text-muted-foreground mb-4">{t("nastroyte_vidimost_vashego_nomera")}</p>
+
       <div 
         className={`flex items-start space-x-3 p-4 rounded-xl border transition-colors cursor-pointer ${
           watch("showPhone") ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
@@ -64,10 +66,10 @@ export function DeliveryOptions() {
           className="mt-1"
         />
         <div className="space-y-1">
-          <Label htmlFor="showPhone" className="text-base font-semibold cursor-pointer">Показывать номер телефона</Label>
-          <p className="text-sm text-muted-foreground">Если выключено, покупатели смогут связаться с вами только через чат</p>
+          <Label htmlFor="showPhone" className="text-base font-semibold cursor-pointer">{t("pokazyvat_nomer_telefona")}</Label>
+          <p className="text-sm text-muted-foreground">{t("esli_vyklyucheno_pokupateli_smogut")}</p>
         </div>
       </div>
     </div>
-  )
+  );
 }

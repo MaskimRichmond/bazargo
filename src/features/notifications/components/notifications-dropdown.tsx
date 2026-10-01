@@ -7,8 +7,10 @@ import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
+import { useTranslations } from "next-intl";
 
 export function NotificationsDropdown() {
+    const t = useTranslations();
   const [notifications, setNotifications] = useState<any[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
@@ -110,7 +112,7 @@ export function NotificationsDropdown() {
         size="icon"
         className="relative h-9 w-9 text-muted-foreground hover:text-foreground"
         onClick={() => setIsOpen(!isOpen)}
-        aria-label="Уведомления"
+        aria-label={t("uvedomleniya")}
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
@@ -125,22 +127,20 @@ export function NotificationsDropdown() {
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
           <div className="absolute right-0 top-full mt-2 w-80 bg-popover rounded-xl shadow-lg border p-1 z-50 overflow-hidden flex flex-col max-h-[80vh]">
             <div className="px-3 py-3 border-b flex items-center justify-between">
-              <h3 className="font-semibold">Уведомления</h3>
+              <h3 className="font-semibold">{t("uvedomleniya")}</h3>
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
                   className="text-xs text-primary hover:underline flex items-center gap-1"
                 >
-                  <Check className="w-3 h-3" /> Прочитать все
-                </button>
+                  <Check className="w-3 h-3" /> {t("prochitat_vse")}</button>
               )}
             </div>
 
             <div className="overflow-y-auto flex-1 p-1">
               {notifications.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground text-sm">
-                  Нет новых уведомлений
-                </div>
+                  {t("net_novyh_uvedomleniy")}</div>
               ) : (
                 <div className="space-y-1">
                   {notifications.map(notification => (
@@ -176,5 +176,5 @@ export function NotificationsDropdown() {
         </>
       )}
     </div>
-  )
+  );
 }

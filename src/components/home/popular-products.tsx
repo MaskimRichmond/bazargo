@@ -4,8 +4,11 @@ import { ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ProductCard } from "@/components/shared/product-card"
 import { createClient } from "@/lib/supabase/server"
+import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 
 export async function PopularProducts() {
+    const t = await getTranslations();
   const supabase = await createClient()
   const cookieStore = await cookies()
   const regionCookie = cookieStore.get("bazargo_region")?.value
@@ -51,25 +54,24 @@ export async function PopularProducts() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-2 text-foreground">
-              Свежие объявления
-            </h2>
+              {t("svezhie_obyavleniya")}</h2>
             <p className="text-muted-foreground">
               {activeRegion ? `В регионе: ${activeRegion}` : "Новые предложения со всего Кыргызстана"}
             </p>
           </div>
           <Button variant="ghost" className="text-primary hover:text-primary hover:bg-primary/5 -ml-4 sm:ml-0 self-start sm:self-auto" asChild>
             <Link href="/catalog" className="flex items-center gap-2 font-medium">
-              Смотреть все <ArrowRight className="w-4 h-4" />
+              {t("smotret_vse")}<ArrowRight className="w-4 h-4" />
             </Link>
           </Button>
         </div>
 
         {products.length === 0 ? (
           <div className="text-center py-16 border rounded-2xl bg-muted/20">
-            <h3 className="text-xl font-semibold mb-2">В этом регионе пока нет объявлений</h3>
-            <p className="text-muted-foreground mb-6">Попробуйте посмотреть объявления из всех регионов</p>
+            <h3 className="text-xl font-semibold mb-2">{t("v_etom_regione_poka")}</h3>
+            <p className="text-muted-foreground mb-6">{t("poprobuyte_posmotret_obyavleniya_iz")}</p>
             <Button asChild>
-              <Link href="/catalog">Показать все регионы</Link>
+              <Link href="/catalog">{t("pokazat_vse_regiony")}</Link>
             </Button>
           </div>
         ) : (
@@ -81,5 +83,5 @@ export async function PopularProducts() {
         )}
       </div>
     </section>
-  )
+  );
 }

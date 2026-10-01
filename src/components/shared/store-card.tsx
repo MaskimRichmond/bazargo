@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
 import { ImageWithFallback } from "@/components/shared/image-with-fallback"
+import { useTranslations } from "next-intl";
 
 interface StoreCardProps {
   store: {
@@ -21,6 +22,7 @@ interface StoreCardProps {
 }
 
 export function StoreCard({ store }: StoreCardProps) {
+    const t = useTranslations();
   const imgSrc = store.image || store.avatar || ""
   const href = `/store/${store.slug || store.id}`
 
@@ -49,15 +51,15 @@ export function StoreCard({ store }: StoreCardProps) {
           {store.itemsCount !== undefined && (
             <div className="flex items-center gap-1 text-muted-foreground text-sm">
               <Package className="w-4 h-4" />
-              <span>{store.itemsCount} тов.</span>
+              <span>{store.itemsCount} {t("tov")}</span>
             </div>
           )}
         </div>
         
         <Button asChild variant="outline" className="w-full text-primary hover:text-primary hover:bg-primary/5 border-primary/20 rounded-xl">
-          <Link href={href}>В магазин</Link>
+          <Link href={href}>{t("v_magazin")}</Link>
         </Button>
       </CardContent>
     </Card>
-  )
+  );
 }

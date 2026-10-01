@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { MessageCircle, Phone } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { createChat } from "@/app/actions/chats"
+import { useTranslations } from "next-intl";
 
 export function ContactSeller({ 
   listingId, 
@@ -19,6 +20,7 @@ export function ContactSeller({
   showPhone: boolean
   phone?: string | null
 }) {
+    const t = useTranslations();
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [phoneVisible, setPhoneVisible] = useState(false)
@@ -46,8 +48,7 @@ export function ContactSeller({
     <div className="flex flex-col gap-3">
       {isOwner ? (
         <div className="bg-muted p-4 rounded-xl text-center text-sm font-medium text-muted-foreground border">
-          Это ваше объявление
-        </div>
+          {t("eto_vashe_obyavlenie")}</div>
       ) : (
         <Button 
           onClick={handleMessage} 
@@ -58,7 +59,7 @@ export function ContactSeller({
           {isLoading ? "Загрузка..." : "Написать продавцу"}
         </Button>
       )}
-      
+
       {(showPhone || isOwner) && (
         <Button 
           variant={phoneVisible ? "secondary" : "outline"}
@@ -70,5 +71,5 @@ export function ContactSeller({
         </Button>
       )}
     </div>
-  )
+  );
 }

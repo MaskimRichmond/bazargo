@@ -7,10 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CategoryPicker } from "@/features/catalog/components/category-picker"
 
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime"
+import { useTranslations } from "next-intl";
 
 type Category = { id: string, name: string, slug: string, parent_id?: string | null }
 
 function SearchFilter({ searchParams, pathname, router, startTransition }: { searchParams: URLSearchParams, pathname: string, router: AppRouterInstance, startTransition: React.TransitionStartFunction }) {
+    const t = useTranslations();
   const [q, setQ] = useState(searchParams.get("q") || "")
   const urlQ = searchParams.get("q") || ""
 
@@ -38,7 +40,7 @@ function SearchFilter({ searchParams, pathname, router, startTransition }: { sea
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input 
           type="search" 
-          placeholder="Что ищут?" 
+          placeholder={t("chto_ischut")} 
           className="w-full h-10 pl-9 pr-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -46,14 +48,14 @@ function SearchFilter({ searchParams, pathname, router, startTransition }: { sea
       </div>
       {hasChanges && (
         <Button size="sm" type="submit" variant="secondary" className="w-full text-xs h-8">
-          Найти
-        </Button>
+          {t("nayti")}</Button>
       )}
     </form>
-  )
+  );
 }
 
 function BudgetFilter({ searchParams, pathname, router, startTransition }: { searchParams: URLSearchParams, pathname: string, router: AppRouterInstance, startTransition: React.TransitionStartFunction }) {
+    const t = useTranslations();
   const urlMin = searchParams.get("budgetMin") || ""
   const urlMax = searchParams.get("budgetMax") || ""
   
@@ -87,7 +89,7 @@ function BudgetFilter({ searchParams, pathname, router, startTransition }: { sea
       <div className="flex items-center gap-2">
         <input 
           type="number" 
-          placeholder="От" 
+          placeholder={t("ot")} 
           className="w-full h-10 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           value={minPrice}
           onChange={(e) => setMinPrice(e.target.value)}
@@ -95,7 +97,7 @@ function BudgetFilter({ searchParams, pathname, router, startTransition }: { sea
         <span className="text-muted-foreground">-</span>
         <input 
           type="number" 
-          placeholder="До" 
+          placeholder={t("do_1")} 
           className="w-full h-10 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
           value={maxPrice}
           onChange={(e) => setMaxPrice(e.target.value)}
@@ -103,14 +105,14 @@ function BudgetFilter({ searchParams, pathname, router, startTransition }: { sea
       </div>
       {hasChanges && (
         <Button size="sm" type="submit" variant="secondary" className="w-full text-xs h-8">
-          Применить
-        </Button>
+          {t("primenit")}</Button>
       )}
     </form>
-  )
+  );
 }
 
 export function RequestsFiltersWidget({ categories }: { categories: Category[] }) {
+    const t = useTranslations();
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -138,7 +140,7 @@ export function RequestsFiltersWidget({ categories }: { categories: Category[] }
     return (
       <div className="space-y-6">
         <div>
-          <h3 className="font-medium mb-3">Поиск</h3>
+          <h3 className="font-medium mb-3">{t("poisk")}</h3>
           <SearchFilter 
             searchParams={currentParams} 
             pathname={pathname} 
@@ -148,7 +150,7 @@ export function RequestsFiltersWidget({ categories }: { categories: Category[] }
         </div>
 
         <div>
-          <h3 className="font-medium mb-3">Категория</h3>
+          <h3 className="font-medium mb-3">{t("kategoriya")}</h3>
           <CategoryPicker 
             categories={categories} 
             value={searchParams.get("category") || ""} 
@@ -157,7 +159,7 @@ export function RequestsFiltersWidget({ categories }: { categories: Category[] }
         </div>
 
         <div>
-          <h3 className="font-medium mb-3">Бюджет</h3>
+          <h3 className="font-medium mb-3">{t("byudzhet_1")}</h3>
           <BudgetFilter 
             searchParams={currentParams} 
             pathname={pathname} 
@@ -167,35 +169,35 @@ export function RequestsFiltersWidget({ categories }: { categories: Category[] }
         </div>
 
         <div>
-          <h3 className="font-medium mb-3">Регион</h3>
+          <h3 className="font-medium mb-3">{t("region")}</h3>
           <Select value={searchParams.get("region") || "all"} onValueChange={(val) => updateFilter("region", val)}>
             <SelectTrigger className="w-full h-10">
-              <SelectValue placeholder="Все регионы" />
+              <SelectValue placeholder={t("vse_regiony")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Все регионы</SelectItem>
-              <SelectItem value="Бишкек">Бишкек</SelectItem>
-              <SelectItem value="Ош">Ош</SelectItem>
-              <SelectItem value="Баткенская область">Баткенская область</SelectItem>
-              <SelectItem value="Джалал-Абадская область">Джалал-Абадская область</SelectItem>
-              <SelectItem value="Иссык-Кульская область">Иссык-Кульская область</SelectItem>
-              <SelectItem value="Нарынская область">Нарынская область</SelectItem>
-              <SelectItem value="Ошская область">Ошская область</SelectItem>
-              <SelectItem value="Таласская область">Таласская область</SelectItem>
-              <SelectItem value="Чуйская область">Чуйская область</SelectItem>
+              <SelectItem value="all">{t("vse_regiony")}</SelectItem>
+              <SelectItem value={t("bishkek")}>{t("bishkek")}</SelectItem>
+              <SelectItem value={t("osh")}>{t("osh")}</SelectItem>
+              <SelectItem value={t("batkenskaya_oblast")}>{t("batkenskaya_oblast")}</SelectItem>
+              <SelectItem value={t("dzhalal_abadskaya_oblast")}>{t("dzhalal_abadskaya_oblast")}</SelectItem>
+              <SelectItem value={t("issyk_kulskaya_oblast")}>{t("issyk_kulskaya_oblast")}</SelectItem>
+              <SelectItem value={t("narynskaya_oblast")}>{t("narynskaya_oblast")}</SelectItem>
+              <SelectItem value={t("oshskaya_oblast")}>{t("oshskaya_oblast")}</SelectItem>
+              <SelectItem value={t("talasskaya_oblast")}>{t("talasskaya_oblast")}</SelectItem>
+              <SelectItem value={t("chuyskaya_oblast")}>{t("chuyskaya_oblast")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
-        
+
         <div>
-          <h3 className="font-medium mb-3">Статус</h3>
+          <h3 className="font-medium mb-3">{t("status")}</h3>
           <Select value={searchParams.get("status") || "OPEN"} onValueChange={(val) => updateFilter("status", val)}>
             <SelectTrigger className="w-full h-10">
-              <SelectValue placeholder="Открытые" />
+              <SelectValue placeholder={t("otkrytye_1")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="OPEN">Только открытые</SelectItem>
-              <SelectItem value="ALL">Все статусы</SelectItem>
+              <SelectItem value="OPEN">{t("tolko_otkrytye")}</SelectItem>
+              <SelectItem value="ALL">{t("vse_statusy")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -209,11 +211,10 @@ export function RequestsFiltersWidget({ categories }: { categories: Category[] }
               router.push(pathname)
             }}
           >
-            Сбросить фильтры
-          </Button>
+            {t("sbrosit_filtry")}</Button>
         )}
       </div>
-    )
+    );
   }
 
   let activeCount = 0
@@ -227,7 +228,7 @@ export function RequestsFiltersWidget({ categories }: { categories: Category[] }
   return (
     <>
       <div className="hidden md:block w-64 shrink-0 opacity-100 transition-opacity" style={{ opacity: isPending ? 0.6 : 1 }}>
-        <h2 className="font-semibold mb-4 text-lg">Фильтры</h2>
+        <h2 className="font-semibold mb-4 text-lg">{t("filtry")}</h2>
         <div className="p-4 bg-muted/30 rounded-xl">
           {renderFiltersContent()}
         </div>
@@ -237,18 +238,18 @@ export function RequestsFiltersWidget({ categories }: { categories: Category[] }
         <div className="flex gap-2">
           <Button variant="outline" type="button" className="flex-1 rounded-xl font-normal" onClick={() => setIsMobileOpen(true)}>
             <Filter className="w-4 h-4 mr-2" />
-            Фильтры {activeCount > 0 && `· ${activeCount}`}
+            {t("filtry")}{activeCount > 0 && `· ${activeCount}`}
           </Button>
           
           <Select value={searchParams.get("sort") || "newest"} onValueChange={(val) => updateFilter("sort", val)}>
             <SelectTrigger className="w-40 rounded-xl bg-muted/30 border-none font-normal">
-              <SelectValue placeholder="Сортировка" />
+              <SelectValue placeholder={t("sortirovka")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="newest">Новые</SelectItem>
-              <SelectItem value="oldest">Старые</SelectItem>
-              <SelectItem value="budget_desc">Бюджет: выше</SelectItem>
-              <SelectItem value="budget_asc">Бюджет: ниже</SelectItem>
+              <SelectItem value="newest">{t("novye")}</SelectItem>
+              <SelectItem value="oldest">{t("starye")}</SelectItem>
+              <SelectItem value="budget_desc">{t("byudzhet_vyshe")}</SelectItem>
+              <SelectItem value="budget_asc">{t("byudzhet_nizhe")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -257,7 +258,7 @@ export function RequestsFiltersWidget({ categories }: { categories: Category[] }
       {isMobileOpen && (
         <div className="md:hidden fixed inset-0 z-50 bg-background flex flex-col animate-in slide-in-from-bottom-4 duration-200">
           <div className="flex items-center justify-between p-4 border-b shrink-0">
-            <h2 className="font-semibold text-lg">Фильтры</h2>
+            <h2 className="font-semibold text-lg">{t("filtry")}</h2>
             <button 
               type="button"
               className="p-2 -mr-2 text-muted-foreground hover:bg-muted rounded-full transition-colors"
@@ -271,11 +272,10 @@ export function RequestsFiltersWidget({ categories }: { categories: Category[] }
           </div>
           <div className="p-4 border-t shrink-0 bg-background">
             <Button type="button" className="w-full rounded-xl" onClick={() => setIsMobileOpen(false)}>
-              Показать результаты
-            </Button>
+              {t("pokazat_rezultaty")}</Button>
           </div>
         </div>
       )}
     </>
-  )
+  );
 }

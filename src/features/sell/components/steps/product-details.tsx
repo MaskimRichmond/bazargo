@@ -4,8 +4,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CITIES_BY_REGION, guessRegionByCity } from "@/lib/regions"
+import { useTranslations } from "next-intl";
 
-function renderCategoryOptions(categories: any[], parentId: string | null = null, depth = 0) {
+function renderCategoryOptions(categories: { id: string, name: string, parent_id: string | null }[], parentId: string | null = null, depth = 0) {
   return categories
     .filter(c => c.parent_id === parentId)
     .map(c => {
@@ -36,7 +37,8 @@ function renderCategoryOptions(categories: any[], parentId: string | null = null
     })
 }
 
-export function ProductDetails({ categories }: { categories: any[] }) {
+export function ProductDetails({ categories }: { categories: { id: string, name: string, parent_id: string | null }[] }) {
+    const t = useTranslations();
   const { register, watch, setValue, formState: { errors } } = useFormContext()
   const listingType = watch("type")
   const currentCategory = watch("categoryId")
@@ -44,38 +46,38 @@ export function ProductDetails({ categories }: { categories: any[] }) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold tracking-tight mb-6">О товаре</h2>
+      <h2 className="text-2xl font-bold tracking-tight mb-6">{t("o_tovare")}</h2>
 
       <div className="space-y-2">
-        <Label htmlFor="title">Название <span className="text-destructive">*</span></Label>
+        <Label htmlFor="title">{t("nazvanie")}<span className="text-destructive">*</span></Label>
         <Input 
           id="title" 
-          placeholder="Например: iPhone 13 128GB" 
+          placeholder={t("naprimer_iphone_13_128gb_2")} 
           {...register("title")} 
           className="h-12 bg-muted/50"
         />
-        {errors.title && <p className="text-xs text-destructive">{errors.title.message as string}</p>}
+        {errors.title && <p className="text-xs text-destructive">{t(errors.title.message as string)}</p>}
       </div>
 
       <div className="space-y-2">
-        <Label>Категория <span className="text-destructive">*</span></Label>
+        <Label>{t("kategoriya")}<span className="text-destructive">*</span></Label>
         <Select 
           value={currentCategory} 
           onValueChange={(val) => setValue("categoryId", val, { shouldValidate: true })}
         >
           <SelectTrigger className="h-12 bg-muted/50">
-            <SelectValue placeholder="Выберите категорию" />
+            <SelectValue placeholder={t("vyberite_kategoriyu")} />
           </SelectTrigger>
           <SelectContent>
             {renderCategoryOptions(categories)}
           </SelectContent>
         </Select>
-        {errors.categoryId && <p className="text-xs text-destructive">{errors.categoryId.message as string}</p>}
+        {errors.categoryId && <p className="text-xs text-destructive">{t(errors.categoryId.message as string)}</p>}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="price">Цена (сом) <span className="text-destructive">*</span></Label>
+          <Label htmlFor="price">{t("tsena_som")}<span className="text-destructive">*</span></Label>
           <Input 
             id="price" 
             type="number"
@@ -83,12 +85,12 @@ export function ProductDetails({ categories }: { categories: any[] }) {
             {...register("price")} 
             className="h-12 bg-muted/50 font-semibold"
           />
-          {errors.price && <p className="text-xs text-destructive">{errors.price.message as string}</p>}
+          {errors.price && <p className="text-xs text-destructive">{t(errors.price.message as string)}</p>}
         </div>
 
         {listingType === "INVENTORY" && (
           <div className="space-y-2">
-            <Label htmlFor="quantity">Количество <span className="text-destructive">*</span></Label>
+            <Label htmlFor="quantity">{t("kolichestvo_1")}<span className="text-destructive">*</span></Label>
             <Input 
               id="quantity" 
               type="number"
@@ -96,20 +98,20 @@ export function ProductDetails({ categories }: { categories: any[] }) {
               {...register("quantity")} 
               className="h-12 bg-muted/50"
             />
-            {errors.quantity && <p className="text-xs text-destructive">{errors.quantity.message as string}</p>}
+            {errors.quantity && <p className="text-xs text-destructive">{t(errors.quantity.message as string)}</p>}
           </div>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label>Состояние <span className="text-destructive">*</span></Label>
+        <Label>{t("sostoyanie")}<span className="text-destructive">*</span></Label>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {[
-            { id: "NEW", label: "Новое" },
-            { id: "USED_LIKE_NEW", label: "Б/у (идеальное)" },
-            { id: "USED_GOOD", label: "Б/у (хорошее)" },
-            { id: "USED_FAIR", label: "Б/у (нормальное)" },
-            { id: "FOR_PARTS", label: "На запчасти" }
+            { id: "NEW", label: t("conditions.NEW") },
+            { id: "USED_LIKE_NEW", label: t("conditions.USED_LIKE_NEW") },
+            { id: "USED_GOOD", label: t("conditions.USED_GOOD") },
+            { id: "USED_FAIR", label: t("conditions.USED_FAIR") },
+            { id: "FOR_PARTS", label: t("conditions.FOR_PARTS") }
           ].map((cond) => (
             <div 
               key={cond.id}
@@ -122,22 +124,22 @@ export function ProductDetails({ categories }: { categories: any[] }) {
             </div>
           ))}
         </div>
-        {errors.condition && <p className="text-xs text-destructive">{errors.condition.message as string}</p>}
+        {errors.condition && <p className="text-xs text-destructive">{t(errors.condition.message as string)}</p>}
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="description">Описание <span className="text-destructive">*</span></Label>
+        <Label htmlFor="description">{t("opisanie")}<span className="text-destructive">*</span></Label>
         <Textarea 
           id="description" 
-          placeholder="Опишите товар, его характеристики и особенности..." 
+          placeholder={t("opishite_tovar_ego_harakteristiki")} 
           {...register("description")} 
           className="min-h-[120px] bg-muted/50 resize-y"
         />
-        {errors.description && <p className="text-xs text-destructive">{errors.description.message as string}</p>}
+        {errors.description && <p className="text-xs text-destructive">{t(errors.description.message as string)}</p>}
       </div>
 
       <div className="space-y-2">
-        <Label>Город <span className="text-destructive">*</span></Label>
+        <Label>{t("gorod")}<span className="text-destructive">*</span></Label>
         <Select 
           value={watch("city")} 
           onValueChange={(val) => {
@@ -149,7 +151,7 @@ export function ProductDetails({ categories }: { categories: any[] }) {
           }}
         >
           <SelectTrigger className="h-12 bg-muted/50">
-            <SelectValue placeholder="Выберите город" />
+            <SelectValue placeholder={t("vyberite_gorod")} />
           </SelectTrigger>
           <SelectContent>
             {Object.entries(CITIES_BY_REGION).map(([region, cities]) => (
@@ -164,10 +166,46 @@ export function ProductDetails({ categories }: { categories: any[] }) {
             ))}
           </SelectContent>
         </Select>
-        {errors.city && <p className="text-xs text-destructive">{errors.city.message as string}</p>}
-        {errors.region && <p className="text-xs text-destructive">{errors.region.message as string}</p>}
+        {errors.city && <p className="text-xs text-destructive">{t(errors.city.message as string)}</p>}
+        {errors.region && <p className="text-xs text-destructive">{t(errors.region.message as string)}</p>}
+      </div>
+
+      <div className="pt-4 border-t space-y-4">
+        <label className="flex items-center gap-3 font-medium cursor-pointer">
+          <input 
+            type="checkbox" 
+            {...register("isB2b")}
+            className="w-5 h-5 rounded border-gray-300 text-primary focus:ring-primary"
+          />
+          Оптовое предложение (B2B)
+        </label>
+        
+        {watch("isB2b") && (
+          <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-xl border">
+            <div className="space-y-2">
+              <Label htmlFor="wholesalePrice">Оптовая цена (сом)</Label>
+              <Input 
+                id="wholesalePrice" 
+                type="number"
+                placeholder="0"
+                {...register("wholesalePrice")} 
+                className="h-10 bg-background"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="minOrderQuantity">Минимальная партия (шт)</Label>
+              <Input 
+                id="minOrderQuantity" 
+                type="number"
+                placeholder="10"
+                {...register("minOrderQuantity")} 
+                className="h-10 bg-background"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
     </div>
-  )
+  );
 }

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ShoppingBag } from "lucide-react"
+import { useTranslations } from "next-intl";
 
 const APP_SCREENS = [
   "/messages", "/cart", "/orders", "/profile", 
@@ -10,6 +11,7 @@ const APP_SCREENS = [
 ]
 
 export function Footer() {
+    const t = useTranslations();
   const pathname = usePathname()
   
   if (APP_SCREENS.some(path => pathname?.startsWith(path))) {
@@ -29,20 +31,20 @@ export function Footer() {
           </div>
 
           <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground font-medium">
-            <Link href="/about" className="hover:text-foreground transition-colors">О нас</Link>
-            <Link href="/help" className="hover:text-foreground transition-colors">Помощь</Link>
-            <Link href="/safety" className="hover:text-foreground transition-colors">Безопасность</Link>
-            <Link href="/b2b" className="hover:text-foreground transition-colors">Для бизнеса</Link>
+            <Link href="/about" className="hover:text-foreground transition-colors">{t("o_nas")}</Link>
+            <Link href="/help" className="hover:text-foreground transition-colors">{t("pomosch")}</Link>
+            <Link href="/safety" className="hover:text-foreground transition-colors">{t("bezopasnost")}</Link>
+            <Link href="/b2b" className="hover:text-foreground transition-colors">{t("dlya_biznesa")}</Link>
           </div>
 
           <div className="flex gap-4 text-xs text-muted-foreground">
-            <Link href="/privacy" className="hover:text-foreground transition-colors">Конфиденциальность</Link>
-            <Link href="/terms" className="hover:text-foreground transition-colors">Условия</Link>
+            <Link href="/privacy" className="hover:text-foreground transition-colors">{t("konfidentsialnost")}</Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">{t("usloviya")}</Link>
             <span>© {new Date().getFullYear()}</span>
           </div>
           
         </div>
       </div>
     </footer>
-  )
+  );
 }

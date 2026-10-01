@@ -12,8 +12,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2 } from "lucide-react"
 import { CITIES_BY_REGION, guessRegionByCity } from "@/lib/regions"
+import { useTranslations } from "next-intl";
 
-export function RequestForm({ categories }: { categories: any[] }) {
+export function RequestForm({ categories }: { categories: { id: string, name: string, parent_id: string | null }[] }) {
+    const t = useTranslations();
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -56,7 +58,7 @@ export function RequestForm({ categories }: { categories: any[] }) {
       } else {
         router.push("/requests")
       }
-    } catch (err: any) {
+    } catch (err: Error | unknown) {
       setError(err.message)
       setIsLoading(false)
     }
@@ -72,19 +74,19 @@ export function RequestForm({ categories }: { categories: any[] }) {
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="title">Что вам нужно? <span className="text-destructive">*</span></Label>
-          <Input id="title" {...register("title")} className="h-12 bg-muted/50" placeholder="Например: iPhone 13 128GB синий" />
-          {errors.title && <p className="text-xs text-destructive">{errors.title.message as string}</p>}
+          <Label htmlFor="title">{t("chto_vam_nuzhno")}<span className="text-destructive">*</span></Label>
+          <Input id="title" {...register("title")} className="h-12 bg-muted/50" placeholder={t("naprimer_iphone_13_128gb_1")} />
+          {errors.title && <p className="text-xs text-destructive">{t(errors.title.message as string)}</p>}
         </div>
 
         <div className="space-y-2">
-          <Label>Категория <span className="text-destructive">*</span></Label>
+          <Label>{t("kategoriya")}<span className="text-destructive">*</span></Label>
           <Select 
             value={currentCategory} 
             onValueChange={(val) => setValue("categoryId", val, { shouldValidate: true })}
           >
             <SelectTrigger className="h-12 bg-muted/50">
-              <SelectValue placeholder="Выберите самую точную категорию" />
+              <SelectValue placeholder={t("vyberite_samuyu_tochnuyu_kategoriyu")} />
             </SelectTrigger>
             <SelectContent>
               {categories.filter(c => !c.parent_id).map((root) => {
@@ -103,43 +105,43 @@ export function RequestForm({ categories }: { categories: any[] }) {
               })}
             </SelectContent>
           </Select>
-          {errors.categoryId && <p className="text-xs text-destructive">{errors.categoryId.message as string}</p>}
+          {errors.categoryId && <p className="text-xs text-destructive">{t(errors.categoryId.message as string)}</p>}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="description">Описание (опционально)</Label>
-          <Textarea id="description" {...register("description")} className="bg-muted/50 min-h-[100px]" placeholder="Уточните детали: цвет, комплект, состояние батареи..." />
-          {errors.description && <p className="text-xs text-destructive">{errors.description.message as string}</p>}
+          <Label htmlFor="description">{t("opisanie_optsionalno")}</Label>
+          <Textarea id="description" {...register("description")} className="bg-muted/50 min-h-[100px]" placeholder={t("utochnite_detali_tsvet_komplekt")} />
+          {errors.description && <p className="text-xs text-destructive">{t(errors.description.message as string)}</p>}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="budgetMax">Максимальная цена (сом)</Label>
-            <Input id="budgetMax" type="number" {...register("budgetMax")} className="h-12 bg-muted/50" placeholder="Например: 30000" />
-            {errors.budgetMax && <p className="text-xs text-destructive">{errors.budgetMax.message as string}</p>}
+            <Label htmlFor="budgetMax">{t("maksimalnaya_tsena_som")}</Label>
+            <Input id="budgetMax" type="number" {...register("budgetMax")} className="h-12 bg-muted/50" placeholder={t("naprimer_30000")} />
+            {errors.budgetMax && <p className="text-xs text-destructive">{t(errors.budgetMax.message as string)}</p>}
           </div>
 
           <div className="space-y-2">
-            <Label>Состояние</Label>
+            <Label>{t("sostoyanie")}</Label>
             <Select 
               value={currentCondition} 
-              onValueChange={(val: any) => setValue("condition", val)}
+              onValueChange={(val: string) => setValue("condition", val)}
             >
               <SelectTrigger className="h-12 bg-muted/50">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ANY">Любое</SelectItem>
-                <SelectItem value="NEW">Новое</SelectItem>
-                <SelectItem value="USED_LIKE_NEW">Как новое</SelectItem>
-                <SelectItem value="USED_GOOD">Хорошее (Б/у)</SelectItem>
+                <SelectItem value="ANY">{t("lyuboe")}</SelectItem>
+                <SelectItem value="NEW">{t("novoe")}</SelectItem>
+                <SelectItem value="USED_LIKE_NEW">{t("kak_novoe")}</SelectItem>
+                <SelectItem value="USED_GOOD">{t("horoshee_b_u")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
         
         <div className="space-y-2">
-          <Label>Город <span className="text-destructive">*</span></Label>
+          <Label>{t("gorod")}<span className="text-destructive">*</span></Label>
           <Select 
             value={watch("city")} 
             onValueChange={(val) => {
@@ -151,7 +153,7 @@ export function RequestForm({ categories }: { categories: any[] }) {
             }}
           >
             <SelectTrigger className="h-12 bg-muted/50">
-              <SelectValue placeholder="Выберите город" />
+              <SelectValue placeholder={t("vyberite_gorod")} />
             </SelectTrigger>
             <SelectContent>
               {Object.entries(CITIES_BY_REGION).map(([region, cities]) => (
@@ -166,12 +168,12 @@ export function RequestForm({ categories }: { categories: any[] }) {
               ))}
             </SelectContent>
           </Select>
-          {errors.city && <p className="text-xs text-destructive">{errors.city.message as string}</p>}
-          {errors.region && <p className="text-xs text-destructive">{errors.region.message as string}</p>}
+          {errors.city && <p className="text-xs text-destructive">{t(errors.city.message as string)}</p>}
+          {errors.region && <p className="text-xs text-destructive">{t(errors.region.message as string)}</p>}
         </div>
 
         <div className="space-y-2">
-          <Label>Срок актуальности</Label>
+          <Label>{t("srok_aktualnosti")}</Label>
           <Select 
             value={watch("expiresInDays").toString()} 
             onValueChange={(val) => setValue("expiresInDays", parseInt(val))}
@@ -180,10 +182,10 @@ export function RequestForm({ categories }: { categories: any[] }) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="3">3 дня</SelectItem>
-              <SelectItem value="7">7 дней</SelectItem>
-              <SelectItem value="14">14 дней</SelectItem>
-              <SelectItem value="30">30 дней</SelectItem>
+              <SelectItem value="3">{t("3_dnya")}</SelectItem>
+              <SelectItem value="7">{t("7_dney")}</SelectItem>
+              <SelectItem value="14">{t("14_dney")}</SelectItem>
+              <SelectItem value="30">{t("30_dney")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -193,9 +195,8 @@ export function RequestForm({ categories }: { categories: any[] }) {
       <div className="pt-4 border-t">
         <Button type="submit" className="w-full h-12 rounded-xl text-lg font-semibold" disabled={isLoading}>
           {isLoading && <Loader2 className="w-5 h-5 mr-2 animate-spin" />}
-          Опубликовать запрос
-        </Button>
+          {t("opublikovat_zapros")}</Button>
       </div>
     </form>
-  )
+  );
 }

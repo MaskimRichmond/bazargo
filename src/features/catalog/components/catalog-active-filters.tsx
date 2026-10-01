@@ -2,8 +2,10 @@
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation"
 import { X } from "lucide-react"
+import { useTranslations } from "next-intl";
 
 export function CatalogActiveFilters({ categories }: { categories: any[] }) {
+    const t = useTranslations();
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
@@ -82,9 +84,8 @@ export function CatalogActiveFilters({ categories }: { categories: any[] }) {
           onClick={clearAll}
           className="whitespace-nowrap px-3 py-1.5 text-muted-foreground hover:text-foreground text-sm font-medium transition-colors shrink-0 underline underline-offset-2"
         >
-          Сбросить всё
-        </button>
+          {t("sbrosit_vsyo")}</button>
       )}
     </div>
-  )
+  );
 }

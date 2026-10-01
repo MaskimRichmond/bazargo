@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Mail, Phone as PhoneIcon } from "lucide-react"
+import { useTranslations } from "next-intl";
 
 export function PhoneAuthForm() {
+    const t = useTranslations();
   const [authMethod, setAuthMethod] = useState<"email" | "phone">("email")
   const [step, setStep] = useState<"input" | "otp">("input")
   const [name, setName] = useState("")
@@ -185,7 +187,7 @@ export function PhoneAuthForm() {
   return (
     <div className="w-full max-w-sm mx-auto space-y-6">
       <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight">Войти или зарегистрироваться</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t("voyti_ili_zaregistrirovatsya")}</h1>
         <p className="text-sm text-muted-foreground">
           {step === "input" 
             ? "Продолжая, вы соглашаетесь с правилами BazarGo." 
@@ -206,17 +208,16 @@ export function PhoneAuthForm() {
               <Mail className="w-4 h-4" /> Email
             </TabsTrigger>
             <TabsTrigger value="phone" className="rounded-lg gap-2 text-sm">
-              <PhoneIcon className="w-4 h-4" /> Телефон
-            </TabsTrigger>
+              <PhoneIcon className="w-4 h-4" /> {t("telefon")}</TabsTrigger>
           </TabsList>
           
           <form onSubmit={handleSendOtp} className="space-y-4">
             <div className="space-y-2 text-left">
-              <Label htmlFor="name">Имя</Label>
+              <Label htmlFor="name">{t("imya")}</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="Как к вам обращаться?"
+                placeholder={t("kak_k_vam_obraschatsya")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={isLoading}
@@ -251,7 +252,7 @@ export function PhoneAuthForm() {
         <form onSubmit={handleVerifyOtp} className="space-y-4">
           <div className="space-y-2 text-left">
             <div className="flex items-center justify-between">
-              <Label htmlFor="otp">Введите код</Label>
+              <Label htmlFor="otp">{t("vvedite_kod")}</Label>
               <button 
                 type="button" 
                 onClick={() => {
@@ -260,8 +261,7 @@ export function PhoneAuthForm() {
                 }}
                 className="text-xs text-primary hover:underline font-medium"
               >
-                Изменить
-              </button>
+                {t("izmenit")}</button>
             </div>
             <div className="relative flex justify-between gap-1 sm:gap-2">
               <Input
@@ -304,8 +304,7 @@ export function PhoneAuthForm() {
           <div className="pt-4 text-center">
             {countdown > 0 ? (
               <p className="text-sm text-muted-foreground">
-                Отправить код повторно через {countdown} сек
-              </p>
+                {t("otpravit_kod_povtorno_cherez")}{countdown} {t("sek")}</p>
             ) : (
               <button 
                 type="button"
@@ -313,12 +312,11 @@ export function PhoneAuthForm() {
                 className="text-sm text-primary font-medium hover:underline"
                 disabled={isLoading}
               >
-                Отправить код повторно
-              </button>
+                {t("otpravit_kod_povtorno")}</button>
             )}
           </div>
         </form>
       )}
     </div>
-  )
+  );
 }

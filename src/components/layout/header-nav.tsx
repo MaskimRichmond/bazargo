@@ -3,8 +3,10 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { useTranslations } from "next-intl";
 
 export function HeaderNav() {
+    const t = useTranslations();
   const pathname = usePathname()
 
   const isActive = (path: string) => {
@@ -18,20 +20,17 @@ export function HeaderNav() {
         href="/catalog" 
         className={cn("transition-colors", isActive("/catalog") || isActive("/product") ? "text-primary font-bold" : "text-muted-foreground hover:text-primary")}
       >
-        Каталог
-      </Link>
+        {t("katalog")}</Link>
       <Link 
         href="/stores" 
         className={cn("transition-colors", isActive("/stores") || isActive("/store") ? "text-primary font-bold" : "text-muted-foreground hover:text-primary")}
       >
-        Магазины
-      </Link>
+        {t("magaziny")}</Link>
       <Link 
         href="/requests" 
         className={cn("transition-colors", isActive("/requests") ? "text-primary font-bold" : "text-muted-foreground hover:text-primary")}
       >
-        Запросы
-      </Link>
+        {t("nav_requests")}</Link>
       <Link 
         href="/b2b" 
         className={cn("transition-colors", isActive("/b2b") ? "text-primary font-bold" : "text-muted-foreground hover:text-primary")}
@@ -39,5 +38,5 @@ export function HeaderNav() {
         B2B
       </Link>
     </nav>
-  )
+  );
 }

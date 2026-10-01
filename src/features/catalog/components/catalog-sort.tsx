@@ -1,8 +1,10 @@
 "use client"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useTranslations } from "next-intl";
 
 export function CatalogSort({ sort }: { sort: string }) {
+    const t = useTranslations();
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -18,15 +20,15 @@ export function CatalogSort({ sort }: { sort: string }) {
     <div className="hidden md:block">
       <Select value={sort} onValueChange={handleSortChange}>
         <SelectTrigger className="w-[180px] bg-background border rounded-xl">
-          <SelectValue placeholder="Сортировка" />
+          <SelectValue placeholder={t("sortirovka")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="newest">Сначала новые</SelectItem>
-          <SelectItem value="oldest">Сначала старые</SelectItem>
-          <SelectItem value="cheapest">Сначала дешевле</SelectItem>
-          <SelectItem value="expensive">Сначала дороже</SelectItem>
+          <SelectItem value="newest">{t("snachala_novye")}</SelectItem>
+          <SelectItem value="oldest">{t("snachala_starye")}</SelectItem>
+          <SelectItem value="cheapest">{t("snachala_deshevle")}</SelectItem>
+          <SelectItem value="expensive">{t("snachala_dorozhe")}</SelectItem>
         </SelectContent>
       </Select>
     </div>
-  )
+  );
 }

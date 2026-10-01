@@ -1,6 +1,7 @@
 "use client"
 import { useState, useRef, useEffect } from "react"
 import { Search, ChevronDown, ChevronRight, X } from "lucide-react"
+import { useTranslations } from "next-intl";
 
 type Category = { id: string; name: string; slug: string; parent_id?: string | null }
 
@@ -42,6 +43,7 @@ interface CategoryPickerProps {
 }
 
 export function CategoryPicker({ categories, value, onChange }: CategoryPickerProps) {
+    const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState("")
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -74,7 +76,7 @@ export function CategoryPicker({ categories, value, onChange }: CategoryPickerPr
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input 
             type="text" 
-            placeholder="Поиск категории..." 
+            placeholder={t("poisk_kategorii")} 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-3 py-2 bg-muted/50 border-none rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
@@ -88,8 +90,7 @@ export function CategoryPicker({ categories, value, onChange }: CategoryPickerPr
           }`}
           onClick={() => { onChange(""); setIsOpen(false) }}
         >
-          Все категории
-        </button>
+          {t("vse_kategorii")}</button>
 
         {search ? (
           // Flat list for search results
@@ -119,8 +120,7 @@ export function CategoryPicker({ categories, value, onChange }: CategoryPickerPr
 
         {search && filtered.length === 0 && (
           <div className="px-3 py-4 text-center text-sm text-muted-foreground">
-            Ничего не найдено
-          </div>
+            {t("nichego_ne_naydeno")}</div>
         )}
       </div>
     </div>
@@ -150,7 +150,7 @@ export function CategoryPicker({ categories, value, onChange }: CategoryPickerPr
       {isOpen && (
         <div className="md:hidden fixed inset-0 z-[100] bg-background flex flex-col animate-in slide-in-from-bottom-4 duration-200">
           <div className="flex items-center justify-between p-4 border-b shrink-0">
-            <h2 className="font-semibold text-lg">Выберите категорию</h2>
+            <h2 className="font-semibold text-lg">{t("vyberite_kategoriyu")}</h2>
             <button 
               className="p-2 -mr-2 text-muted-foreground hover:bg-muted rounded-full transition-colors"
               onClick={() => setIsOpen(false)}
@@ -162,5 +162,5 @@ export function CategoryPicker({ categories, value, onChange }: CategoryPickerPr
         </div>
       )}
     </>
-  )
+  );
 }

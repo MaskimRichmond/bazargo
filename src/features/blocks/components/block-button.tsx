@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { blockUserAction, unblockUserAction } from "../actions"
 import { ShieldAlert, ShieldCheck } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl";
 
 interface BlockButtonProps {
   userId: string;
@@ -14,6 +15,7 @@ interface BlockButtonProps {
 }
 
 export function BlockButton({ userId, isInitiallyBlocked, variant = "outline", size = "sm" }: BlockButtonProps) {
+    const t = useTranslations();
   const [isBlocked, setIsBlocked] = useState(isInitiallyBlocked)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -47,10 +49,10 @@ export function BlockButton({ userId, isInitiallyBlocked, variant = "outline", s
       className={isBlocked ? "text-green-600" : "text-destructive hover:text-destructive"}
     >
       {isBlocked ? (
-        <><ShieldCheck className="w-4 h-4 mr-2" /> Разблокировать</>
+        <><ShieldCheck className="w-4 h-4 mr-2" /> {t("razblokirovat")}</>
       ) : (
-        <><ShieldAlert className="w-4 h-4 mr-2" /> Заблокировать</>
+        <><ShieldAlert className="w-4 h-4 mr-2" /> {t("zablokirovat")}</>
       )}
     </Button>
-  )
+  );
 }

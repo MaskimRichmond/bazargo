@@ -6,8 +6,10 @@ import Link from "next/link"
 import { PackageSearch, Clock, MapPin, XCircle, CheckCircle2 } from "lucide-react"
 import { closeRequest, cancelRequest } from "@/app/actions/requests"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { useTranslations } from "next-intl";
 
 export function MyRequestsClient({ requests }: { requests: any[] }) {
+    const t = useTranslations();
   const [isUpdating, setIsUpdating] = useState<string | null>(null)
   
   const [closeConfirmId, setCloseConfirmId] = useState<string | null>(null)
@@ -37,9 +39,9 @@ export function MyRequestsClient({ requests }: { requests: any[] }) {
     if (list.length === 0) {
       return (
         <div className="text-center py-12 px-4 border rounded-3xl bg-muted/10">
-          <p className="text-muted-foreground">В этой категории пусто.</p>
+          <p className="text-muted-foreground">{t("v_etoy_kategorii_pusto")}</p>
         </div>
-      )
+      );
     }
 
     return (
@@ -60,8 +62,7 @@ export function MyRequestsClient({ requests }: { requests: any[] }) {
                   </span>
                   {req.offersCount > 0 && (
                     <span className="text-xs font-semibold bg-blue-500/10 text-blue-600 px-2 py-1 rounded-md">
-                      {req.offersCount} предложений
-                    </span>
+                      {req.offersCount} {t("predlozheniy")}</span>
                   )}
                 </div>
                 <h3 className="text-lg font-bold line-clamp-1 mb-1">
@@ -70,7 +71,7 @@ export function MyRequestsClient({ requests }: { requests: any[] }) {
                   </Link>
                 </h3>
                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <span>Бюджет: {req.budget_max ? `до ${req.budget_max}` : "Не указан"}</span>
+                  <span>{t("byudzhet")}{req.budget_max ? `до ${req.budget_max}` : "Не указан"}</span>
                   <span>•</span>
                   <span>{new Date(req.created_at).toLocaleDateString()}</span>
                 </div>
@@ -78,7 +79,7 @@ export function MyRequestsClient({ requests }: { requests: any[] }) {
               
               <div className="flex items-center gap-2 sm:flex-col sm:items-end">
                 <Button asChild variant="outline" className="rounded-xl w-full sm:w-auto text-xs h-9">
-                  <Link href={`/requests/${req.id}`}>Смотреть</Link>
+                  <Link href={`/requests/${req.id}`}>{t("smotret")}</Link>
                 </Button>
                 {req.effectiveStatus === "OPEN" && (
                   <div className="flex gap-2 w-full">
@@ -87,15 +88,13 @@ export function MyRequestsClient({ requests }: { requests: any[] }) {
                       onClick={() => setCloseConfirmId(req.id)}
                       className="rounded-xl text-xs h-9 w-full sm:w-auto"
                     >
-                      Закрыть
-                    </Button>
+                      {t("zakryt")}</Button>
                     <Button 
                       variant="outline" 
                       onClick={() => setCancelConfirmId(req.id)}
                       className="rounded-xl text-xs h-9 w-full sm:w-auto text-destructive hover:text-destructive border-destructive/20"
                     >
-                      Отменить
-                    </Button>
+                      {t("otmenit")}</Button>
                   </div>
                 )}
               </div>
@@ -103,7 +102,7 @@ export function MyRequestsClient({ requests }: { requests: any[] }) {
           </div>
         ))}
       </div>
-    )
+    );
   }
 
   return (
@@ -111,13 +110,13 @@ export function MyRequestsClient({ requests }: { requests: any[] }) {
       <Tabs defaultValue="open" className="w-full">
         <TabsList className="w-full justify-start h-12 bg-transparent border-b rounded-none mb-6 overflow-x-auto">
           <TabsTrigger value="open" className="text-base h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
-            Открытые ({openRequests.length})
+            {t("otkrytye")}{openRequests.length})
           </TabsTrigger>
           <TabsTrigger value="closed" className="text-base h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
-            Завершённые ({closedRequests.length})
+            {t("zavershyonnye")}{closedRequests.length})
           </TabsTrigger>
           <TabsTrigger value="cancelled" className="text-base h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent">
-            Отменённые ({cancelledRequests.length})
+            {t("otmenyonnye")}{cancelledRequests.length})
           </TabsTrigger>
         </TabsList>
         
@@ -130,14 +129,13 @@ export function MyRequestsClient({ requests }: { requests: any[] }) {
       <AlertDialog open={!!closeConfirmId} onOpenChange={(v) => !v && setCloseConfirmId(null)}>
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Завершить запрос?</AlertDialogTitle>
+            <AlertDialogTitle>{t("zavershit_zapros")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Вы нашли подходящий товар? Запрос будет отмечен как завершённый и новые предложения перестанут поступать.
-            </AlertDialogDescription>
+              {t("vy_nashli_podhodyaschiy_tovar")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">Отмена</AlertDialogCancel>
-            <AlertDialogAction onClick={handleClose} className="rounded-xl bg-primary">Завершить</AlertDialogAction>
+            <AlertDialogCancel className="rounded-xl">{t("otmena")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClose} className="rounded-xl bg-primary">{t("zavershit")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -146,17 +144,16 @@ export function MyRequestsClient({ requests }: { requests: any[] }) {
       <AlertDialog open={!!cancelConfirmId} onOpenChange={(v) => !v && setCancelConfirmId(null)}>
         <AlertDialogContent className="rounded-3xl">
           <AlertDialogHeader>
-            <AlertDialogTitle>Отменить запрос?</AlertDialogTitle>
+            <AlertDialogTitle>{t("otmenit_zapros")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Запрос будет отменён и перенесён в соответствующую вкладку.
-            </AlertDialogDescription>
+              {t("zapros_budet_otmenyon_i")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">Назад</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCancel} className="rounded-xl bg-destructive hover:bg-destructive/90">Отменить запрос</AlertDialogAction>
+            <AlertDialogCancel className="rounded-xl">{t("nazad")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancel} className="rounded-xl bg-destructive hover:bg-destructive/90">{t("otmenit_zapros_1")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
-  )
+  );
 }

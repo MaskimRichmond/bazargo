@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import Image from "next/image"
 import { ChevronLeft, ChevronRight, X, ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTranslations } from "next-intl";
 
 interface ProductImageGalleryProps {
   images: { url: string; order_index?: number }[]
@@ -13,6 +14,7 @@ interface ProductImageGalleryProps {
 }
 
 export function ProductImageGallery({ images, title, status, favoriteButton }: ProductImageGalleryProps) {
+    const t = useTranslations();
   const [activeIndex, setActiveIndex] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({})
@@ -111,9 +113,9 @@ export function ProductImageGallery({ images, title, status, favoriteButton }: P
         {favoriteButton && <div className="absolute top-4 right-4 z-20">{favoriteButton}</div>}
         {renderStatusBadge()}
         <ImageIcon className="w-16 h-16 text-muted-foreground/50 mb-4" />
-        <p className="text-muted-foreground font-medium">Нет фото</p>
+        <p className="text-muted-foreground font-medium">{t("net_foto")}</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -124,7 +126,7 @@ export function ProductImageGallery({ images, title, status, favoriteButton }: P
         onClick={openFullscreen}
         tabIndex={0}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFullscreen() } }}
-        aria-label="Просмотр изображений"
+        aria-label={t("prosmotr_izobrazheniy")}
       >
         {renderStatusBadge()}
         
@@ -183,7 +185,7 @@ export function ProductImageGallery({ images, title, status, favoriteButton }: P
               onClick={handlePrev}
               disabled={activeIndex === 0}
               className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-background/80 hover:bg-background/95 text-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0 z-20 shadow-sm hidden md:flex"
-              aria-label="Предыдущее фото"
+              aria-label={t("predyduschee_foto")}
             >
               <ChevronLeft className="w-6 h-6 -ml-0.5" />
             </button>
@@ -191,7 +193,7 @@ export function ProductImageGallery({ images, title, status, favoriteButton }: P
               onClick={handleNext}
               disabled={activeIndex === sortedImages.length - 1}
               className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-background/80 hover:bg-background/95 text-foreground rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-0 z-20 shadow-sm hidden md:flex"
-              aria-label="Следующее фото"
+              aria-label={t("sleduyuschee_foto")}
             >
               <ChevronRight className="w-6 h-6 -mr-0.5" />
             </button>
@@ -258,7 +260,7 @@ export function ProductImageGallery({ images, title, status, favoriteButton }: P
             <button 
               onClick={closeFullscreen}
               className="p-2 bg-black/40 hover:bg-black/60 rounded-full text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white"
-              aria-label="Закрыть"
+              aria-label={t("zakryt")}
             >
               <X className="w-6 h-6" />
             </button>
@@ -286,7 +288,7 @@ export function ProductImageGallery({ images, title, status, favoriteButton }: P
                   onClick={handlePrev}
                   disabled={activeIndex === 0}
                   className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 p-3 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors disabled:opacity-0 focus:outline-none focus:ring-2 focus:ring-white"
-                  aria-label="Предыдущее фото"
+                  aria-label={t("predyduschee_foto")}
                 >
                   <ChevronLeft className="w-8 h-8" />
                 </button>
@@ -294,7 +296,7 @@ export function ProductImageGallery({ images, title, status, favoriteButton }: P
                   onClick={handleNext}
                   disabled={activeIndex === sortedImages.length - 1}
                   className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 p-3 bg-black/40 hover:bg-black/60 text-white rounded-full transition-colors disabled:opacity-0 focus:outline-none focus:ring-2 focus:ring-white"
-                  aria-label="Следующее фото"
+                  aria-label={t("sleduyuschee_foto")}
                 >
                   <ChevronRight className="w-8 h-8" />
                 </button>
@@ -326,5 +328,5 @@ export function ProductImageGallery({ images, title, status, favoriteButton }: P
         </div>
       )}
     </div>
-  )
+  );
 }

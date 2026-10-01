@@ -1,12 +1,14 @@
 import { Search, Plus, FileQuestion, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
+import { useTranslations } from "next-intl"
 
 export function QuickActions() {
+  const t = useTranslations()
   const actions = [
     {
-      title: "Найти товар",
-      description: "Ищите среди тысяч объявлений и проверенных магазинов",
+      title: t("nayti_tovar"),
+      description: t("ischite_sredi_tysyach_obyavleniy"),
       icon: Search,
       href: "/catalog",
       color: "from-blue-500 to-cyan-500",
@@ -14,8 +16,8 @@ export function QuickActions() {
       iconColor: "text-blue-600 dark:text-blue-400",
     },
     {
-      title: "Продать товар",
-      description: "Разместите объявление бесплатно и найдите покупателя",
+      title: t("prodat_tovar"),
+      description: t("razmestite_obyavlenie_besplatno_i"),
       icon: Plus,
       href: "/sell",
       color: "from-primary to-emerald-500",
@@ -23,8 +25,8 @@ export function QuickActions() {
       iconColor: "text-primary",
     },
     {
-      title: "Нужен товар?",
-      description: "Создайте запрос — продавцы сами предложат варианты",
+      title: t("nuzhen_tovar"),
+      description: t("sozdayte_zapros_prodavtsy_sami_1"),
       icon: FileQuestion,
       href: "/requests",
       color: "from-orange-500 to-amber-500",
