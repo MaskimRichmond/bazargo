@@ -1,0 +1,9 @@
+stateDiagram-v2
+    [*] --> REGISTERED : Регистрация по телефону/почте
+    REGISTERED --> ACTIVE : Подтверждение OTP
+    ACTIVE --> SUSPENDED : Временная блокировка администратором
+    SUSPENDED --> ACTIVE : Разблокировка
+    ACTIVE --> BANNED : Полная блокировка администратором
+    BANNED --> ACTIVE : Апелляция и разблокировка
+    ACTIVE --> DELETED : Удаление аккаунта (анонимизация)
+    DELETED --> [*]

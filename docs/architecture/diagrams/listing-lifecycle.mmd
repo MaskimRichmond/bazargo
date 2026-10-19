@@ -1,0 +1,12 @@
+stateDiagram-v2
+    [*] --> DRAFT : Создание черновика
+    DRAFT --> PENDING : Опубликовать (отправка на модерацию)
+    PENDING --> ACTIVE : Одобрено модератором
+    PENDING --> REJECTED : Отклонено модератором
+    REJECTED --> DRAFT : Запрос на исправление
+    ACTIVE --> DEACTIVATED : Временно скрыто продавцом
+    DEACTIVATED --> ACTIVE : Восстановлено продавцом
+    ACTIVE --> ARCHIVED : Удалено (мягкое удаление)
+    DEACTIVATED --> ARCHIVED : Удалено (мягкое удаление)
+    REJECTED --> ARCHIVED : Удалено (мягкое удаление)
+    ARCHIVED --> [*]

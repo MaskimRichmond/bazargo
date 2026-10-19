@@ -1,0 +1,9 @@
+stateDiagram-v2
+    [*] --> OPEN : Покупатель создаёт запрос на товар
+    OPEN --> OFFERS_RECEIVED : Продавцы отправляют предложения
+    OFFERS_RECEIVED --> OFFER_ACCEPTED : Покупатель выбирает одно предложение
+    OFFER_ACCEPTED --> CHAT_INITIATED : Автоматически создаётся чат для сделки
+    OFFERS_RECEIVED --> CLOSED : Покупатель закрывает запрос без выбора
+    OPEN --> CLOSED : Истёк срок давности или отменён
+    CHAT_INITIATED --> [*]
+    CLOSED --> [*]

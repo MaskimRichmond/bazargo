@@ -124,21 +124,25 @@
 
 **Phase 1: Foundation & Stability (Current Goal)**
 - Set up Playwright. Write E2E tests for the 3 core journeys.
-- Resolve remaining 271 ESLint warnings.
-- Clean up root directory (remove `.js` test/fix scripts).
+- Resolve remaining ESLint warnings.
+- Clean up root directory.
 
-**Phase 2: UX Polish**
+**Phase 2: UX Polish (Web)**
 - Implement Cart Grouping, Order Tabs, and Next.js Image optimizations.
 - Apply unified Skeletons.
 
-**Phase 3: Controlled Beta (Invite-Only)**
-- Deploy to Production. Monitor Vercel logs and Supabase database metrics.
-- QA testing by real users on actual mobile devices.
+**Phase 3: Cross-platform Architecture & Client Foundation**
+- Establish Monorepo/Workspaces (e.g. Turborepo, NPM workspaces).
+- Extract shared types, API contracts, and Supabase client logic into shared packages.
+- **Android & iOS:** Setup React Native + Expo. Verify build/simulator access. Implement Login & Catalog via shared backend.
+- **Desktop:** Setup Tauri or Electron wrapping shared web logic or dedicated UI. Verify build targets (Windows/macOS).
 
-**Phase 4: Public Launch**
-- Marketing release.
+**Phase 4: Controlled Beta (Invite-Only)**
+- Deploy to Production. Monitor logs and metrics.
+- QA testing on Web, Android, iOS, Desktop.
 
----
+**Phase 5: Public Launch**
+- Marketing release across App Stores and Web.
 
 ## 8. STOP-REOPENING RULE
 The following security vectors have been exhaustively tested and secured at the database layer. **Do not initiate new audits on these topics unless reproducible code exploits are found:**

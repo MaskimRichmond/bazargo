@@ -1,53 +1,14 @@
 {
-  "name": "bazargo",
-  "version": "0.1.0",
+  "name": "bazargo-monorepo",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "i18n:check": "node i18n-check.js"
-  },
-  "dependencies": {
-    "@hookform/resolvers": "^5.9.1",
-    "@radix-ui/react-alert-dialog": "^1.1.23",
-    "@radix-ui/react-checkbox": "^1.3.11",
-    "@radix-ui/react-dialog": "^1.1.23",
-    "@radix-ui/react-dropdown-menu": "^2.1.24",
-    "@radix-ui/react-select": "^2.3.7",
-    "@radix-ui/react-slot": "^1.3.3",
-    "@radix-ui/react-tabs": "^1.1.21",
-    "@supabase/ssr": "^0.12.7",
-    "@supabase/supabase-js": "^2.116.0",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "lucide-react": "^1.46.0",
-    "next": "16.3.5",
-    "next-intl": "^4.14.7",
-    "next-themes": "^0.4.6",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "react-hook-form": "^7.88.0",
-    "sharp": "^0.35.4",
-    "sonner": "^2.0.8",
-    "tailwind-merge": "^3.7.0",
-    "uuid": "^14.0.2",
-    "zod": "^3.25.76"
-  },
-  "devDependencies": {
-    "@playwright/test": "^1.63.0",
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "@types/uuid": "^10.0.0",
-    "eslint": "^9",
-    "eslint-config-next": "16.3.5",
-    "jscodeshift": "^17.4.0",
-    "supabase": "^2.117.0",
-    "tailwindcss": "^4",
-    "ts-morph": "^28.0.0",
-    "typescript": "^5"
+    "dev": "npm run dev --workspace=web",
+    "dev:mobile": "npm run start --workspace=@bazargo/mobile",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
   }
 }

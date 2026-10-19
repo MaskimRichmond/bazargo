@@ -1,0 +1,9 @@
+stateDiagram-v2
+    [*] --> PENDING : Заявка на создание магазина
+    PENDING --> ACTIVE : Одобрено администратором
+    PENDING --> REJECTED : Отклонено администратором
+    ACTIVE --> SUSPENDED : Временная приостановка
+    SUSPENDED --> ACTIVE : Восстановление
+    ACTIVE --> DELETED : Удаление магазина
+    REJECTED --> [*]
+    DELETED --> [*]

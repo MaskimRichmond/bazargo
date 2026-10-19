@@ -1,0 +1,10 @@
+stateDiagram-v2
+    [*] --> PENDING : Создан заказ из корзины (резерв остатков)
+    PENDING --> CANCELED : Отменён покупателем
+    PENDING --> REJECTED : Отклонён продавцом (возврат остатков)
+    PENDING --> CONFIRMED : Подтверждён продавцом (в сборке/доставке)
+    CONFIRMED --> COMPLETED : Завершён (товар получен, списание остатков)
+    CONFIRMED --> CANCELED : Отменён модератором (возврат остатков)
+    CANCELED --> [*]
+    REJECTED --> [*]
+    COMPLETED --> [*]

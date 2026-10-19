@@ -1,0 +1,7 @@
+stateDiagram-v2
+    [*] --> OPEN : Новая жалоба создана пользователем
+    OPEN --> IN_PROGRESS : Взята в работу модератором
+    IN_PROGRESS --> RESOLVED : Проблема устранена (приняты меры)
+    IN_PROGRESS --> REJECTED : Отклонена (нет нарушений)
+    RESOLVED --> [*]
+    REJECTED --> [*]
