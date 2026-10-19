@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/i18n/routing"
 import { submitRequestOffer } from "@/app/actions/requests"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,29 +14,35 @@ interface SupplierQuoteFormProps {
   requestQuantity: number
   requestUnit: string
   suggestedMaxPrice?: number | null
+  isTestMode?: boolean
+  onSubmitted?: () => void
 }
 
 export function SupplierQuoteForm({
   requestId,
   requestQuantity = 1,
   requestUnit = "шт",
-  suggestedMaxPrice
+  suggestedMaxPrice,
+  isTestMode = false,
+  onSubmitted
 }: SupplierQuoteFormProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
-  // 4 required numeric fields + optional message
+  // 4 required numeric fields as strings for seamless editing without input freezing
   const [unitPrice, setUnitPrice] = useState<string>(suggestedMaxPrice ? String(suggestedMaxPrice) : "")
-  const [moq, setMoq] = useState<number>(1)
-  const [leadTimeDays, setLeadTimeDays] = useState<number>(3)
+  const [moq, setMoq] = useState<string>("1")
+  const [leadTimeDays, setLeadTimeDays] = useState<string>("3")
   const [deliveryCost, setDeliveryCost] = useState<string>("0")
   const [message, setMessage] = useState<string>("")
 
   // Live Auto-calculation: (unit_price * quantity) + delivery_cost
-  const numUnitPrice = parseFloat(unitPrice) || 0
-  const numDeliveryCost = parseFloat(deliveryCost) || 0
+  const numUnitPrice = Number(unitPrice) || 0
+  const numMoq = Number(moq) || 0
+  const numLeadTimeDays = Number(leadTimeDays) || 0
+  const numDeliveryCost = Number(deliveryCost) || 0
   const calculatedTotal = (numUnitPrice * requestQuantity) + numDeliveryCost
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,11 +51,11 @@ export function SupplierQuoteForm({
       setError("Укажите корректную цену за единицу товара")
       return
     }
-    if (moq <= 0) {
+    if (numMoq <= 0) {
       setError("Минимальная партия (MOQ) должна быть от 1 шт.")
       return
     }
-    if (leadTimeDays <= 0) {
+    if (numLeadTimeDays <= 0) {
       setError("Укажите срок поставки в днях")
       return
     }
@@ -62,10 +68,11 @@ export function SupplierQuoteForm({
         requestId,
         unitPrice: numUnitPrice,
         offeredQuantity: requestQuantity,
-        moq,
-        leadTimeDays,
+        moq: numMoq,
+        leadTimeDays: numLeadTimeDays,
         deliveryCost: numDeliveryCost,
-        message: message.trim() || null
+        message: message.trim() || null,
+        isTestMode
       })
 
       if (result.error) {
@@ -73,6 +80,7 @@ export function SupplierQuoteForm({
         setIsSubmitting(false)
       } else {
         setSuccess(true)
+        onSubmitted?.()
         router.refresh()
       }
     } catch (err: any) {
@@ -116,8 +124,7 @@ export function SupplierQuoteForm({
               id="unitPrice"
               type="number"
               step="0.01"
-              min="0.01"
-              required
+              min="0"
               value={unitPrice}
               onChange={(e) => setUnitPrice(e.target.value)}
               placeholder="0.00"
@@ -138,10 +145,10 @@ export function SupplierQuoteForm({
           <Input
             id="moq"
             type="number"
-            min="1"
-            required
+            min="0"
             value={moq}
-            onChange={(e) => setMoq(Math.max(1, parseInt(e.target.value) || 1))}
+            onChange={(e) => setMoq(e.target.value)}
+            placeholder="1"
             className="h-11 rounded-xl bg-background font-semibold"
           />
         </div>
@@ -155,11 +162,11 @@ export function SupplierQuoteForm({
           <Input
             id="leadTimeDays"
             type="number"
-            min="1"
+            min="0"
             max="365"
-            required
             value={leadTimeDays}
-            onChange={(e) => setLeadTimeDays(Math.max(1, parseInt(e.target.value) || 1))}
+            onChange={(e) => setLeadTimeDays(e.target.value)}
+            placeholder="3"
             className="h-11 rounded-xl bg-background font-semibold"
           />
         </div>
@@ -176,7 +183,6 @@ export function SupplierQuoteForm({
               type="number"
               step="0.01"
               min="0"
-              required
               value={deliveryCost}
               onChange={(e) => setDeliveryCost(e.target.value)}
               placeholder="0"

@@ -7,17 +7,14 @@ import {
   Clock, 
   Tag, 
   User, 
-  PackageSearch, 
   ArrowLeft, 
   Boxes, 
-  Coins, 
-  Sparkles,
   Building2,
   FileText
 } from "lucide-react"
-import { BazaarIcon } from "@/components/shared/bazaar-logo"
-import { AiComparisonEngine, OfferItem } from "@/features/requests/components/ai-comparison-engine"
+import { OfferItem, AiComparisonEngine } from "@/features/requests/components/ai-comparison-engine"
 import { SupplierQuoteForm } from "@/features/requests/components/supplier-quote-form"
+import { RequestOwnerView } from "@/features/requests/components/request-owner-view"
 
 export async function generateMetadata(props: { params: Promise<{ id: string }> }) {
   const params = await props.params
@@ -29,7 +26,7 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
     .maybeSingle()
 
   return {
-    title: request ? `${request.title} | BazaarOS RFQ` : "Заявка на закупку | BazaarOS"
+    title: request?.title ? `${request.title} | BazaarOS RFQ` : "Заявка на закупку | BazaarOS"
   }
 }
 
@@ -39,60 +36,58 @@ export default async function RequestDetailsPage(props: { params: Promise<{ id: 
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
 
-  const { data: request } = await supabase
+  // 1. Fetch raw request directly WITHOUT complex joins to prevent 404
+  const { data: request, error: reqErr } = await supabase
     .from("requests")
-    .select("*, categories(name), profiles(full_name, phone)")
+    .select("*")
     .eq("id", requestId)
     .maybeSingle()
 
-  if (!request) {
+  if (!request || reqErr) {
     notFound()
   }
 
-  // Check expiration status
-  const isExpired = new Date(request.expires_at) < new Date()
-  const effectiveStatus = isExpired && request.status === "OPEN" ? "EXPIRED" : request.status
-  const isOwner = session?.user.id === request.buyer_id
+  // 2. Extract packed metadata if fields were stored inside description (fallback resilience)
+  const extractFromDescription = (desc: string | null | undefined) => {
+    if (!desc) return {}
+    const qtyMatch = desc.match(/Количество:\s*(\d+)\s*([^\n\r]+)/i)
+    const specsMatch = desc.match(/Характеристики:\s*([^\n\r]+)/i)
+    const priceMatch = desc.match(/Желаемая цена:\s*(\d+(?:\.\d+)?)/i)
+    const daysMatch = desc.match(/Срок доставки:\s*до\s*(\d+)/i)
+    const catMatch = desc.match(/Категория:\s*([^\n\r]+)/i)
 
-  // Fetch offers with supplier profile
-  let offers: OfferItem[] = []
-  if (session) {
-    let query = supabase
-      .from("request_offers")
-      .select(`
-        id,
-        request_id,
-        seller_id,
-        unit_price,
-        offered_quantity,
-        moq,
-        delivery_cost,
-        lead_time_days,
-        total_cost,
-        message,
-        status,
-        created_at,
-        profiles (
-          id,
-          full_name,
-          avatar_url,
-          phone,
-          is_verified
-        )
-      `)
-      .eq("request_id", requestId)
-
-    if (!isOwner) {
-      // Suppliers only see their own submitted quote
-      query = query.eq("seller_id", session.user.id)
-    }
-
-    const { data: offersData } = await query
-    if (offersData) {
-      offers = offersData as unknown as OfferItem[]
+    return {
+      quantity: qtyMatch ? parseInt(qtyMatch[1], 10) : undefined,
+      unit: qtyMatch ? qtyMatch[2].trim() : undefined,
+      specs: specsMatch ? specsMatch[1].trim() : undefined,
+      maxPrice: priceMatch ? parseFloat(priceMatch[1]) : undefined,
+      deadlineDays: daysMatch ? parseInt(daysMatch[1], 10) : undefined,
+      categoryTag: catMatch ? catMatch[1].trim() : undefined
     }
   }
 
+  const descMeta = extractFromDescription(request.description)
+  const quantity = request.quantity || descMeta.quantity || 1
+  const unit = request.unit || descMeta.unit || "шт"
+  const specs = request.specs || descMeta.specs || ""
+  const deadlineDays = request.deadline_days || descMeta.deadlineDays || 7
+  const categoryTag = request.category_tag || descMeta.categoryTag || "packaging"
+  const maxPrice = request.max_price ?? descMeta.maxPrice ?? request.budget_max
+  const totalBudget = maxPrice ? (request.max_price || descMeta.maxPrice ? maxPrice * quantity : request.budget_max) : null
+
+  // 3. Fetch buyer profile safely without breaking page if not found
+  const buyerId = request.buyer_id || (request as any).user_id
+  let buyerProfile: { full_name?: string | null; phone?: string | null } | null = null
+  if (buyerId) {
+    const { data: p } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar_url, phone")
+      .eq("id", buyerId)
+      .maybeSingle()
+    buyerProfile = p
+  }
+
+  // 4. Resolve category label
   const categoryLabelMap: Record<string, string> = {
     packaging: "Упаковка и тара",
     cups: "Стаканы и посуда",
@@ -101,44 +96,94 @@ export default async function RequestDetailsPage(props: { params: Promise<{ id: 
     other: "Товары для бизнеса"
   }
 
-  const categoryName = request.category_tag 
-    ? (categoryLabelMap[request.category_tag] || request.category_tag)
-    : (request.categories?.name || "B2B Закупка")
+  let categoryName = categoryLabelMap[categoryTag] || "B2B Закупка"
+  if (!categoryLabelMap[categoryTag] && request.category_id) {
+    const { data: cat } = await supabase
+      .from("categories")
+      .select("name")
+      .eq("id", request.category_id)
+      .maybeSingle()
+    if (cat?.name) categoryName = cat.name
+  }
 
-  const quantity = request.quantity || 1
-  const unit = request.unit || "шт"
-  const maxPrice = request.max_price ?? request.budget_max
-  const totalBudget = maxPrice ? (request.max_price ? maxPrice * quantity : request.budget_max) : null
+  // Check expiration status
+  const isExpired = request.expires_at ? new Date(request.expires_at) < new Date() : false
+  const effectiveStatus = isExpired && request.status === "OPEN" ? "EXPIRED" : request.status
+  const isOwner = Boolean(session?.user.id && (session.user.id === request.buyer_id || session.user.id === (request as any).user_id || session.user.id === buyerId))
+
+  // 5. Fetch offers safely without join errors
+  let offers: OfferItem[] = []
+  if (session) {
+    try {
+      const { data: offersData } = await supabase
+        .from("request_offers")
+        .select(`
+          id,
+          request_id,
+          seller_id,
+          unit_price,
+          offered_quantity,
+          moq,
+          delivery_cost,
+          lead_time_days,
+          total_cost,
+          message,
+          status,
+          created_at,
+          profiles:seller_id (
+            id,
+            full_name,
+            avatar_url,
+            phone,
+            is_verified
+          )
+        `)
+        .eq("request_id", requestId)
+
+      if (offersData) {
+        offers = offersData as unknown as OfferItem[]
+      }
+    } catch (e) {
+      console.warn("Non-fatal offers fetch error, retrying without join:", e)
+      const { data: basicOffers } = await supabase
+        .from("request_offers")
+        .select("*")
+        .eq("request_id", requestId)
+      if (basicOffers) {
+        offers = basicOffers as unknown as OfferItem[]
+      }
+    }
+  }
 
   // Check if current supplier has already quoted
   const myOffer = !isOwner && session ? offers.find(o => o.seller_id === session.user.id) : null
 
   return (
-    <div className="container max-w-4xl mx-auto py-8 md:py-12 px-4 space-y-8">
+    <div className="container max-w-5xl mx-auto py-8 md:py-12 px-4 space-y-8">
       {/* Back Link */}
       <Link
         href="/requests"
-        className="inline-flex items-center text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+        className="inline-flex items-center text-sm font-semibold text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white transition-colors"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
-        К бирже B2B-запросов
+        К бирже B2B-запросов (RFQ)
       </Link>
 
       {/* Main Request Specification Card */}
-      <div className="rounded-3xl border bg-card p-6 md:p-8 shadow-sm space-y-6">
+      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#11131A] p-6 md:p-8 shadow-sm space-y-6">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
           <div className="space-y-3 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold bg-primary/10 text-primary px-3 py-1 rounded-full uppercase tracking-wider">
+              <span className="text-xs font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full uppercase tracking-wider">
                 {categoryName}
               </span>
               <span
-                className={`text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider ${
+                className={`text-xs font-mono font-bold px-3 py-1 rounded-full uppercase tracking-wider ${
                   effectiveStatus === "OPEN"
-                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
                     : effectiveStatus === "EXPIRED"
-                    ? "bg-amber-500/10 text-amber-600"
-                    : "bg-muted text-muted-foreground"
+                    ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                    : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
                 }`}
               >
                 {effectiveStatus === "OPEN"
@@ -151,49 +196,49 @@ export default async function RequestDetailsPage(props: { params: Promise<{ id: 
               </span>
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-foreground">
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
               {request.title}
             </h1>
 
             {/* Meta details */}
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-500 dark:text-zinc-400">
               <span className="flex items-center gap-1.5 font-medium">
-                <MapPin className="w-4 h-4 text-primary" /> {request.city}
+                <MapPin className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> {request.city}
               </span>
               <span className="flex items-center gap-1.5 font-medium">
-                <Clock className="w-4 h-4 text-primary" /> Срок: {request.deadline_days || 7} дн. (до {new Date(request.expires_at).toLocaleDateString("ru-RU")})
+                <Clock className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> Срок: до {deadlineDays} дн. {request.expires_at ? `(до ${new Date(request.expires_at).toLocaleDateString("ru-RU")})` : ""}
               </span>
               <span className="flex items-center gap-1.5 font-medium">
-                <User className="w-4 h-4 text-primary" /> {request.profiles?.full_name || "Заказчик"}
+                <User className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> {buyerProfile?.full_name || (isOwner ? "Вы (Заказчик)" : "Заказчик")}
               </span>
             </div>
           </div>
 
           {/* Target Price / Volume Box */}
-          <div className="rounded-2xl bg-muted/40 border p-5 min-w-[220px] text-center shrink-0 space-y-2">
-            <div className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+          <div className="rounded-xl bg-zinc-50 dark:bg-[#090A0F] border border-zinc-200 dark:border-zinc-800 p-5 min-w-[220px] text-center shrink-0 space-y-2">
+            <div className="text-xs uppercase tracking-wider text-zinc-500 font-semibold font-mono">
               Объем партии
             </div>
-            <div className="text-2xl font-black text-foreground flex items-center justify-center gap-1.5">
-              <Boxes className="w-5 h-5 text-primary" />
+            <div className="text-2xl font-black text-zinc-900 dark:text-white flex items-center justify-center gap-1.5 font-mono">
+              <Boxes className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
               <span>{quantity.toLocaleString("ru-RU")}</span>
-              <span className="text-sm font-bold text-muted-foreground">{unit}</span>
+              <span className="text-sm font-bold text-zinc-500 dark:text-zinc-400 font-sans">{unit}</span>
             </div>
 
             {maxPrice ? (
-              <div className="pt-2 border-t text-xs">
-                <div className="text-muted-foreground">Желаемая цена:</div>
-                <div className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">
+              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 text-xs">
+                <div className="text-zinc-500 font-mono">Желаемая цена:</div>
+                <div className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
                   до {maxPrice.toLocaleString("ru-RU")} сом/{unit}
                 </div>
                 {totalBudget && (
-                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                  <div className="text-[11px] text-zinc-500 font-mono mt-0.5">
                     (бюджет: ~{totalBudget.toLocaleString("ru-RU")} сом)
                   </div>
                 )}
               </div>
             ) : (
-              <div className="pt-2 border-t text-xs text-muted-foreground">
+              <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 text-xs text-zinc-500 font-mono">
                 Цена договорная
               </div>
             )}
@@ -201,17 +246,17 @@ export default async function RequestDetailsPage(props: { params: Promise<{ id: 
         </div>
 
         {/* Specs and details */}
-        {(request.specs || request.description || request.raw_ai_prompt) && (
-          <div className="pt-6 border-t space-y-4">
-            {request.specs && (
+        {(specs || request.description || request.raw_ai_prompt) && (
+          <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800 space-y-4">
+            {specs && (
               <div className="flex items-start gap-2.5">
-                <Tag className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <Tag className="w-4 h-4 text-emerald-500 dark:text-emerald-400 mt-0.5 shrink-0" />
                 <div>
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Характеристики и размеры
+                  <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider font-mono">
+                    Характеристики и спецификация
                   </div>
-                  <div className="text-sm font-medium text-foreground mt-0.5">
-                    {request.specs}
+                  <div className="text-sm font-medium font-mono text-zinc-800 dark:text-zinc-200 mt-0.5">
+                    {specs}
                   </div>
                 </div>
               </div>
@@ -219,12 +264,12 @@ export default async function RequestDetailsPage(props: { params: Promise<{ id: 
 
             {request.description && (
               <div className="flex items-start gap-2.5">
-                <FileText className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <FileText className="w-4 h-4 text-emerald-500 dark:text-emerald-400 mt-0.5 shrink-0" />
                 <div>
-                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Дополнительные требования
+                  <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider font-mono">
+                    Требования к заказу
                   </div>
-                  <p className="text-sm text-foreground/90 whitespace-pre-wrap leading-relaxed mt-0.5">
+                  <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed mt-0.5">
                     {request.description}
                   </p>
                 </div>
@@ -232,8 +277,8 @@ export default async function RequestDetailsPage(props: { params: Promise<{ id: 
             )}
 
             {request.raw_ai_prompt && (
-              <div className="p-3.5 rounded-2xl bg-primary/5 border border-primary/10 text-xs text-muted-foreground">
-                <span className="font-semibold text-primary">Исходный AI-запрос заказчика: </span>
+              <div className="p-3.5 rounded-xl bg-zinc-50 dark:bg-[#090A0F] border border-zinc-200 dark:border-zinc-800 text-xs text-zinc-600 dark:text-zinc-400 font-mono">
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">Исходный AI-запрос: </span>
                 «{request.raw_ai_prompt}»
               </div>
             )}
@@ -241,40 +286,24 @@ export default async function RequestDetailsPage(props: { params: Promise<{ id: 
         )}
       </div>
 
-      {/* BLOCK 1: AI Comparison Engine (For Buyer) */}
-      {isOwner && (
-        <div className="space-y-6">
-          {offers.length === 0 ? (
-            <div className="text-center py-16 px-4 border rounded-3xl bg-muted/20 space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto">
-                <BazaarIcon className="w-7 h-7 text-emerald-500" />
-              </div>
-              <div className="space-y-1">
-                <h3 className="text-lg font-bold">Ожидаем предложения от поставщиков</h3>
-                <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                  Ваш запрос опубликован на бирже BazaarOS. Как только поставщики сделают расчеты, AI сравнит их по цене и срокам.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <AiComparisonEngine
-              offers={offers}
-              isOwner={isOwner}
-              currentUserId={session?.user.id}
-              requestTitle={request.title}
-              requestQuantity={quantity}
-              requestUnit={unit}
-            />
-          )}
-        </div>
-      )}
-
-      {/* BLOCK 2: Supplier Quote Form & History (For Supplier) */}
-      {!isOwner && (
+      {/* BLOCK 1: Owner View with AI Comparison & Test Mode */}
+      {isOwner ? (
+        <RequestOwnerView
+          requestId={request.id}
+          offers={offers}
+          currentUserId={session?.user.id}
+          requestTitle={request.title}
+          requestQuantity={quantity}
+          requestUnit={unit}
+          suggestedMaxPrice={request.max_price}
+          effectiveStatus={effectiveStatus}
+        />
+      ) : (
+        /* BLOCK 2: Supplier Quote Form & History (For Suppliers) */
         <div className="space-y-6">
           {myOffer ? (
             <div className="space-y-4">
-              <h2 className="text-xl font-bold">Ваше коммерческое предложение</h2>
+              <h2 className="text-xl font-bold text-zinc-900 dark:text-white">Ваше коммерческое предложение</h2>
               <AiComparisonEngine
                 offers={[myOffer]}
                 isOwner={false}
@@ -285,13 +314,15 @@ export default async function RequestDetailsPage(props: { params: Promise<{ id: 
               />
             </div>
           ) : effectiveStatus === "OPEN" ? (
-            <div className="rounded-3xl border bg-card p-6 md:p-8 shadow-sm space-y-5">
-              <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-primary" />
+            <div className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#11131A] p-6 md:p-8 shadow-sm space-y-5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 dark:text-emerald-400">
+                  <Building2 className="w-4 h-4" />
+                </div>
                 <div>
-                  <h2 className="text-xl font-bold">Отправить коммерческое предложение</h2>
-                  <p className="text-xs text-muted-foreground">
-                    Укажите вашу оптовую цену, срок и стоимость логистики для заказчика
+                  <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Отправить коммерческое предложение (КП)</h2>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Укажите оптовую стоимость партии, мин. тираж (MOQ) и срок доставки для заказчика
                   </p>
                 </div>
               </div>
@@ -304,11 +335,11 @@ export default async function RequestDetailsPage(props: { params: Promise<{ id: 
                   suggestedMaxPrice={request.max_price}
                 />
               ) : (
-                <div className="p-8 rounded-2xl bg-muted/30 border text-center space-y-4">
-                  <p className="text-sm text-muted-foreground">
+                <div className="p-8 rounded-xl bg-zinc-50 dark:bg-[#090A0F] border border-zinc-200 dark:border-zinc-800 text-center space-y-4">
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
                     Для отправки коммерческого предложения авторизуйтесь как поставщик
                   </p>
-                  <Button asChild className="rounded-xl px-6">
+                  <Button asChild className="rounded-xl px-6 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold">
                     <Link href={`/login?redirect_to=/requests/${request.id}`}>
                       Войти и предложить цену
                     </Link>
@@ -317,7 +348,7 @@ export default async function RequestDetailsPage(props: { params: Promise<{ id: 
               )}
             </div>
           ) : (
-            <div className="p-6 rounded-3xl bg-muted/30 border text-center text-sm text-muted-foreground">
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800 text-center text-sm text-zinc-600 dark:text-zinc-400 font-mono">
               Заявка закрыта или истекла, новые предложения не принимаются.
             </div>
           )}

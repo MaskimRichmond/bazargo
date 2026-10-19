@@ -22,12 +22,13 @@ const STATUS_MAP: Record<string, { label: string, color: string, description: st
 
 import { LeaveReviewButton } from "@/features/orders/components/leave-review-button"
 
-export default async function OrderDetailPage({ params }: { params: { id: string } }) {
+export default async function OrderDetailPage(props: { params: Promise<{ id: string }> }) {
+  const { id } = await props.params;
   const t = await getTranslations();
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
 
-  if (!session) redirect("/login?next=/orders/" + params.id)
+  if (!session) redirect("/login?next=/orders/" + id)
 
   const { data: order } = await supabase
     .from("orders")
@@ -37,7 +38,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
       order_items (*),
       reviews (*)
     `)
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("buyer_id", session.user.id)
     .single()
 

@@ -5,46 +5,64 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Sparkles, Layers, Building2 } from "lucide-react"
 
-export function HeaderNav() {
-  const pathname = usePathname()
+interface NavItem {
+  href: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  exact?: boolean
+}
 
-  const isActive = (path: string) => {
-    if (path === "/") return pathname === "/"
-    return pathname.startsWith(path)
+const NAV_ITEMS: NavItem[] = [
+  {
+    href: "/requests/create",
+    label: "Создать закупку (AI)",
+    icon: Sparkles
+  },
+  {
+    href: "/requests",
+    label: "Биржа заказов (RFQ)",
+    icon: Layers,
+    exact: true
+  },
+  {
+    href: "/b2b",
+    label: "Кабинет поставщика",
+    icon: Building2
+  }
+]
+
+export function HeaderNav() {
+  const pathname = usePathname() || ""
+
+  const checkActive = (item: NavItem) => {
+    if (item.exact) {
+      return pathname.endsWith("/requests") || pathname === "/requests"
+    }
+    return pathname.includes(item.href)
   }
 
   return (
-    <nav className="hidden lg:flex items-center gap-6 text-sm font-semibold">
-      <Link 
-        href="/requests/create" 
-        className={cn(
-          "inline-flex items-center gap-1.5 transition-colors", 
-          isActive("/requests/create") ? "text-primary font-bold" : "text-muted-foreground hover:text-primary"
-        )}
-      >
-        <Sparkles className="w-4 h-4 text-primary" />
-        <span>Создать закупку (AI)</span>
-      </Link>
-      <Link 
-        href="/requests" 
-        className={cn(
-          "inline-flex items-center gap-1.5 transition-colors", 
-          isActive("/requests") && !isActive("/requests/create") ? "text-primary font-bold" : "text-muted-foreground hover:text-primary"
-        )}
-      >
-        <Layers className="w-4 h-4" />
-        <span>Биржа запросов B2B</span>
-      </Link>
-      <Link 
-        href="/b2b/become-supplier" 
-        className={cn(
-          "inline-flex items-center gap-1.5 transition-colors", 
-          isActive("/b2b/become-supplier") ? "text-primary font-bold" : "text-muted-foreground hover:text-primary"
-        )}
-      >
-        <Building2 className="w-4 h-4" />
-        <span>Стать поставщиком</span>
-      </Link>
+    <nav className="hidden lg:flex items-center gap-1.5 text-sm">
+      {NAV_ITEMS.map((item) => {
+        const active = checkActive(item)
+        const Icon = item.icon
+
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all select-none text-sm font-medium",
+              active
+                ? "text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 border-transparent"
+            )}
+          >
+            <Icon className={cn("w-4 h-4 transition-colors", active ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-500 dark:text-zinc-400")} />
+            <span>{item.label}</span>
+          </Link>
+        )
+      })}
     </nav>
   )
 }

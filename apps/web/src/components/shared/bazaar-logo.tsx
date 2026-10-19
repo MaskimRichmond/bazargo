@@ -1,7 +1,7 @@
 import React from "react"
 import Link from "next/link"
 
-export function BazaarIcon({ className = "w-6 h-6" }: { className?: string }) {
+export function BazaarIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -10,65 +10,60 @@ export function BazaarIcon({ className = "w-6 h-6" }: { className?: string }) {
       className={className}
       aria-hidden="true"
     >
-      {/* Top Facet */}
       <path
-        d="M12 2.5L21 7.5L12 12.5L3 7.5L12 2.5Z"
-        className="fill-emerald-500/25 stroke-emerald-500"
-        strokeWidth="1.5"
+        d="M12 2.5L20.5 7.2V16.8L12 21.5L3.5 16.8V7.2L12 2.5Z"
+        stroke="#10B981"
+        strokeWidth="1.8"
         strokeLinejoin="round"
       />
-      {/* Left Facet */}
       <path
-        d="M3 7.5L12 12.5V21.5L3 16.5V7.5Z"
-        className="fill-zinc-900/40 dark:fill-zinc-900/80 stroke-zinc-700 dark:stroke-zinc-600"
-        strokeWidth="1.5"
+        d="M12 2.5V12M12 12L20.5 7.2M12 12L3.5 7.2"
+        stroke="#10B981"
+        strokeWidth="1.8"
         strokeLinejoin="round"
       />
-      {/* Right Facet */}
       <path
-        d="M21 7.5L12 12.5V21.5L21 16.5V7.5Z"
-        className="fill-emerald-950/20 dark:fill-emerald-950/40 stroke-emerald-600/80"
-        strokeWidth="1.5"
+        d="M12 12V21.5"
+        stroke="#10B981"
+        strokeWidth="1.8"
         strokeLinejoin="round"
       />
-      {/* Inner Precision Grid / Logistics Node */}
-      <circle cx="12" cy="12.5" r="1.25" className="fill-emerald-400" />
-      <path
-        d="M7.5 5L16.5 10"
-        stroke="currentColor"
-        strokeWidth="0.75"
-        strokeOpacity="0.3"
-        strokeDasharray="1.5 1.5"
-      />
+      <circle cx="12" cy="12" r="1.5" fill="#10B981" />
     </svg>
   )
 }
 
 export function BazaarLogo({
-  showVersion = true,
-  href = "/"
+  href = "/",
+  size = "header",
+  className = ""
 }: {
   showVersion?: boolean
   href?: string
+  size?: "default" | "header" | "footer" | "sm" | "lg"
+  className?: string
 }) {
+  const isFooter = size === "footer" || size === "lg"
+  const isSmall = size === "sm"
+
+  const boxSize = isFooter 
+    ? "w-10 h-10 rounded-xl" 
+    : isSmall 
+    ? "w-7 h-7 rounded-lg" 
+    : "w-8 h-8 rounded-lg"
+
+  const iconSize = isFooter ? "w-6 h-6" : isSmall ? "w-4 h-4" : "w-5 h-5"
+  const textSize = isFooter ? "text-2xl" : isSmall ? "text-base" : "text-xl"
+
   return (
-    <Link href={href} className="flex items-center gap-2.5 outline-none group select-none">
-      <div className="w-8 h-8 rounded-lg bg-zinc-900/90 dark:bg-zinc-900 border border-zinc-800 flex items-center justify-center p-1.5 shadow-sm group-hover:border-emerald-500/40 transition-colors">
-        <BazaarIcon className="w-full h-full text-foreground group-hover:scale-105 transition-transform" />
+    <Link href={href} className={`inline-flex items-center gap-2.5 outline-none group select-none ${className}`}>
+      <div className={`${boxSize} bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0 p-1 group-hover:border-emerald-500/50 transition-colors`}>
+        <BazaarIcon className={`${iconSize} group-hover:scale-105 transition-transform`} />
       </div>
 
-      <div className="flex items-center gap-1.5">
-        <span className="font-extrabold text-lg tracking-tight text-foreground">
-          Bazaar
-        </span>
-        <span className="px-1.5 py-0.5 rounded text-[11px] font-black bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 tracking-wide font-mono">
-          OS
-        </span>
-        {showVersion && (
-          <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400 font-medium ml-0.5">
-            v2.0
-          </span>
-        )}
+      <div className={`flex items-center tracking-tight font-bold ${textSize} leading-none`}>
+        <span className="text-white">Bazaar</span>
+        <span className="text-[#10B981]">OS</span>
       </div>
     </Link>
   )

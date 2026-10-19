@@ -7,7 +7,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 
 export const metadata = {
-  title: "Стать поставщиком | BazarGo B2B",
+  title: "Стать поставщиком | BazaarOS B2B",
 }
 
 export default async function BecomeSupplierPage() {
@@ -32,8 +32,8 @@ export default async function BecomeSupplierPage() {
   return (
     <div className="container mx-auto px-4 py-12 md:py-24 max-w-3xl">
       <div className="mb-12">
-        <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">Стать поставщиком</h1>
-        <p className="text-lg text-muted-foreground">Заполните заявку, чтобы получить статус проверенного поставщика на BazarGo B2B.</p>
+        <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-4 text-white">Стать поставщиком</h1>
+        <p className="text-lg text-zinc-400">Заполните заявку, чтобы получить статус проверенного поставщика и прямые заказы в BazaarOS.</p>
       </div>
 
       <div className="flex flex-col gap-8">

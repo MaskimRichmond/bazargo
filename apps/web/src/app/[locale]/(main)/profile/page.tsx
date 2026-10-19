@@ -47,19 +47,19 @@ export default async function ProfilePage() {
 
   const displayName = profile?.full_name || session.user.phone || session.user.email || "Пользователь"
 
-  const NavItem = ({ href, icon: Icon, title, subtitle, isPrimary = false }: any) => (
+  const NavItem = ({ href, icon: Icon, title, subtitle }: any) => (
     <Link 
       href={href} 
-      className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors active:bg-muted"
+      className="group flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors active:bg-muted"
     >
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isPrimary ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-muted/60 text-zinc-400 group-hover:text-zinc-100 transition-colors">
         <Icon className="w-5 h-5" />
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className={`font-semibold text-[15px] ${isPrimary ? 'text-primary' : 'text-foreground'}`}>{title}</h3>
+        <h3 className="font-semibold text-[15px] text-foreground group-hover:text-zinc-100 transition-colors">{title}</h3>
         {subtitle && <p className="text-xs text-muted-foreground truncate">{subtitle}</p>}
       </div>
-      <ChevronRight className="w-5 h-5 text-muted-foreground/50 shrink-0" />
+      <ChevronRight className="w-5 h-5 text-muted-foreground/50 shrink-0 group-hover:translate-x-0.5 transition-transform" />
     </Link>
   )
 

@@ -20,12 +20,13 @@ const STATUS_MAP: Record<string, { label: string, color: string, description: st
   EXPIRED: { label: "Истёк", color: "text-gray-600 bg-gray-50", description: "Вы не подтвердили заказ вовремя." },
 }
 
-export default async function SellerOrderDetailPage({ params }: { params: { id: string } }) {
-    const t = await getTranslations();
+export default async function SellerOrderDetailPage(props: { params: Promise<{ id: string }> }) {
+  const { id } = await props.params;
+  const t = await getTranslations();
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
 
-  if (!session) redirect("/login?next=/seller/orders/" + params.id)
+  if (!session) redirect("/login?next=/seller/orders/" + id)
 
   const { data: order } = await supabase
     .from("orders")
@@ -34,7 +35,7 @@ export default async function SellerOrderDetailPage({ params }: { params: { id: 
       profiles!buyer_id (id, full_name, avatar_url),
       order_items (*)
     `)
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("seller_id", session.user.id)
     .single()
 

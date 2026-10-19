@@ -120,28 +120,28 @@ export function HeaderAuth() {
               <p className="text-xs text-muted-foreground truncate">{user.phone || user.email}</p>
             </div>
             
-            <Link href="/my-requests" onClick={() => setIsOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors font-medium">
-              <ClipboardList className="w-4 h-4 text-primary" />
+            <Link href="/my-requests" onClick={() => setIsOpen(false)} className="group flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors font-medium">
+              <ClipboardList className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors" />
               <span>Мои закупки (RFQ)</span>
             </Link>
 
-            <Link href="/requests" onClick={() => setIsOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <Layers className="w-4 h-4 text-muted-foreground" />
+            <Link href="/requests" onClick={() => setIsOpen(false)} className="group flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
+              <Layers className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors" />
               <span>Биржа заказов (Для поставщиков)</span>
             </Link>
 
-            <Link href="/messages" onClick={() => setIsOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <MessageCircle className="w-4 h-4 text-muted-foreground" />
+            <Link href="/messages" onClick={() => setIsOpen(false)} className="group flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
+              <MessageCircle className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors" />
               <span>Сообщения по сделкам</span>
             </Link>
 
-            <Link href="/b2b" onClick={() => setIsOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <Briefcase className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <Link href="/b2b" onClick={() => setIsOpen(false)} className="group flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
+              <Briefcase className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors" />
               <span>Кабинет поставщика</span>
             </Link>
 
-            <Link href="/settings" onClick={() => setIsOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors text-muted-foreground">
-              <Settings className="w-4 h-4" />
+            <Link href="/settings" onClick={() => setIsOpen(false)} className="group flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors text-muted-foreground">
+              <Settings className="w-4 h-4 text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors" />
               <span>Настройки аккаунта</span>
             </Link>
             

@@ -22,7 +22,7 @@ export function Header() {
       <div className="container mx-auto px-4 h-14 md:h-16 flex items-center justify-between gap-4">
         {/* Left: Strict Geometric BazaarOS Logo & Location */}
         <div className="flex items-center gap-4 md:gap-6">
-          <BazaarLogo />
+          <BazaarLogo size="header" />
           
           <Suspense fallback={<div className="hidden lg:flex w-24 h-8 bg-muted rounded-md animate-pulse" />}>
             <HeaderLocationSelector />

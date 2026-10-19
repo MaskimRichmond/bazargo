@@ -4,6 +4,7 @@
   "main": "index.ts",
   "dependencies": {
     "@bazargo/shared": "*",
+    "@expo/vector-icons": "^15.1.1",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@supabase/supabase-js": "^2.39.0",
     "expo": "~57.0.26",

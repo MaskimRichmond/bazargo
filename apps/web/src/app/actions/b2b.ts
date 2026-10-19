@@ -1,0 +1,279 @@
+"use server"
+
+import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { revalidatePath } from "next/cache"
+import { SupplierProduct } from "@bazargo/shared"
+
+export async function submitSupplierApplication(params: {
+  company_name: string
+  contact_name: string
+  phone: string
+  city: string
+  categories: string
+  description?: string
+  telegram_username?: string
+}) {
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (!session) {
+    return { error: "Необходима авторизация" }
+  }
+
+  const { company_name, contact_name, phone, city, categories, description, telegram_username } = params
+
+  if (!company_name || !contact_name || !phone || !city || !categories) {
+    return { error: "Пожалуйста, заполните все обязательные поля" }
+  }
+
+  let packedDescription = (description || "").trim()
+  if (telegram_username) {
+    const cleanTg = telegram_username.startsWith("@") ? telegram_username : `@${telegram_username}`
+    packedDescription = `Telegram: ${cleanTg}\n\n${packedDescription}`.trim()
+  }
+
+  const payload: any = {
+    user_id: session.user.id,
+    company_name: company_name.trim(),
+    contact_name: contact_name.trim(),
+    phone: phone.trim(),
+    city: city.trim(),
+    categories: categories.trim(),
+    description: packedDescription || null,
+    status: 'PENDING'
+  }
+
+  let insertRes = await supabase.from("b2b_applications").insert({
+    ...payload,
+    telegram_username: telegram_username ? telegram_username.trim() : null
+  })
+
+  if (insertRes.error) {
+    console.warn("b2b_applications insert failed with telegram_username, retrying without column:", insertRes.error.message)
+    insertRes = await supabase.from("b2b_applications").insert(payload)
+  }
+
+  if (insertRes.error) {
+    try {
+      const admin = createAdminClient()
+      insertRes = await admin.from("b2b_applications").insert(payload)
+    } catch {}
+  }
+
+  if (insertRes.error) {
+    console.error("Final submitSupplierApplication error:", insertRes.error)
+    return { error: insertRes.error.message }
+  }
+
+  // Send Telegram Notification to Admin/Channel
+  try {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN
+    const chatId = process.env.TELEGRAM_CHAT_ID || process.env.TELEGRAM_ADMIN_CHAT_ID
+
+    if (botToken && chatId) {
+      const cleanTg = telegram_username ? (telegram_username.startsWith('@') ? telegram_username : `@${telegram_username}`) : null
+      const tgMsg = `НОВАЯ ЗАЯВКА ПОСТАВЩИКА BAZAAROS\n\n` +
+        `• Компания: ${company_name}\n` +
+        `• Контакт: ${contact_name}\n` +
+        `• Телефон: ${phone}\n` +
+        `• Город: ${city}\n` +
+        `• Категории: ${categories}\n` +
+        (cleanTg ? `• Telegram: ${cleanTg}\n` : '') +
+        (description ? `• Описание: ${description}\n` : '')
+
+      await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: tgMsg
+        })
+      }).catch(err => console.warn("TG notification failed:", err))
+    }
+  } catch (tgErr) {
+    console.warn("Telegram alert error:", tgErr)
+  }
+
+  revalidatePath("/b2b")
+  revalidatePath("/b2b/become-supplier")
+  revalidatePath("/b2b/my-applications")
+  return { success: true }
+}
+
+export async function addSupplierProduct(data: {
+  title: string
+  category_tag: string
+  specs?: string
+  unit: string
+  unit_price: number
+  moq: number
+  delivery_cost: number
+  lead_time_days: number
+  city?: string
+  phone?: string
+  telegram_username?: string
+  company_name?: string
+}) {
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (!session) {
+    return { success: false, error: "Необходима авторизация" }
+  }
+
+  if (!data.title?.trim()) {
+    return { success: false, error: "Укажите название позиции" }
+  }
+  if (!data.unit_price || data.unit_price <= 0) {
+    return { success: false, error: "Укажите корректную оптовую цену за единицу" }
+  }
+
+  // Fetch supplier company name from profile or b2b_application if not passed
+  let compName = data.company_name?.trim() || ""
+  let phone = data.phone?.trim() || ""
+  let tg = data.telegram_username?.trim() || ""
+
+  if (!compName) {
+    const { data: app } = await supabase
+      .from("b2b_applications")
+      .select("company_name, phone, telegram_username")
+      .eq("user_id", session.user.id)
+      .maybeSingle()
+
+    if (app) {
+      compName = app.company_name || ""
+      if (!phone) phone = app.phone || ""
+      if (!tg) tg = app.telegram_username || ""
+    }
+  }
+
+  if (!compName) {
+    const { data: prof } = await supabase
+      .from("profiles")
+      .select("company_name, full_name, phone, telegram_username")
+      .eq("id", session.user.id)
+      .maybeSingle()
+
+    if (prof) {
+      compName = prof.company_name || prof.full_name || "Поставщик"
+      if (!phone) phone = prof.phone || ""
+      if (!tg) tg = prof.telegram_username || ""
+    }
+  }
+
+  const payload = {
+    supplier_id: session.user.id,
+    company_name: compName || "Поставщик BazaarOS",
+    title: data.title.trim(),
+    category_tag: data.category_tag || "packaging",
+    specs: data.specs?.trim() || null,
+    unit: data.unit?.trim() || "шт",
+    unit_price: Number(data.unit_price),
+    moq: Number(data.moq) || 1,
+    delivery_cost: Number(data.delivery_cost) || 0,
+    lead_time_days: Number(data.lead_time_days) || 3,
+    city: data.city?.trim() || "Бишкек",
+    phone: phone || null,
+    telegram_username: tg ? tg.replace(/^@/, '') : null,
+    in_stock: true
+  }
+
+  let { data: inserted, error } = await supabase
+    .from("supplier_products")
+    .insert([payload])
+    .select("id")
+    .single()
+
+  if (error) {
+    console.warn("User insert supplier_products failed, trying admin client:", error.message)
+    const admin = createAdminClient()
+    const adminRes = await admin
+      .from("supplier_products")
+      .insert([payload])
+      .select("id")
+      .single()
+    if (adminRes.error) {
+      return { success: false, error: adminRes.error.message }
+    }
+  }
+
+  revalidatePath("/b2b")
+  revalidatePath("/requests/create")
+  return { success: true }
+}
+
+export async function deleteSupplierProduct(productId: string) {
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (!session) {
+    return { success: false, error: "Необходима авторизация" }
+  }
+
+  let { error } = await supabase
+    .from("supplier_products")
+    .delete()
+    .eq("id", productId)
+    .eq("supplier_id", session.user.id)
+
+  if (error) {
+    const admin = createAdminClient()
+    const { error: adminErr } = await admin
+      .from("supplier_products")
+      .delete()
+      .eq("id", productId)
+      .eq("supplier_id", session.user.id)
+    if (adminErr) {
+      return { success: false, error: adminErr.message }
+    }
+  }
+
+  revalidatePath("/b2b")
+  revalidatePath("/requests/create")
+  return { success: true }
+}
+
+export async function getPublicRegistry(filters?: {
+  category?: string
+  minMoq?: number
+  maxPrice?: number
+  city?: string
+  search?: string
+}) {
+  const supabase = await createClient()
+
+  let query = supabase
+    .from("supplier_products")
+    .select("*")
+    .eq("in_stock", true)
+    .order("created_at", { ascending: false })
+
+  if (filters?.category && filters.category !== "all") {
+    query = query.eq("category_tag", filters.category)
+  }
+  if (filters?.city && filters.city !== "all") {
+    query = query.ilike("city", `%${filters.city}%`)
+  }
+  if (filters?.maxPrice) {
+    query = query.lte("unit_price", filters.maxPrice)
+  }
+  if (filters?.search) {
+    const s = filters.search.trim()
+    query = query.or(`title.ilike.%${s}%,specs.ilike.%${s}%,company_name.ilike.%${s}%`)
+  }
+
+  const { data: products, error } = await query
+
+  // Also fetch approved B2B supplier applications
+  const { data: suppliers } = await supabase
+    .from("b2b_applications")
+    .select("id, user_id, company_name, city, categories, description, phone, telegram_username, status")
+    .in("status", ["APPROVED", "PENDING"])
+    .order("created_at", { ascending: false })
+
+  return {
+    products: (products as SupplierProduct[]) || [],
+    suppliers: suppliers || []
+  }
+}

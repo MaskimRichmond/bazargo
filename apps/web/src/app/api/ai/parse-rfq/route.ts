@@ -3,7 +3,6 @@ import { parseRfqFallback, ParsedRfqResponse } from "@/lib/rfq-parser"
 
 export type { ParsedRfqResponse }
 
-
 export async function POST(req: NextRequest) {
   let prompt = ""
   try {
@@ -18,10 +17,11 @@ export async function POST(req: NextRequest) {
 Твоя задача — извлечь структурированные данные из свободного запроса предпринимателя на закупку.
 Верни ТОЛЬКО валидный JSON со следующими полями:
 - "title": краткое коммерческое название товара (например: "Коробки картонные 30×20×15 см" или "Двухслойные стаканы 350 мл с крышками")
-- "category_tag": строго одно из значений: "packaging", "cups", "syrups", "coffee", "other"
+- "category_tag": строго одно из значений: "packaging", "cups", "syrups", "food", "cleaning", "textiles", "printing", "equipment", "other"
 - "specs": точные характеристики, размеры, объем, плотность, цвет (например: "30×20×15 см" или "350 мл, двухслойные")
 - "quantity": целое число, количество (например: 300, по умолчанию 1)
 - "unit": единица измерения ("шт", "коробок", "стаканов", "уп", "кг", "л", "бутылок", "рулонов")
+- "total_budget": общий бюджет на всю партию в сомах (число, например 9000, либо null)
 - "max_price": максимальная желаемая цена за 1 единицу в сомах (число, например 80 или 4.5, либо null если не указана)
 - "city": город доставки в Кыргызстане (например: "Бишкек", "Ош", по умолчанию "Бишкек")
 - "deadline_days": срок поставки в днях (целое число, например 7, по умолчанию 7)`
@@ -61,18 +61,34 @@ export async function POST(req: NextRequest) {
               "packaging",
               "cups",
               "syrups",
+              "food",
+              "cleaning",
+              "textiles",
+              "printing",
+              "equipment",
               "coffee",
               "other"
             ]
             const category_tag = validTags.includes(parsed.category_tag) ? parsed.category_tag : "other"
+            const quantity = typeof parsed.quantity === "number" && parsed.quantity > 0 ? Math.round(parsed.quantity) : 1
+
+            let max_price = typeof parsed.max_price === "number" && parsed.max_price > 0 ? parsed.max_price : null
+            let total_budget = typeof parsed.total_budget === "number" && parsed.total_budget > 0 ? parsed.total_budget : null
+
+            if (total_budget && !max_price && quantity > 0) {
+              max_price = Math.round((total_budget / quantity) * 100) / 100
+            } else if (max_price && !total_budget) {
+              total_budget = Math.round(max_price * quantity * 100) / 100
+            }
 
             const result: ParsedRfqResponse = {
               title: typeof parsed.title === "string" && parsed.title ? parsed.title : "Закупка товаров",
               category_tag,
               specs: typeof parsed.specs === "string" ? parsed.specs : "",
-              quantity: typeof parsed.quantity === "number" && parsed.quantity > 0 ? Math.round(parsed.quantity) : 1,
+              quantity,
               unit: typeof parsed.unit === "string" && parsed.unit ? parsed.unit : "шт",
-              max_price: typeof parsed.max_price === "number" && parsed.max_price > 0 ? parsed.max_price : null,
+              max_price,
+              total_budget,
               city: typeof parsed.city === "string" && parsed.city ? parsed.city : "Бишкек",
               deadline_days: typeof parsed.deadline_days === "number" && parsed.deadline_days > 0 ? Math.round(parsed.deadline_days) : 7,
               raw_ai_prompt: prompt,

@@ -49,7 +49,7 @@ export default async function RootLayout({
           <NextIntlClientProvider messages={messages} locale={locale}>
             <div className="relative flex min-h-screen flex-col">
               <Header />
-              <div className="flex-1">
+              <div className="flex-1 pb-20 md:pb-0">
                 {children}
               </div>
               <Footer />

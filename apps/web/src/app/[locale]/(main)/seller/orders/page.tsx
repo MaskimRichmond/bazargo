@@ -19,18 +19,17 @@ const STATUS_MAP: Record<string, { label: string, color: string }> = {
   EXPIRED: { label: "Истёк", color: "text-gray-600 bg-gray-100 dark:bg-gray-800" },
 }
 
-export default async function SellerOrdersPage({
-  searchParams
-}: {
-  searchParams: { page?: string }
+export default async function SellerOrdersPage(props: {
+  searchParams: Promise<{ page?: string }>
 }) {
-    const t = await getTranslations();
+  const searchParams = await props.searchParams;
+  const t = await getTranslations();
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
 
   if (!session) redirect("/login?next=/seller/orders")
 
-  const page = parseInt(searchParams.page || "1", 10)
+  const page = parseInt(searchParams?.page || "1", 10)
   const limit = 20
   const from = (page - 1) * limit
   const to = from + limit - 1

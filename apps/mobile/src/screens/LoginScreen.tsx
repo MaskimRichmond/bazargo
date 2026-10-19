@@ -1,6 +1,32 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
+
+const THEME = {
+  bg: '#090A0F',
+  card: '#131620',
+  cardBorder: '#1F2433',
+  inputBg: '#181C2A',
+  inputBorder: '#272E43',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#94A3B8',
+  textMuted: '#64748B',
+  accent: '#10B981',
+  accentBg: 'rgba(16, 185, 129, 0.12)',
+  accentBorder: 'rgba(16, 185, 129, 0.3)',
+};
 
 export function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) {
   const [email, setEmail] = useState('');
@@ -15,10 +41,10 @@ export function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) 
 
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
-      email: email,
+      email: email.trim(),
       password: password,
     });
-    
+
     setLoading(false);
 
     if (error) {
@@ -33,10 +59,10 @@ export function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) 
       Alert.alert('Ошибка', 'Введите email и пароль');
       return;
     }
-    
+
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email: email,
+    const { error } = await supabase.auth.signUp({
+      email: email.trim(),
       password: password,
     });
 
@@ -51,49 +77,61 @@ export function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) 
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.inner}
       >
-        <Text style={styles.title}>Вход в BazarGo</Text>
-        
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            onChangeText={(text) => setEmail(text)}
-            value={email}
-            placeholder="Email"
-            placeholderTextColor="#9ca3af"
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-        </View>
-        
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            onChangeText={(text) => setPassword(text)}
-            value={password}
-            secureTextEntry={true}
-            placeholder="Пароль"
-            placeholderTextColor="#9ca3af"
-            autoCapitalize="none"
-          />
+        <View style={styles.logoWrap}>
+          <View style={styles.logoBadge}>
+            <Feather name="cpu" size={24} color={THEME.accent} />
+          </View>
+          <Text style={styles.brandTitle}>BazaarOS</Text>
+          <Text style={styles.brandSubtitle}>B2B-платформа AI-снабжения</Text>
         </View>
 
-        {loading ? (
-          <ActivityIndicator size="large" color="#10b981" style={styles.loader} />
-        ) : (
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.primaryButton} onPress={signInWithEmail}>
-              <Text style={styles.primaryButtonText}>Войти</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.secondaryButton} onPress={signUpWithEmail}>
-              <Text style={styles.secondaryButtonText}>Зарегистрироваться</Text>
-            </TouchableOpacity>
+        <View style={styles.card}>
+          <Text style={styles.formTitle}>Вход в аккаунт</Text>
+
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Корпоративный или личный Email</Text>
+            <TextInput
+              style={styles.input}
+              onChangeText={setEmail}
+              value={email}
+              placeholder="buyer@company.kg"
+              placeholderTextColor={THEME.textMuted}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
           </View>
-        )}
+
+          <View style={styles.fieldGroup}>
+            <Text style={styles.label}>Пароль</Text>
+            <TextInput
+              style={styles.input}
+              onChangeText={setPassword}
+              value={password}
+              secureTextEntry={true}
+              placeholder="Пароль"
+              placeholderTextColor={THEME.textMuted}
+              autoCapitalize="none"
+            />
+          </View>
+
+          {loading ? (
+            <ActivityIndicator size="large" color={THEME.accent} style={{ marginTop: 16 }} />
+          ) : (
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={styles.primaryButton} onPress={signInWithEmail}>
+                <Text style={styles.primaryButtonText}>Войти</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.secondaryButton} onPress={signUpWithEmail}>
+                <Text style={styles.secondaryButtonText}>Создать аккаунт</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -102,61 +140,96 @@ export function LoginScreen({ onLoginSuccess }: { onLoginSuccess: () => void }) 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: THEME.bg,
   },
   inner: {
     flex: 1,
     padding: 24,
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#10b981',
-    marginBottom: 32,
-    textAlign: 'center',
+  logoWrap: {
+    alignItems: 'center',
+    marginBottom: 28,
   },
-  inputContainer: {
+  logoBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: THEME.accentBg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: THEME.accentBorder,
+    marginBottom: 12,
+  },
+  brandTitle: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: THEME.textPrimary,
+    letterSpacing: 0.5,
+  },
+  brandSubtitle: {
+    fontSize: 13,
+    color: THEME.textSecondary,
+    marginTop: 4,
+  },
+  card: {
+    backgroundColor: THEME.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: THEME.cardBorder,
+    padding: 20,
+  },
+  formTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: THEME.textPrimary,
     marginBottom: 16,
   },
+  fieldGroup: {
+    marginBottom: 14,
+  },
+  label: {
+    color: THEME.textSecondary,
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: THEME.inputBg,
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: THEME.inputBorder,
     borderRadius: 8,
-    padding: 14,
-    fontSize: 16,
-    color: '#111827',
+    padding: 12,
+    fontSize: 14,
+    color: THEME.textPrimary,
   },
   buttonContainer: {
-    marginTop: 16,
-    gap: 12,
+    marginTop: 8,
+    gap: 10,
   },
   primaryButton: {
-    backgroundColor: '#10b981',
-    padding: 16,
+    backgroundColor: THEME.accent,
+    padding: 14,
     borderRadius: 8,
     alignItems: 'center',
   },
   primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: '#090A0F',
+    fontSize: 15,
+    fontWeight: '700',
   },
   secondaryButton: {
     backgroundColor: 'transparent',
-    padding: 16,
+    padding: 13,
     borderRadius: 8,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#10b981',
+    borderColor: THEME.accent,
   },
   secondaryButtonText: {
-    color: '#10b981',
-    fontSize: 16,
-    fontWeight: 'bold',
+    color: THEME.accent,
+    fontSize: 14,
+    fontWeight: '600',
   },
-  loader: {
-    marginTop: 24,
-  }
 });

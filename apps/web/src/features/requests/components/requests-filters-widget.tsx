@@ -1,281 +1,285 @@
 "use client"
+
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { useTransition, useState, useEffect, useRef } from "react"
+import { useTransition, useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Search, Filter, X } from "lucide-react"
+import { Search, Filter, SlidersHorizontal, RotateCcw } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CategoryPicker } from "@/features/catalog/components/category-picker"
+import { BAZAAR_B2B_CATEGORIES } from "@/lib/categories"
 
-import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime"
-import { useTranslations } from "next-intl";
+const CITIES = [
+  "Бишкек",
+  "Ош",
+  "Джалал-Абад",
+  "Каракол",
+  "Токмок",
+  "Нарын",
+  "Талас",
+  "Балыкчы",
+  "Кант"
+]
 
-type Category = { id: string, name: string, slug: string, parent_id?: string | null }
-
-function SearchFilter({ searchParams, pathname, router, startTransition }: { searchParams: URLSearchParams, pathname: string, router: AppRouterInstance, startTransition: React.TransitionStartFunction }) {
-    const t = useTranslations();
-  const [q, setQ] = useState(searchParams.get("q") || "")
-  const urlQ = searchParams.get("q") || ""
-
-  useEffect(() => {
-    setQ(urlQ)
-  }, [urlQ])
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const current = new URLSearchParams(Array.from(searchParams.entries()))
-    if (q) current.set("q", q)
-    else current.delete("q")
-    
-    current.delete("page")
-    startTransition(() => {
-      router.push(`${pathname}?${current.toString()}`)
-    })
-  }
-
-  const hasChanges = q !== urlQ
-
-  return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <input 
-          type="search" 
-          placeholder={t("chto_ischut")} 
-          className="w-full h-10 pl-9 pr-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-      </div>
-      {hasChanges && (
-        <Button size="sm" type="submit" variant="secondary" className="w-full text-xs h-8">
-          {t("nayti")}</Button>
-      )}
-    </form>
-  );
-}
-
-function BudgetFilter({ searchParams, pathname, router, startTransition }: { searchParams: URLSearchParams, pathname: string, router: AppRouterInstance, startTransition: React.TransitionStartFunction }) {
-    const t = useTranslations();
-  const urlMin = searchParams.get("budgetMin") || ""
-  const urlMax = searchParams.get("budgetMax") || ""
-  
-  const [minPrice, setMinPrice] = useState(urlMin)
-  const [maxPrice, setMaxPrice] = useState(urlMax)
-
-  useEffect(() => {
-    setMinPrice(urlMin)
-    setMaxPrice(urlMax)
-  }, [urlMin, urlMax])
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const current = new URLSearchParams(Array.from(searchParams.entries()))
-    if (minPrice) current.set("budgetMin", minPrice)
-    else current.delete("budgetMin")
-    
-    if (maxPrice) current.set("budgetMax", maxPrice)
-    else current.delete("budgetMax")
-
-    current.delete("page")
-    startTransition(() => {
-      router.push(`${pathname}?${current.toString()}`)
-    })
-  }
-
-  const hasChanges = minPrice !== urlMin || maxPrice !== urlMax
-
-  return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <input 
-          type="number" 
-          placeholder={t("ot")} 
-          className="w-full h-10 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-          value={minPrice}
-          onChange={(e) => setMinPrice(e.target.value)}
-        />
-        <span className="text-muted-foreground">-</span>
-        <input 
-          type="number" 
-          placeholder={t("do_1")} 
-          className="w-full h-10 px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
-          value={maxPrice}
-          onChange={(e) => setMaxPrice(e.target.value)}
-        />
-      </div>
-      {hasChanges && (
-        <Button size="sm" type="submit" variant="secondary" className="w-full text-xs h-8">
-          {t("primenit")}</Button>
-      )}
-    </form>
-  );
-}
-
-export function RequestsFiltersWidget({ categories }: { categories: Category[] }) {
-    const t = useTranslations();
+export function RequestsFiltersWidget({ categories = [] }: { categories?: any[] }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
-  
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
-  const updateFilter = (key: string, value: string) => {
+  // Search filter
+  const [q, setQ] = useState(searchParams.get("q") || "")
+  const urlQ = searchParams.get("q") || ""
+  useEffect(() => { setQ(urlQ) }, [urlQ])
+
+  // Budget filters
+  const [budgetMin, setBudgetMin] = useState(searchParams.get("budgetMin") || "")
+  const [budgetMax, setBudgetMax] = useState(searchParams.get("budgetMax") || "")
+  useEffect(() => {
+    setBudgetMin(searchParams.get("budgetMin") || "")
+    setBudgetMax(searchParams.get("budgetMax") || "")
+  }, [searchParams])
+
+  // Quantity filter
+  const [minQty, setMinQty] = useState(searchParams.get("minQty") || "")
+  useEffect(() => { setMinQty(searchParams.get("minQty") || "") }, [searchParams])
+
+  const updateParam = (key: string, value: string) => {
     const current = new URLSearchParams(Array.from(searchParams.entries()))
     if (!value || value === "all") {
       current.delete(key)
     } else {
       current.set(key, value)
     }
-    if (key !== "page") current.delete("page")
-    
+    current.delete("page")
     startTransition(() => {
       router.push(`${pathname}?${current.toString()}`)
     })
   }
 
-  const renderFiltersContent = () => {
-    const currentParams = new URLSearchParams(Array.from(searchParams.entries()))
-    
-    return (
-      <div className="space-y-6">
-        <div>
-          <h3 className="font-medium mb-3">{t("poisk")}</h3>
-          <SearchFilter 
-            searchParams={currentParams} 
-            pathname={pathname} 
-            router={router} 
-            startTransition={startTransition} 
-          />
-        </div>
+  const handleApplyNumbers = (e: React.FormEvent) => {
+    e.preventDefault()
+    const current = new URLSearchParams(Array.from(searchParams.entries()))
+    if (q.trim()) current.set("q", q.trim())
+    else current.delete("q")
 
-        <div>
-          <h3 className="font-medium mb-3">{t("kategoriya")}</h3>
-          <CategoryPicker 
-            categories={categories} 
-            value={searchParams.get("category") || ""} 
-            onChange={(val) => updateFilter("category", val)} 
-          />
-        </div>
+    if (budgetMin.trim()) current.set("budgetMin", budgetMin.trim())
+    else current.delete("budgetMin")
 
-        <div>
-          <h3 className="font-medium mb-3">{t("byudzhet_1")}</h3>
-          <BudgetFilter 
-            searchParams={currentParams} 
-            pathname={pathname} 
-            router={router} 
-            startTransition={startTransition} 
-          />
-        </div>
+    if (budgetMax.trim()) current.set("budgetMax", budgetMax.trim())
+    else current.delete("budgetMax")
 
-        <div>
-          <h3 className="font-medium mb-3">{t("region")}</h3>
-          <Select value={searchParams.get("region") || "all"} onValueChange={(val) => updateFilter("region", val)}>
-            <SelectTrigger className="w-full h-10">
-              <SelectValue placeholder={t("vse_regiony")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("vse_regiony")}</SelectItem>
-              <SelectItem value={t("bishkek")}>{t("bishkek")}</SelectItem>
-              <SelectItem value={t("osh")}>{t("osh")}</SelectItem>
-              <SelectItem value={t("batkenskaya_oblast")}>{t("batkenskaya_oblast")}</SelectItem>
-              <SelectItem value={t("dzhalal_abadskaya_oblast")}>{t("dzhalal_abadskaya_oblast")}</SelectItem>
-              <SelectItem value={t("issyk_kulskaya_oblast")}>{t("issyk_kulskaya_oblast")}</SelectItem>
-              <SelectItem value={t("narynskaya_oblast")}>{t("narynskaya_oblast")}</SelectItem>
-              <SelectItem value={t("oshskaya_oblast")}>{t("oshskaya_oblast")}</SelectItem>
-              <SelectItem value={t("talasskaya_oblast")}>{t("talasskaya_oblast")}</SelectItem>
-              <SelectItem value={t("chuyskaya_oblast")}>{t("chuyskaya_oblast")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+    if (minQty.trim()) current.set("minQty", minQty.trim())
+    else current.delete("minQty")
 
-        <div>
-          <h3 className="font-medium mb-3">{t("status")}</h3>
-          <Select value={searchParams.get("status") || "OPEN"} onValueChange={(val) => updateFilter("status", val)}>
-            <SelectTrigger className="w-full h-10">
-              <SelectValue placeholder={t("otkrytye_1")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="OPEN">{t("tolko_otkrytye")}</SelectItem>
-              <SelectItem value="ALL">{t("vse_statusy")}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {(searchParams.get("budgetMin") || searchParams.get("budgetMax") || searchParams.get("category") || searchParams.get("region") || searchParams.get("q") || (searchParams.get("status") && searchParams.get("status") !== "OPEN")) && (
-          <Button 
-            variant="outline" 
-            className="w-full text-xs" 
-            type="button"
-            onClick={() => {
-              router.push(pathname)
-            }}
-          >
-            {t("sbrosit_filtry")}</Button>
-        )}
-      </div>
-    );
+    current.delete("page")
+    startTransition(() => {
+      router.push(`${pathname}?${current.toString()}`)
+    })
   }
 
-  let activeCount = 0
-  if (searchParams.get("budgetMin")) activeCount++
-  if (searchParams.get("budgetMax")) activeCount++
-  if (searchParams.get("category")) activeCount++
-  if (searchParams.get("region")) activeCount++
-  if (searchParams.get("q")) activeCount++
-  if (searchParams.get("status") && searchParams.get("status") !== "OPEN") activeCount++
+  const handleReset = () => {
+    setQ("")
+    setBudgetMin("")
+    setBudgetMax("")
+    setMinQty("")
+    startTransition(() => {
+      router.push(pathname)
+    })
+  }
+
+  const activeCategory = searchParams.get("category") || "all"
+  const activeCity = searchParams.get("city") || "all"
+  const activeStatus = searchParams.get("status") || "OPEN"
+
+  const hasActiveFilters = Boolean(
+    searchParams.get("q") ||
+    searchParams.get("category") ||
+    searchParams.get("budgetMin") ||
+    searchParams.get("budgetMax") ||
+    searchParams.get("minQty") ||
+    (searchParams.get("city") && searchParams.get("city") !== "all") ||
+    (searchParams.get("status") && searchParams.get("status") !== "OPEN")
+  )
+
+  const content = (
+    <div className="space-y-6">
+      {/* Search Bar */}
+      <div>
+        <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block mb-2">
+          Поиск по запросам
+        </label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+          <input
+            type="search"
+            placeholder="Название, характеристики..."
+            className="w-full h-10 pl-9 pr-3 py-2 border border-zinc-300 dark:border-zinc-800 rounded-xl bg-white dark:bg-[#090A0F] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 text-sm focus:outline-none focus:border-emerald-500/50"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleApplyNumbers(e)
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Category Filter (8 B2B Wholesale Categories) */}
+      <div>
+        <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block mb-2">
+          Категория закупки
+        </label>
+        <Select value={activeCategory} onValueChange={(val) => updateParam("category", val)}>
+          <SelectTrigger className="w-full h-10 rounded-xl bg-white dark:bg-[#090A0F] border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm">
+            <SelectValue placeholder="Все категории" />
+          </SelectTrigger>
+          <SelectContent className="bg-white dark:bg-[#11131A] border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200">
+            <SelectItem value="all">Все оптовые категории</SelectItem>
+            {BAZAAR_B2B_CATEGORIES.map((cat) => (
+              <SelectItem key={cat.slug} value={cat.slug}>
+                {cat.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Total Budget Filter */}
+      <form onSubmit={handleApplyNumbers} className="space-y-2">
+        <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block">
+          Общий бюджет (сом)
+        </label>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            placeholder="от"
+            className="w-full h-10 px-3 py-2 border border-zinc-300 dark:border-zinc-800 rounded-xl bg-white dark:bg-[#090A0F] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 text-sm font-mono focus:outline-none focus:border-emerald-500/50"
+            value={budgetMin}
+            onChange={(e) => setBudgetMin(e.target.value)}
+          />
+          <span className="text-zinc-400 dark:text-zinc-600">—</span>
+          <input
+            type="number"
+            placeholder="до"
+            className="w-full h-10 px-3 py-2 border border-zinc-300 dark:border-zinc-800 rounded-xl bg-white dark:bg-[#090A0F] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 text-sm font-mono focus:outline-none focus:border-emerald-500/50"
+            value={budgetMax}
+            onChange={(e) => setBudgetMax(e.target.value)}
+          />
+        </div>
+
+        {/* Min Quantity Filter */}
+        <div className="pt-2">
+          <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block mb-2">
+            Мин. партия (от N шт.)
+          </label>
+          <input
+            type="number"
+            placeholder="Например: 500"
+            className="w-full h-10 px-3 py-2 border border-zinc-300 dark:border-zinc-800 rounded-xl bg-white dark:bg-[#090A0F] text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 text-sm font-mono focus:outline-none focus:border-emerald-500/50"
+            value={minQty}
+            onChange={(e) => setMinQty(e.target.value)}
+          />
+        </div>
+
+        <Button
+          type="submit"
+          size="sm"
+          className="w-full h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs mt-3 cursor-pointer"
+        >
+          Применить фильтры
+        </Button>
+      </form>
+
+      {/* City Filter */}
+      <div>
+        <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block mb-2">
+          Город доставки
+        </label>
+        <Select value={activeCity} onValueChange={(val) => updateParam("city", val)}>
+          <SelectTrigger className="w-full h-10 rounded-xl bg-white dark:bg-[#090A0F] border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm">
+            <SelectValue placeholder="Все города" />
+          </SelectTrigger>
+          <SelectContent className="bg-white dark:bg-[#11131A] border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200">
+            <SelectItem value="all">Все города Кыргызстана</SelectItem>
+            {CITIES.map((c) => (
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Status Filter */}
+      <div>
+        <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider block mb-2">
+          Статус тендера
+        </label>
+        <Select value={activeStatus} onValueChange={(val) => updateParam("status", val)}>
+          <SelectTrigger className="w-full h-10 rounded-xl bg-white dark:bg-[#090A0F] border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-white dark:bg-[#11131A] border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200">
+            <SelectItem value="OPEN">Только открытые закупки</SelectItem>
+            <SelectItem value="ALL">Все статусы (включая закрытые)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Reset Button */}
+      {hasActiveFilters && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleReset}
+          className="w-full h-9 rounded-xl border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-[#090A0F] hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 text-xs gap-1.5 cursor-pointer"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          <span>Сбросить все фильтры</span>
+        </Button>
+      )}
+    </div>
+  )
 
   return (
-    <>
-      <div className="hidden md:block w-64 shrink-0 opacity-100 transition-opacity" style={{ opacity: isPending ? 0.6 : 1 }}>
-        <h2 className="font-semibold mb-4 text-lg">{t("filtry")}</h2>
-        <div className="p-4 bg-muted/30 rounded-xl">
-          {renderFiltersContent()}
-        </div>
+    <div className="w-full">
+      {/* Mobile Toggle Button */}
+      <div className="lg:hidden mb-4">
+        <Button
+          variant="outline"
+          className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white dark:bg-[#11131A] text-zinc-800 dark:text-zinc-200 justify-between h-11"
+          onClick={() => setIsMobileOpen(!isMobileOpen)}
+        >
+          <span className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span>Фильтры оптовых закупок</span>
+          </span>
+          {hasActiveFilters && (
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          )}
+        </Button>
+
+        {isMobileOpen && (
+          <div className="mt-3 p-5 rounded-2xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800 shadow-xl">
+            {content}
+          </div>
+        )}
       </div>
 
-      <div className="md:hidden flex flex-col gap-2 mb-4">
-        <div className="flex gap-2">
-          <Button variant="outline" type="button" className="flex-1 rounded-xl font-normal" onClick={() => setIsMobileOpen(true)}>
-            <Filter className="w-4 h-4 mr-2" />
-            {t("filtry")}{activeCount > 0 && `· ${activeCount}`}
-          </Button>
-          
-          <Select value={searchParams.get("sort") || "newest"} onValueChange={(val) => updateFilter("sort", val)}>
-            <SelectTrigger className="w-40 rounded-xl bg-muted/30 border-none font-normal">
-              <SelectValue placeholder={t("sortirovka")} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">{t("novye")}</SelectItem>
-              <SelectItem value="oldest">{t("starye")}</SelectItem>
-              <SelectItem value="budget_desc">{t("byudzhet_vyshe")}</SelectItem>
-              <SelectItem value="budget_asc">{t("byudzhet_nizhe")}</SelectItem>
-            </SelectContent>
-          </Select>
+      {/* Desktop Sidebar (parent has sticky top-24) */}
+      <div className="hidden lg:block p-5 rounded-2xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800 shadow-sm">
+        <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800 mb-4">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <h2 className="text-sm font-bold text-zinc-900 dark:text-white">Фильтры RFQ</h2>
+          </div>
+          {hasActiveFilters && (
+            <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+              Активны
+            </span>
+          )}
         </div>
+        {content}
       </div>
-
-      {isMobileOpen && (
-        <div className="md:hidden fixed inset-0 z-50 bg-background flex flex-col animate-in slide-in-from-bottom-4 duration-200">
-          <div className="flex items-center justify-between p-4 border-b shrink-0">
-            <h2 className="font-semibold text-lg">{t("filtry")}</h2>
-            <button 
-              type="button"
-              className="p-2 -mr-2 text-muted-foreground hover:bg-muted rounded-full transition-colors"
-              onClick={() => setIsMobileOpen(false)}
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            {renderFiltersContent()}
-          </div>
-          <div className="p-4 border-t shrink-0 bg-background">
-            <Button type="button" className="w-full rounded-xl" onClick={() => setIsMobileOpen(false)}>
-              {t("pokazat_rezultaty")}</Button>
-          </div>
-        </div>
-      )}
-    </>
-  );
+    </div>
+  )
 }

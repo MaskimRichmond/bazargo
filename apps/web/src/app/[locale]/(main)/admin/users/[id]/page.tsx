@@ -11,7 +11,8 @@ export const metadata = {
   title: "Детали пользователя | BazarGo Admin",
 }
 
-export default async function AdminUserDetailPage({ params }: { params: { id: string } }) {
+export default async function AdminUserDetailPage(props: { params: Promise<{ id: string }> }) {
+  const { id } = await props.params;
   const t = await getTranslations();
   const authRes = await verifyAdminAccess('USERS_BAN')
   if (!authRes.authorized) return <div className="text-destructive font-medium p-4">{t("net_dostupa_k_dannomu_1")}</div>;
@@ -21,7 +22,7 @@ export default async function AdminUserDetailPage({ params }: { params: { id: st
   const { data: user, error } = await adminClient
     .from('profiles')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
 
   if (error || !user) {
