@@ -5,6 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 import { SupplierProduct } from "@bazargo/shared"
 
+import { CompanyType, SupplierProfile, validateKyrgyzInn } from "@/types/supplier"
+
 export async function submitSupplierApplication(params: {
   company_name: string
   contact_name: string
@@ -13,6 +15,9 @@ export async function submitSupplierApplication(params: {
   categories: string
   description?: string
   telegram_username?: string
+  company_type?: CompanyType
+  inn?: string
+  director_name?: string
 }) {
   const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
@@ -21,16 +26,28 @@ export async function submitSupplierApplication(params: {
     return { error: "Необходима авторизация" }
   }
 
-  const { company_name, contact_name, phone, city, categories, description, telegram_username } = params
+  const { company_name, contact_name, phone, city, categories, description, telegram_username, company_type, inn, director_name } = params
 
   if (!company_name || !contact_name || !phone || !city || !categories) {
     return { error: "Пожалуйста, заполните все обязательные поля" }
   }
 
+  if (inn && !validateKyrgyzInn(inn)) {
+    return { error: "ИНН юридического лица в Кыргызстане должен состоять ровно из 14 цифр" }
+  }
+
   let packedDescription = (description || "").trim()
+  const metadataLines: string[] = []
+  if (company_type) metadataLines.push(`Форма: ${company_type}`)
+  if (inn) metadataLines.push(`ИНН: ${inn.trim()}`)
+  if (director_name) metadataLines.push(`Руководитель: ${director_name.trim()}`)
   if (telegram_username) {
     const cleanTg = telegram_username.startsWith("@") ? telegram_username : `@${telegram_username}`
-    packedDescription = `Telegram: ${cleanTg}\n\n${packedDescription}`.trim()
+    metadataLines.push(`Telegram: ${cleanTg}`)
+  }
+
+  if (metadataLines.length > 0) {
+    packedDescription = `${metadataLines.join(" | ")}\n\n${packedDescription}`.trim()
   }
 
   const payload: any = {
@@ -44,13 +61,26 @@ export async function submitSupplierApplication(params: {
     status: 'PENDING'
   }
 
-  let insertRes = await supabase.from("b2b_applications").insert({
+  // Include modern legal columns if available
+  const extendedPayload: any = {
     ...payload,
-    telegram_username: telegram_username ? telegram_username.trim() : null
-  })
+    telegram_username: telegram_username ? telegram_username.trim() : null,
+    company_type: company_type || 'LLC',
+    inn: inn ? inn.trim() : null,
+    director_name: director_name ? director_name.trim() : null
+  }
+
+  let insertRes = await supabase.from("b2b_applications").insert(extendedPayload)
 
   if (insertRes.error) {
-    console.warn("b2b_applications insert failed with telegram_username, retrying without column:", insertRes.error.message)
+    console.warn("b2b_applications extended insert failed, retrying with fallback payload:", insertRes.error.message)
+    insertRes = await supabase.from("b2b_applications").insert({
+      ...payload,
+      telegram_username: telegram_username ? telegram_username.trim() : null
+    })
+  }
+
+  if (insertRes.error) {
     insertRes = await supabase.from("b2b_applications").insert(payload)
   }
 
@@ -73,8 +103,15 @@ export async function submitSupplierApplication(params: {
 
     if (botToken && chatId) {
       const cleanTg = telegram_username ? (telegram_username.startsWith('@') ? telegram_username : `@${telegram_username}`) : null
+      const legalInfo = [
+        company_type ? `Форма: ${company_type}` : null,
+        inn ? `ИНН: ${inn}` : null,
+        director_name ? `Директор: ${director_name}` : null
+      ].filter(Boolean).join(" | ")
+
       const tgMsg = `НОВАЯ ЗАЯВКА ПОСТАВЩИКА BAZAAROS\n\n` +
         `• Компания: ${company_name}\n` +
+        (legalInfo ? `• Юр. данные: ${legalInfo}\n` : '') +
         `• Контакт: ${contact_name}\n` +
         `• Телефон: ${phone}\n` +
         `• Город: ${city}\n` +
@@ -96,6 +133,7 @@ export async function submitSupplierApplication(params: {
   }
 
   revalidatePath("/b2b")
+  revalidatePath("/suppliers")
   revalidatePath("/b2b/become-supplier")
   revalidatePath("/b2b/my-applications")
   return { success: true }
@@ -266,14 +304,62 @@ export async function getPublicRegistry(filters?: {
   const { data: products, error } = await query
 
   // Also fetch approved B2B supplier applications
-  const { data: suppliers } = await supabase
+  const { data: rawSuppliers } = await supabase
     .from("b2b_applications")
-    .select("id, user_id, company_name, city, categories, description, phone, telegram_username, status")
+    .select("*")
     .in("status", ["APPROVED", "PENDING"])
     .order("created_at", { ascending: false })
 
+  const suppliers: SupplierProfile[] = (rawSuppliers || []).map((sup: any) => {
+    let companyType: CompanyType = 'LLC'
+    if (sup.company_type && ['IP', 'LLC', 'FACTORY'].includes(sup.company_type)) {
+      companyType = sup.company_type as CompanyType
+    } else {
+      const lower = (sup.company_name || '').toLowerCase()
+      if (lower.startsWith('ип ') || lower.includes('ип ')) {
+        companyType = 'IP'
+      } else if (lower.includes('фабрик') || lower.includes('завод') || lower.includes('производств')) {
+        companyType = 'FACTORY'
+      } else {
+        companyType = 'LLC'
+      }
+    }
+
+    let inn = sup.inn || ''
+    if (!inn && sup.description) {
+      const match = sup.description.match(/ИНН[:\s]+(\d{14})/)
+      if (match) inn = match[1]
+    }
+
+    let directorName = sup.director_name || sup.contact_name || ''
+    if (!directorName && sup.description) {
+      const match = sup.description.match(/Руководитель[:\s]+([^|\n]+)/)
+      if (match) directorName = match[1].trim()
+    }
+
+    const moderationStatus = (sup.status === 'APPROVED' ? 'VERIFIED' : sup.status === 'REJECTED' ? 'REJECTED' : 'PENDING')
+
+    return {
+      id: sup.id,
+      userId: sup.user_id,
+      companyName: sup.company_name,
+      companyType,
+      inn: inn || '',
+      directorName,
+      categoryTag: sup.categories || 'packaging',
+      categories: typeof sup.categories === 'string' ? sup.categories.split(',').map((c: string) => c.trim()) : (sup.categories || []),
+      city: sup.city || 'Бишкек',
+      address: sup.address || undefined,
+      phone: sup.phone,
+      telegramUsername: sup.telegram_username,
+      moderationStatus,
+      description: sup.description,
+      createdAt: sup.created_at || new Date().toISOString()
+    }
+  })
+
   return {
     products: (products as SupplierProduct[]) || [],
-    suppliers: suppliers || []
+    suppliers
   }
 }

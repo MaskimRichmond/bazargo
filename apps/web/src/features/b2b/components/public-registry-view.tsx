@@ -8,6 +8,7 @@ import { BAZAAR_B2B_CATEGORIES } from "@/lib/categories"
 import { contactSupplierDirect } from "@/app/actions/requests"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import {
   Search,
@@ -159,32 +160,34 @@ export function PublicRegistryView({
           </div>
 
           <div>
-            <select
-              value={selectedCategory}
-              onChange={e => setSelectedCategory(e.target.value)}
-              className="w-full bg-white dark:bg-[#090A0F] border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-white text-xs rounded-xl px-3 py-2.5 focus:border-emerald-500 outline-none"
-            >
-              <option value="all">Все категории ({BAZAAR_B2B_CATEGORIES.length})</option>
-              {BAZAAR_B2B_CATEGORIES.map(cat => (
-                <option key={cat.id} value={cat.id} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">
-                  {cat.label}
-                </option>
-              ))}
-            </select>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-full bg-white dark:bg-[#090A0F] border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-white text-xs rounded-xl px-3 py-2.5 focus:border-emerald-500">
+                <SelectValue placeholder="Все категории" />
+              </SelectTrigger>
+              <SelectContent className="bg-white dark:bg-[#11131A] border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white text-xs">
+                <SelectItem value="all">Все категории ({BAZAAR_B2B_CATEGORIES.length})</SelectItem>
+                {BAZAAR_B2B_CATEGORIES.map(cat => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
-            <select
-              value={selectedCity}
-              onChange={e => setSelectedCity(e.target.value)}
-              className="w-full bg-white dark:bg-[#090A0F] border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-white text-xs rounded-xl px-3 py-2.5 focus:border-emerald-500 outline-none"
-            >
-              <option value="all">Все города</option>
-              <option value="Бишкек">Бишкек</option>
-              <option value="Ош">Ош</option>
-              <option value="Чуйская область">Чуйская область</option>
-              <option value="Джалал-Абад">Джалал-Абад</option>
-            </select>
+            <Select value={selectedCity} onValueChange={setSelectedCity}>
+              <SelectTrigger className="w-full bg-white dark:bg-[#090A0F] border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-white text-xs rounded-xl px-3 py-2.5 focus:border-emerald-500">
+                <SelectValue placeholder="Все города" />
+              </SelectTrigger>
+              <SelectContent className="bg-white dark:bg-[#11131A] border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white text-xs">
+                <SelectItem value="all">Все города</SelectItem>
+                <SelectItem value="Бишкек">Бишкек</SelectItem>
+                <SelectItem value="Ош">Ош</SelectItem>
+                <SelectItem value="Чуйская область">Чуйская область</SelectItem>
+                <SelectItem value="Джалал-Абад">Джалал-Абад</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>

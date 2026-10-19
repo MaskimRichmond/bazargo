@@ -1,11 +1,10 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import { getPublicRegistry } from "@/app/actions/b2b"
 import { SupplierProduct } from "@bazargo/shared"
+import { CompanyType, ModerationStatus, validateKyrgyzInn } from "@/types/supplier"
 import { Button } from "@/components/ui/button"
 import { BazaarIcon } from "@/components/shared/bazaar-logo"
 import { SupplierProductsManager } from "@/features/b2b/components/supplier-products-manager"
-import { PublicRegistryView } from "@/features/b2b/components/public-registry-view"
 import { 
   Building2, 
   Send, 
@@ -15,16 +14,21 @@ import {
   Clock, 
   ArrowRight, 
   CheckCircle2, 
-  Coins, 
   Boxes, 
   FileText,
   AlertCircle,
-  Plus
+  Plus,
+  Store,
+  UserCheck,
+  Factory,
+  Settings,
+  Phone,
+  Sparkles
 } from "lucide-react"
 
 export const metadata = {
-  title: "Кабинет поставщика и Реестр прайс-листов | BazaarOS B2B",
-  description: "BazaarOS для поставщиков и оптовых производителей. Прямой реестр оптовых товаров и заказы бизнеса без посредников."
+  title: "Кабинет поставщика | BazaarOS B2B",
+  description: "Рабочий кабинет оптового поставщика: управление оптовыми прайс-листами, поданными КП и аккредитацией юрлица в Кыргызстане."
 }
 
 export default async function B2bSupplierCabinetPage() {
@@ -37,13 +41,14 @@ export default async function B2bSupplierCabinetPage() {
     .select("id", { count: "exact", head: true })
     .eq("status", "OPEN")
 
-  // 2. Fetch user's submitted offers, supplier status & products
+  // 2. Fetch user's submitted offers, supplier status & products if authenticated
   let myOffers: any[] = []
   let b2bApp: any = null
+  let profile: any = null
   let myProducts: SupplierProduct[] = []
 
   if (session) {
-    const [offersRes, appRes, productsRes] = await Promise.all([
+    const [offersRes, appRes, productsRes, profileRes] = await Promise.all([
       supabase
         .from("request_offers")
         .select(`
@@ -65,10 +70,10 @@ export default async function B2bSupplierCabinetPage() {
         `)
         .eq("seller_id", session.user.id)
         .order("created_at", { ascending: false })
-        .limit(10),
+        .limit(20),
       supabase
         .from("b2b_applications")
-        .select("id, company_name, city, phone, telegram_username, status, categories, created_at")
+        .select("*")
         .eq("user_id", session.user.id)
         .order("created_at", { ascending: false })
         .limit(1)
@@ -77,192 +82,276 @@ export default async function B2bSupplierCabinetPage() {
         .from("supplier_products")
         .select("*")
         .eq("supplier_id", session.user.id)
-        .order("created_at", { ascending: false })
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", session.user.id)
+        .maybeSingle()
     ])
 
     myOffers = offersRes.data || []
     b2bApp = appRes.data || null
     myProducts = (productsRes.data as SupplierProduct[]) || []
+    profile = profileRes.data || null
   }
 
-  const publicRegistry = await getPublicRegistry()
+  // Derive legal entity details
+  const companyName = b2bApp?.company_name || profile?.company_name || profile?.full_name || "Оптовый поставщик"
+  let companyType: CompanyType = (b2bApp?.company_type as CompanyType) || "LLC"
+  if (!b2bApp?.company_type) {
+    const lower = companyName.toLowerCase()
+    if (lower.startsWith("ип ") || lower.includes("ип ")) companyType = "IP"
+    else if (lower.includes("фабрик") || lower.includes("завод") || lower.includes("производств")) companyType = "FACTORY"
+  }
+
+  let inn = b2bApp?.inn || ""
+  if (!inn && b2bApp?.description) {
+    const match = b2bApp.description.match(/ИНН[:\s]+(\d{14})/)
+    if (match) inn = match[1]
+  }
 
   const isVerifiedSupplier = b2bApp?.status === "APPROVED"
   const isPendingSupplier = b2bApp?.status === "PENDING"
+  const directorName = b2bApp?.director_name || b2bApp?.contact_name || profile?.full_name
 
-  return (
-    <div className="container mx-auto px-4 py-8 md:py-14 max-w-6xl space-y-12">
-      {/* Top Banner */}
-      <div className="rounded-3xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800 p-6 md:p-10 relative overflow-hidden shadow-sm">
-        <div className="max-w-2xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
-            <BazaarIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>BazaarOS • Для поставщиков и производств</span>
+  // If visitor is unauthenticated, show clean dedicated onboarding page
+  if (!session) {
+    return (
+      <div className="container mx-auto px-4 py-10 md:py-16 max-w-5xl space-y-12">
+        <div className="rounded-3xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800 p-8 md:p-12 text-center space-y-6 shadow-sm">
+          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto">
+            <Building2 className="w-8 h-8" />
           </div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
-            Кабинет поставщика BazaarOS
-          </h1>
-          <p className="text-zinc-600 dark:text-zinc-400 text-sm md:text-base leading-relaxed">
-            Получайте прямые коммерческие запросы от кофеен, ресторанов, фабрик и ритейла Кыргызстана. Выставляйте КП в 3 клика или загружайте оптовый прайс-лист для мгновенных заказов.
-          </p>
-        </div>
 
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <Button asChild className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold">
-            <Link href="/requests">
-              <span>Смотреть открытые RFQ-запросы</span>
-              <ArrowRight className="w-4 h-4 ml-1.5" />
-            </Link>
-          </Button>
-          {!isVerifiedSupplier && (
-            <Button asChild variant="outline" className="rounded-xl border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-[#090A0F] text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800">
-              <Link href="/b2b/become-supplier">
-                {isPendingSupplier ? "Статус заявки поставщика" : "Пройти аккредитацию поставщика"}
+          <div className="max-w-2xl mx-auto space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
+              <BazaarIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>BazaarOS • Для поставщиков и оптовых производств</span>
+            </div>
+            <h1 className="text-3xl md:text-4xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
+              Личный кабинет поставщика
+            </h1>
+            <p className="text-zinc-600 dark:text-zinc-400 text-sm md:text-base leading-relaxed">
+              Прямой канал оптовых продаж для производителей и дистрибьюторов Кыргызстана. Получайте коммерческие запросы от бизнеса, загружайте прайс-лист и участвуйте в AI-подборе без рекламных бюджетов.
+            </p>
+          </div>
+
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+            <Button asChild size="lg" className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold">
+              <Link href="/auth/login">Войти в кабинет</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="rounded-xl border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-[#090A0F] text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white">
+              <Link href="/b2b/become-supplier">Подать заявку поставщика</Link>
+            </Button>
+            <Button asChild size="lg" variant="ghost" className="rounded-xl text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white">
+              <Link href="/suppliers">
+                <Store className="w-4 h-4 mr-1.5" />
+                <span>Открыть публичный реестр</span>
               </Link>
             </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Metrics Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800 space-y-2 shadow-sm">
-          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs font-mono">
-            <span>ОТКРЫТЫЕ RFQ НА БИРЖЕ</span>
-            <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div className="text-3xl font-black text-zinc-900 dark:text-white font-mono">
-            {openRfqsCount ?? 0}
-          </div>
-          <p className="text-xs text-zinc-500">
-            Готовые заявки от бизнеса, ожидающие предложений
-          </p>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800 space-y-2 shadow-sm">
-          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs font-mono">
-            <span>ВАШИ ПОДАННЫЕ КП</span>
-            <Send className="w-4 h-4 text-emerald-600 dark:text-primary" />
-          </div>
-          <div className="text-3xl font-black text-zinc-900 dark:text-white font-mono">
-            {myOffers.length}
-          </div>
-          <p className="text-xs text-zinc-500">
-            Коммерческие расчеты, отправленные заказчикам
-          </p>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800 space-y-2 shadow-sm">
-          <div className="flex items-center justify-between text-zinc-500 dark:text-zinc-400 text-xs font-mono">
-            <span>СТАТУС АККРЕДИТАЦИИ</span>
-            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          </div>
-          <div className="text-lg font-bold">
-            {isVerifiedSupplier ? (
-              <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                <CheckCircle2 className="w-5 h-5" />
-                Верифицирован
-              </span>
-            ) : isPendingSupplier ? (
-              <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                <Clock className="w-5 h-5" />
-                На модерации
-              </span>
-            ) : (
-              <span className="text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
-                <AlertCircle className="w-5 h-5 text-zinc-400 dark:text-zinc-500" />
-                Базовый аккаунт
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-zinc-500">
-            {isVerifiedSupplier ? "Максимальный приоритет в AI-сравнении" : "Верификация повышает доверие заказчиков"}
-          </p>
-        </div>
-      </div>
-
-      {/* Supplier's Own Price-list Management (If logged in) */}
-      {session ? (
-        <SupplierProductsManager
-          initialProducts={myProducts}
-          companyName={b2bApp?.company_name}
-          defaultCity={b2bApp?.city}
-          defaultPhone={b2bApp?.phone}
-          defaultTelegram={b2bApp?.telegram_username}
-        />
-      ) : (
-        <div className="p-6 rounded-2xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
-          <div className="space-y-1">
-            <h3 className="text-base font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-              <Boxes className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Управление оптовым прайс-листом</span>
-            </h3>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 max-w-xl">
-              Войдите в аккаунт поставщика, чтобы добавлять оптовые товары в каталог BazaarOS для автоматического подбора в AI-закупках.
-            </p>
-          </div>
-          <Button asChild className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs whitespace-nowrap">
-            <Link href="/auth/login">Войти в аккаунт</Link>
-          </Button>
-        </div>
-      )}
-
-      {/* Public Registry of Wholesale Products & Suppliers */}
-      <PublicRegistryView
-        initialProducts={publicRegistry.products}
-        initialSuppliers={publicRegistry.suppliers}
-      />
-
-      {/* Advantages of BazaarOS RFQ Model */}
-      <div className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-        <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
-          <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-          <span>Преимущества работы по модели RFQ</span>
-        </h2>
-
+        {/* Benefits Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="p-6 rounded-2xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800 space-y-2.5 shadow-sm">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold">
               01
             </div>
-            <h3 className="text-base font-bold text-zinc-900 dark:text-white">Горячие заявки без рекламы</h3>
+            <h3 className="text-base font-bold text-zinc-900 dark:text-white">Горячие заявки бизнеса</h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-              Не нужно тратить бюджет на контекстную рекламу или менеджеров по холодным продажам. Заказчики сами публикуют точные спецификации партий.
+              Кофейни, рестораны и ритейл публикуют реальные партии с бюджетом. Вы предлагаете КП напрямую заказчику.
             </p>
           </div>
 
           <div className="p-6 rounded-2xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800 space-y-2.5 shadow-sm">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-400 flex items-center justify-center font-bold">
               02
             </div>
-            <h3 className="text-base font-bold text-zinc-900 dark:text-white">Быстрый расчет КП в 3 поля</h3>
+            <h3 className="text-base font-bold text-zinc-900 dark:text-white">Каталог прайс-листов</h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-              Укажите цену за единицу, минимальную партию (MOQ) и стоимость доставки. Алгоритм рассчитывает и презентует полную математику заказчику.
+              Загрузите оптовые товары один раз: алгоритм автоматически сопоставляет их с запросами покупателей при AI-парсинге.
             </p>
           </div>
 
           <div className="p-6 rounded-2xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800 space-y-2.5 shadow-sm">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-700 dark:text-purple-400 flex items-center justify-center font-bold">
               03
             </div>
-            <h3 className="text-base font-bold text-zinc-900 dark:text-white">Мгновенные алерты в Telegram</h3>
+            <h3 className="text-base font-bold text-zinc-900 dark:text-white">Оповещения в Telegram</h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed">
-              Подключите Telegram и получайте уведомления о новых тендерах по вашей специализации (упаковка, стаканы, сиропы, кофе) в первую минуту.
+              Получайте мгновенные уведомления о новых тендерах по вашей категории в Telegram и выставляйте счет в 3 клика.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Authenticated Supplier Workspace
+  return (
+    <div className="container mx-auto px-4 py-8 md:py-14 max-w-6xl space-y-10">
+      {/* Supplier Profile Card */}
+      <div className="rounded-3xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800 p-6 md:p-8 shadow-sm space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+                <BazaarIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Кабинет поставщика BazaarOS</span>
+              </span>
+
+              {/* Legal Badge */}
+              {companyType === "IP" ? (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20">
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>ИП</span>
+                </span>
+              ) : companyType === "FACTORY" ? (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20">
+                  <Factory className="w-3.5 h-3.5" />
+                  <span>Фабрика</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20">
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>ОсОО</span>
+                </span>
+              )}
+
+              {/* Moderation Badge */}
+              {isVerifiedSupplier ? (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Верифицирован</span>
+                </span>
+              ) : isPendingSupplier ? (
+                <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20">
+                  <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  <span>На модерации</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full bg-zinc-100 text-zinc-600 border border-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  <span>Базовый аккаунт</span>
+                </span>
+              )}
+            </div>
+
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
+              {companyName}
+            </h1>
+
+            <div className="flex flex-wrap items-center gap-4 text-xs text-zinc-500 dark:text-zinc-400 font-mono">
+              {inn && (
+                <span>
+                  ИНН: <strong className="text-zinc-800 dark:text-zinc-200">{inn}</strong>
+                </span>
+              )}
+              {directorName && (
+                <span>
+                  Руководитель: <strong className="text-zinc-800 dark:text-zinc-200">{directorName}</strong>
+                </span>
+              )}
+              {b2bApp?.city && (
+                <span>
+                  Город: <strong className="text-zinc-800 dark:text-zinc-200">{b2bApp.city}</strong>
+                </span>
+              )}
+              {b2bApp?.telegram_username && (
+                <span className="text-blue-600 dark:text-blue-400">
+                  TG: @{b2bApp.telegram_username.replace(/^@/, '')}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 self-start md:self-center">
+            <Button asChild className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs">
+              <Link href="/requests">
+                <span>Смотреть открытые RFQ</span>
+                <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="rounded-xl border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-[#090A0F] text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white text-xs">
+              <Link href="/suppliers">
+                <Store className="w-3.5 h-3.5 mr-1.5" />
+                <span>Открыть реестр</span>
+              </Link>
+            </Button>
+            {!isVerifiedSupplier && (
+              <Button asChild variant="outline" className="rounded-xl border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-[#090A0F] text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white text-xs">
+                <Link href="/b2b/become-supplier">
+                  {isPendingSupplier ? "Статус аккредитации" : "Пройти аккредитацию"}
+                </Link>
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Metrics Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+          <div className="p-4 rounded-xl bg-zinc-50 dark:bg-[#090A0F] border border-zinc-200 dark:border-zinc-800/80 space-y-1">
+            <div className="flex items-center justify-between text-zinc-500 text-xs font-mono">
+              <span>ОТКРЫТЫЕ RFQ НА БИРЖЕ</span>
+              <Layers className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="text-2xl font-black text-zinc-900 dark:text-white font-mono">
+              {openRfqsCount ?? 0}
+            </div>
+            <p className="text-[11px] text-zinc-500">
+              Актуальные запросы партий от покупателей
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-zinc-50 dark:bg-[#090A0F] border border-zinc-200 dark:border-zinc-800/80 space-y-1">
+            <div className="flex items-center justify-between text-zinc-500 text-xs font-mono">
+              <span>ВАШИ ПОДАННЫЕ КП</span>
+              <Send className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="text-2xl font-black text-zinc-900 dark:text-white font-mono">
+              {myOffers.length}
+            </div>
+            <p className="text-[11px] text-zinc-500">
+              Коммерческие расчеты, направленные заказчикам
+            </p>
+          </div>
+
+          <div className="p-4 rounded-xl bg-zinc-50 dark:bg-[#090A0F] border border-zinc-200 dark:border-zinc-800/80 space-y-1">
+            <div className="flex items-center justify-between text-zinc-500 text-xs font-mono">
+              <span>ТОВАРЫ В ПРАЙС-ЛИСТЕ</span>
+              <Boxes className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="text-2xl font-black text-zinc-900 dark:text-white font-mono">
+              {myProducts.length}
+            </div>
+            <p className="text-[11px] text-zinc-500">
+              Позиции в каталоге для AI-подбора
             </p>
           </div>
         </div>
       </div>
 
-      {/* Submitted Quotes Section */}
+      {/* Supplier's Wholesale Price-list Management */}
+      <SupplierProductsManager
+        initialProducts={myProducts}
+        companyName={companyName}
+        defaultCity={b2bApp?.city || profile?.city || "Бишкек"}
+        defaultPhone={b2bApp?.phone || profile?.phone || ""}
+        defaultTelegram={b2bApp?.telegram_username || profile?.telegram_username || ""}
+      />
+
+      {/* Submitted Quotations Section */}
       <div className="space-y-4 pt-4 border-t border-zinc-200 dark:border-zinc-800">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
               <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-              <span>Ваши поданные коммерческие предложения ({myOffers.length})</span>
+              <span>Поданные коммерческие предложения ({myOffers.length})</span>
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
-              Статусы согласования и прямые ссылки на сделки
+              Статусы рассмотрения ваших оптовых расчетов заказчиками
             </p>
           </div>
           <Button asChild variant="outline" size="sm" className="rounded-xl border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-[#090A0F] text-zinc-700 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white">

@@ -44,11 +44,18 @@ export function Footer() {
               Биржа RFQ-заказов
             </Link>
             <Link 
+              href="/suppliers" 
+              className="group text-zinc-700 dark:text-zinc-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors inline-flex items-center gap-1.5"
+            >
+              <Building2 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
+              Реестр поставщиков
+            </Link>
+            <Link 
               href="/b2b" 
               className="group text-zinc-700 dark:text-zinc-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors inline-flex items-center gap-1.5"
             >
               <Building2 className="w-3.5 h-3.5 text-zinc-400 dark:text-zinc-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors" />
-              Подключение поставщиков
+              Кабинет поставщика
             </Link>
             <Link 
               href="/safety" 

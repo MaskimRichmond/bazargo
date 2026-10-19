@@ -7,6 +7,7 @@ import { addSupplierProduct, deleteSupplierProduct } from "@/app/actions/b2b"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import {
   PackagePlus,
@@ -193,17 +194,18 @@ export function SupplierProductsManager({
 
             <div className="space-y-1.5">
               <Label className="text-xs text-zinc-700 dark:text-zinc-300">Оптовая категория</Label>
-              <select
-                value={categoryTag}
-                onChange={e => setCategoryTag(e.target.value)}
-                className="w-full bg-white dark:bg-[#090A0F] border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-white text-sm rounded-xl px-3 py-2 focus:border-emerald-500 outline-none"
-              >
-                {BAZAAR_B2B_CATEGORIES.map(cat => (
-                  <option key={cat.id} value={cat.id} className="bg-white dark:bg-zinc-900 text-zinc-900 dark:text-white">
-                    {cat.label}
-                  </option>
-                ))}
-              </select>
+              <Select value={categoryTag} onValueChange={setCategoryTag}>
+                <SelectTrigger className="w-full bg-white dark:bg-[#090A0F] border border-zinc-300 dark:border-zinc-800 text-zinc-900 dark:text-white text-sm rounded-xl px-3 py-2 focus:border-emerald-500">
+                  <SelectValue placeholder="Выберите категорию" />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-[#11131A] border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white">
+                  {BAZAAR_B2B_CATEGORIES.map(cat => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-1.5">

@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Sparkles, Layers, Building2 } from "lucide-react"
+import { Sparkles, Layers, Building2, Store } from "lucide-react"
 
 interface NavItem {
   href: string
@@ -23,6 +23,11 @@ const NAV_ITEMS: NavItem[] = [
     label: "Биржа заказов (RFQ)",
     icon: Layers,
     exact: true
+  },
+  {
+    href: "/suppliers",
+    label: "Поставщики",
+    icon: Store
   },
   {
     href: "/b2b",
