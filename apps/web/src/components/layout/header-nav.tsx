@@ -54,11 +54,11 @@ export function HeaderNav() {
             className={cn(
               "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all select-none text-sm font-medium",
               active
-                ? "text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-                : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 border-transparent"
+                ? "text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20 font-semibold"
+                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/40 border-transparent"
             )}
           >
-            <Icon className={cn("w-4 h-4 transition-colors", active ? "text-emerald-600 dark:text-emerald-400" : "text-zinc-500 dark:text-zinc-400")} />
+            <Icon className={cn("w-4 h-4 transition-colors", active ? "text-emerald-700 dark:text-emerald-400" : "text-zinc-500 dark:text-zinc-400")} />
             <span>{item.label}</span>
           </Link>
         )

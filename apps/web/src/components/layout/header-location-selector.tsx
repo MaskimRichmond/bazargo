@@ -77,22 +77,22 @@ export function HeaderLocationSelector() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div className="hidden lg:flex items-center gap-1 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-muted">
-          <MapPin className="w-4 h-4 text-primary" />
+        <div className="hidden lg:flex items-center gap-1 text-sm text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white cursor-pointer transition-colors px-2 py-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800">
+          <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           <span className="font-medium">{selectedLocation === "Все регионы" ? t("vse_regiony") : t(`regions.${selectedLocation}` as any)}</span>
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56">
+      <DropdownMenuContent align="start" className="w-56 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200">
         <DropdownMenuItem 
           onClick={() => handleSelect("Все регионы")}
-          className={selectedLocation === "Все регионы" ? "bg-primary/10 text-primary font-medium" : ""}
+          className={selectedLocation === "Все регионы" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold" : "cursor-pointer"}
         >
           {t("vse_regiony")}</DropdownMenuItem>
         {REGIONS.map(region => (
           <DropdownMenuItem 
             key={region} 
             onClick={() => handleSelect(region)}
-            className={selectedLocation === region ? "bg-primary/10 text-primary font-medium" : ""}
+            className={selectedLocation === region ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold" : "cursor-pointer"}
           >
             {region}
           </DropdownMenuItem>

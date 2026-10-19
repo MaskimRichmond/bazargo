@@ -83,7 +83,7 @@ export default async function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
             {/* Step 1 */}
             <div className="grid grid-rows-[auto_auto_1fr_auto] h-full p-6 rounded-2xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800/80 shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700 transition-all gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-xl font-mono">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-black text-xl font-mono">
                 1
               </div>
               <h3 className="text-lg font-bold min-h-[3.5rem] flex items-center text-zinc-900 dark:text-white">
@@ -92,7 +92,7 @@ export default async function Home() {
               <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 Напишите, что нужно вашему кафе, ресторану или производству. Наш AI-парсер мгновенно извлечет размеры, объем партии, бюджет и город.
               </p>
-              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800/60 flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-emerald-600 dark:text-emerald-400 font-mono">
+              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800/60 flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-emerald-700 dark:text-emerald-400 font-mono">
                 <span>Текст и спецификации</span>
                 <ArrowRight className="w-4 h-4 shrink-0" />
               </div>
@@ -100,7 +100,7 @@ export default async function Home() {
 
             {/* Step 2 */}
             <div className="grid grid-rows-[auto_auto_1fr_auto] h-full p-6 rounded-2xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800/80 shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700 transition-all gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-xl font-mono">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-black text-xl font-mono">
                 2
               </div>
               <h3 className="text-lg font-bold min-h-[3.5rem] flex items-center text-zinc-900 dark:text-white">
@@ -109,7 +109,7 @@ export default async function Home() {
               <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 Проверенные фабрики и дистрибьюторы Кыргызстана выставляют коммерческие предложения: цена за единицу, MOQ, срок и логистика.
               </p>
-              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800/60 flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-emerald-600 dark:text-emerald-400 font-mono">
+              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800/60 flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-emerald-700 dark:text-emerald-400 font-mono">
                 <span>Без скрытых наценок</span>
                 <ArrowRight className="w-4 h-4 shrink-0" />
               </div>
@@ -117,7 +117,7 @@ export default async function Home() {
 
             {/* Step 3 */}
             <div className="grid grid-rows-[auto_auto_1fr_auto] h-full p-6 rounded-2xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800/80 shadow-sm hover:border-zinc-300 dark:hover:border-zinc-700 transition-all gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-xl font-mono">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800/40 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-black text-xl font-mono">
                 3
               </div>
               <h3 className="text-lg font-bold min-h-[3.5rem] flex items-center text-zinc-900 dark:text-white">
@@ -126,8 +126,8 @@ export default async function Home() {
               <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed">
                 Алгоритм рассчитывает полную формулу стоимости с учетом доставки и выделяет лучшее предложение. Принимайте и переходите в прямой чат по заказу.
               </p>
-              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800/60 flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-emerald-600 dark:text-emerald-400 font-mono">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div className="pt-4 border-t border-zinc-200 dark:border-zinc-800/60 flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-emerald-700 dark:text-emerald-400 font-mono">
+                <CheckCircle2 className="w-4 h-4 text-emerald-700 dark:text-emerald-400 shrink-0" />
                 <span>Фиксация сделки</span>
               </div>
             </div>
@@ -140,7 +140,7 @@ export default async function Home() {
         <div className="container mx-auto px-4 max-w-5xl space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div className="space-y-2">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wider">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/40 text-xs font-bold uppercase tracking-wider">
                 <Layers className="w-3.5 h-3.5" />
                 <span>Биржа коммерческих запросов</span>
               </div>
@@ -171,7 +171,7 @@ export default async function Home() {
                   Опубликуйте первый запрос котировок (RFQ), чтобы поставщики и производства предложили лучшие оптовые цены.
                 </p>
               </div>
-              <Button asChild className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs">
+              <Button asChild className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-zinc-950 font-bold text-xs">
                 <Link href="/requests/create">Создать первый RFQ-запрос</Link>
               </Button>
             </div>
@@ -189,7 +189,7 @@ export default async function Home() {
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between gap-3">
-                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 uppercase tracking-wider truncate">
+                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/40 uppercase tracking-wider truncate">
                           {cat?.label || req.category_tag || "Закупка"}
                         </span>
                         <span className="text-xs text-zinc-500 dark:text-zinc-400 flex items-center gap-1 shrink-0 ml-2 font-mono">
@@ -198,7 +198,7 @@ export default async function Home() {
                         </span>
                       </div>
 
-                      <h3 className="font-bold text-base text-zinc-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors line-clamp-2">
+                      <h3 className="font-bold text-base text-zinc-900 dark:text-white group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors line-clamp-2">
                         {req.title}
                       </h3>
 
@@ -213,7 +213,7 @@ export default async function Home() {
                     <div className="mt-auto pt-5 space-y-4">
                       <div className="flex items-center gap-3 text-xs font-semibold">
                         <span className="flex items-center gap-1 text-zinc-800 dark:text-zinc-200 font-mono">
-                          <Boxes className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <Boxes className="w-4 h-4 text-emerald-700 dark:text-emerald-400 shrink-0" />
                           <span>{req.quantity ? req.quantity.toLocaleString("ru-RU") : "1"} {req.unit || "шт"}</span>
                         </span>
                         <span className="text-zinc-300 dark:text-zinc-700">•</span>
@@ -227,11 +227,11 @@ export default async function Home() {
                         <div>
                           <div className="text-[11px] text-zinc-500 font-mono">Бюджет партии:</div>
                           {totalBudget ? (
-                            <div className="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                            <div className="text-sm font-black text-emerald-700 dark:text-emerald-400 font-mono">
                               {totalBudget.toLocaleString("ru-RU")} сом
                             </div>
                           ) : unitPrice ? (
-                            <div className="text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                            <div className="text-sm font-black text-emerald-700 dark:text-emerald-400 font-mono">
                               до {unitPrice} сом/{req.unit || "шт"}
                             </div>
                           ) : (
@@ -239,7 +239,7 @@ export default async function Home() {
                           )}
                         </div>
 
-                        <Button asChild size="sm" className="rounded-xl text-xs font-bold gap-1 bg-emerald-600 hover:bg-emerald-500 text-white cursor-pointer">
+                        <Button asChild size="sm" className="rounded-xl text-xs font-bold gap-1 bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-zinc-950 cursor-pointer">
                           <Link href={`/requests/${req.id}`}>
                             <span>Предложить КП</span>
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -394,23 +394,23 @@ export default async function Home() {
       {/* 5. Supplier CTA Banner */}
       <section className="py-16 md:py-20">
         <div className="container mx-auto px-4 max-w-5xl">
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-950 via-zinc-900 to-zinc-950 border border-emerald-500/30 text-white p-8 md:p-12 shadow-2xl">
+          <div className="relative overflow-hidden rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-gradient-to-br from-emerald-50/50 via-zinc-50 to-white dark:from-zinc-900 dark:via-zinc-900/80 dark:to-zinc-950 p-8 md:p-12 shadow-xl">
             <div className="relative z-10 max-w-2xl space-y-4">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100/80 text-emerald-800 border border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20 text-xs font-bold uppercase tracking-wider">
                 <Building2 className="w-3.5 h-3.5" />
                 <span>Для поставщиков и фабрик</span>
               </div>
-              <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
+              <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-white leading-tight">
                 Поставляете товары для бизнеса в Кыргызстане?
               </h2>
-              <p className="text-zinc-300 text-sm sm:text-base leading-relaxed">
+              <p className="text-zinc-600 dark:text-zinc-300 text-sm sm:text-base leading-relaxed">
                 Подключайтесь к BazaarOS и получайте готовые оптовые заказы от кофеен, ресторанов, производств и магазинов без затрат на холодные продажи.
               </p>
               <div className="pt-2 flex flex-wrap items-center gap-3">
                 <Button
                   asChild
                   size="lg"
-                  className="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-7 shadow-md cursor-pointer"
+                  className="rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-zinc-950 font-bold px-7 shadow-md cursor-pointer"
                 >
                   <Link href="/b2b/become-supplier">
                     Стать поставщиком BazaarOS
@@ -420,7 +420,7 @@ export default async function Home() {
                   asChild
                   variant="outline"
                   size="lg"
-                  className="rounded-xl border-zinc-800 bg-[#090A0F] text-zinc-300 hover:text-white hover:bg-zinc-800 font-semibold"
+                  className="rounded-xl border border-zinc-300 bg-white hover:bg-zinc-100 text-zinc-800 dark:border-zinc-800 dark:bg-[#090A0F] dark:hover:bg-zinc-800 dark:text-zinc-300 dark:hover:text-white font-semibold"
                 >
                   <Link href="/b2b">
                     Кабинет и реестр прайс-листов
@@ -430,7 +430,7 @@ export default async function Home() {
             </div>
 
             {/* Decorative background icon */}
-            <BazaarIcon className="absolute right-[-20px] bottom-[-20px] w-72 h-72 text-emerald-500/5 pointer-events-none -z-0" />
+            <BazaarIcon className="absolute right-[-20px] bottom-[-20px] w-72 h-72 text-emerald-500/10 dark:text-emerald-500/5 pointer-events-none -z-0" />
           </div>
         </div>
       </section>

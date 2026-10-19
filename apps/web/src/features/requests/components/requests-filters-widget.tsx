@@ -183,7 +183,7 @@ export function RequestsFiltersWidget({ categories = [] }: { categories?: any[] 
         <Button
           type="submit"
           size="sm"
-          className="w-full h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs mt-3 cursor-pointer"
+          className="w-full h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-zinc-950 font-bold text-xs mt-3 cursor-pointer"
         >
           Применить фильтры
         </Button>
@@ -250,11 +250,11 @@ export function RequestsFiltersWidget({ categories = [] }: { categories?: any[] 
           onClick={() => setIsMobileOpen(!isMobileOpen)}
         >
           <span className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <Filter className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
             <span>Фильтры оптовых закупок</span>
           </span>
           {hasActiveFilters && (
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="w-2 h-2 rounded-full bg-emerald-600 dark:bg-emerald-400" />
           )}
         </Button>
 
@@ -269,11 +269,11 @@ export function RequestsFiltersWidget({ categories = [] }: { categories?: any[] 
       <div className="hidden lg:block p-5 rounded-2xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800 shadow-sm">
         <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-zinc-800 mb-4">
           <div className="flex items-center gap-2">
-            <SlidersHorizontal className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <SlidersHorizontal className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
             <h2 className="text-sm font-bold text-zinc-900 dark:text-white">Фильтры RFQ</h2>
           </div>
           {hasActiveFilters && (
-            <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+            <span className="text-[10px] font-mono text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/40">
               Активны
             </span>
           )}

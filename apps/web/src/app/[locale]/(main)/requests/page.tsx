@@ -145,9 +145,9 @@ async function RequestsList({
             Попробуйте изменить параметры поиска или создайте первый запрос на оптовую закупку через AI-ассистента.
           </p>
         </div>
-        <Button asChild className="rounded-xl font-semibold bg-emerald-600 hover:bg-emerald-500 text-white gap-2 mt-2">
+        <Button asChild className="rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-zinc-950 gap-2 mt-2">
           <Link href="/requests/create">
-            <Sparkles className="w-4 h-4" />
+            <Sparkles className="w-4 h-4 text-emerald-100 dark:text-zinc-950" />
             <span>Создать закупку (RFQ)</span>
           </Link>
         </Button>
@@ -164,7 +164,7 @@ async function RequestsList({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-zinc-200 dark:border-zinc-800">
         <div>
           <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Найдено: <strong className="text-emerald-600 dark:text-emerald-400 font-mono font-bold">{totalCount}</strong> {pluralWord}
+            Найдено: <strong className="text-emerald-700 dark:text-emerald-400 font-mono font-bold">{totalCount}</strong> {pluralWord}
           </p>
         </div>
         <RequestsSortWidget sort={sort} />
@@ -193,13 +193,13 @@ async function RequestsList({
               <div className="flex flex-col md:flex-row md:items-start justify-between gap-5">
                 <div className="flex flex-col gap-2 flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-2.5 py-0.5 rounded-md">
+                    <span className="text-xs font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/40 px-2.5 py-0.5 rounded-md">
                       {categoryName}
                     </span>
 
                     {isOwner && (
-                      <span className="text-xs font-mono font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-md flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-500 dark:text-emerald-400" />
+                      <span className="text-xs font-mono font-bold bg-emerald-100/80 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/50 px-2.5 py-0.5 rounded-md flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-700 dark:text-emerald-400" />
                         Моя закупка
                       </span>
                     )}
@@ -212,7 +212,7 @@ async function RequestsList({
                   </div>
 
                   <div className="flex flex-col gap-1 min-w-0">
-                    <h3 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors line-clamp-2">
+                    <h3 className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white hover:text-emerald-700 dark:hover:text-emerald-400 transition-colors line-clamp-2">
                       <Link href={`/requests/${req.id}`}>
                         {req.title}
                       </Link>
@@ -227,7 +227,7 @@ async function RequestsList({
 
                   <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-zinc-500 dark:text-zinc-400 pt-1">
                     <span className="flex items-center gap-1.5 font-medium">
-                      <Boxes className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <Boxes className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
                       Объем: <span className="font-mono text-zinc-900 dark:text-white font-bold">{quantity.toLocaleString("ru-RU")} {unit}</span>
                     </span>
                     <span className="flex items-center gap-1.5 font-medium">
@@ -246,7 +246,7 @@ async function RequestsList({
                     <div className="text-[11px] font-mono text-zinc-500 dark:text-zinc-400">Бюджет партии:</div>
                     {req.total_budget || req.budget ? (
                       <>
-                        <div className="font-mono text-lg font-semibold text-emerald-600 dark:text-emerald-400">
+                        <div className="font-mono text-lg font-bold text-emerald-700 dark:text-emerald-400">
                           {Math.round(req.total_budget || req.budget).toLocaleString("ru-RU")} сом
                         </div>
                         {price && (
@@ -256,7 +256,7 @@ async function RequestsList({
                         )}
                       </>
                     ) : price ? (
-                      <div className="font-mono text-lg font-semibold text-emerald-600 dark:text-emerald-400">
+                      <div className="font-mono text-lg font-bold text-emerald-700 dark:text-emerald-400">
                         до {price.toLocaleString("ru-RU")} сом/{unit}
                       </div>
                     ) : (
@@ -268,7 +268,7 @@ async function RequestsList({
                     asChild 
                     className={`rounded-xl text-xs font-semibold px-4 h-10 shadow-sm transition-all gap-1.5 cursor-pointer ${
                       isOwner 
-                        ? "bg-emerald-600 hover:bg-emerald-500 text-white" 
+                        ? "bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-zinc-950 font-bold" 
                         : "bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-white"
                     }`}
                   >
@@ -323,7 +323,7 @@ export default async function RequestsPage(props: { searchParams: Promise<{ [key
       {/* Top B2B Exchange Banner */}
       <div className="bg-white dark:bg-[#11131A] rounded-2xl p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 border border-zinc-200 dark:border-zinc-800 shadow-sm">
         <div className="space-y-2 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-mono font-semibold">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/40 text-xs font-mono font-semibold">
             <span>BazaarOS • RFQ Exchange</span>
           </div>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
@@ -335,9 +335,9 @@ export default async function RequestsPage(props: { searchParams: Promise<{ [key
         </div>
 
         <div className="shrink-0 flex items-center gap-3">
-          <Button asChild size="lg" className="rounded-xl font-semibold h-11 px-6 bg-emerald-600 hover:bg-emerald-500 text-white gap-2 shadow-lg shadow-emerald-950/20 dark:shadow-emerald-950/40 cursor-pointer">
+          <Button asChild size="lg" className="rounded-xl font-bold h-11 px-6 bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-zinc-950 gap-2 shadow-lg shadow-emerald-950/20 dark:shadow-emerald-950/40 cursor-pointer">
             <Link href="/requests/create">
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-4 h-4 text-emerald-100 dark:text-zinc-950" />
               <span>Создать закупку</span>
             </Link>
           </Button>

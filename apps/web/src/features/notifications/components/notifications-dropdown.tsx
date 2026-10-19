@@ -110,7 +110,7 @@ export function NotificationsDropdown() {
       <Button
         variant="ghost"
         size="icon"
-        className="relative h-9 w-9 text-muted-foreground hover:text-foreground"
+        className="relative h-9 w-9 text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white rounded-lg"
         onClick={() => setIsOpen(!isOpen)}
         aria-label={t("uvedomleniya")}
       >
@@ -125,9 +125,9 @@ export function NotificationsDropdown() {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 top-full mt-2 w-80 bg-popover rounded-xl shadow-lg border p-1 z-50 overflow-hidden flex flex-col max-h-[80vh]">
-            <div className="px-3 py-3 border-b flex items-center justify-between">
-              <h3 className="font-semibold">{t("uvedomleniya")}</h3>
+          <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-zinc-200 dark:border-zinc-800 p-1 z-50 overflow-hidden flex flex-col max-h-[80vh]">
+            <div className="px-3 py-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between">
+              <h3 className="font-semibold text-zinc-900 dark:text-white">{t("uvedomleniya")}</h3>
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}

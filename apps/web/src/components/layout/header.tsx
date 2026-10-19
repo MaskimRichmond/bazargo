@@ -18,13 +18,13 @@ export function Header() {
   const { setTheme, theme } = useTheme()
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/70 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <header className="sticky top-0 z-50 w-full border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md">
       <div className="container mx-auto px-4 h-14 md:h-16 flex items-center justify-between gap-4">
         {/* Left: Strict Geometric BazaarOS Logo & Location */}
         <div className="flex items-center gap-4 md:gap-6">
           <BazaarLogo size="header" />
           
-          <Suspense fallback={<div className="hidden lg:flex w-24 h-8 bg-muted rounded-md animate-pulse" />}>
+          <Suspense fallback={<div className="hidden lg:flex w-24 h-8 bg-zinc-100 dark:bg-zinc-800 rounded-md animate-pulse" />}>
             <HeaderLocationSelector />
           </Suspense>
         </div>
@@ -38,24 +38,24 @@ export function Header() {
             variant="ghost"
             size="icon"
             onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-            className="h-9 w-9 text-muted-foreground hover:text-foreground rounded-lg"
+            className="h-9 w-9 text-zinc-700 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white rounded-lg"
             aria-label={t("theme_switch")}
           >
             <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           </Button>
 
-          <div className="hidden sm:block w-px h-5 bg-border mx-1" />
+          <div className="hidden sm:block w-px h-5 bg-zinc-200 dark:bg-zinc-800 mx-1" />
 
           <LanguageSwitcher />
           <HeaderAuth />
           
           <Button 
-            className="hidden sm:inline-flex bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-4 py-2 font-bold shadow-sm gap-1.5 text-xs md:text-sm"
+            className="hidden sm:inline-flex bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-zinc-950 rounded-xl px-4 py-2 font-bold shadow-sm gap-1.5 text-xs md:text-sm cursor-pointer"
             asChild
           >
             <Link href="/requests/create">
-              <Sparkles className="w-3.5 h-3.5 text-emerald-200" />
+              <Sparkles className="w-3.5 h-3.5 text-emerald-100 dark:text-zinc-950" />
               <span>Создать закупку</span>
             </Link>
           </Button>

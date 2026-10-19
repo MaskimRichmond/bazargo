@@ -62,8 +62,8 @@ export function BazaarLogo({
       </div>
 
       <div className={`flex items-center tracking-tight font-bold ${textSize} leading-none`}>
-        <span className="text-white">Bazaar</span>
-        <span className="text-[#10B981]">OS</span>
+        <span className="text-zinc-900 dark:text-white">Bazaar</span>
+        <span className="text-emerald-600 dark:text-emerald-400">OS</span>
       </div>
     </Link>
   )

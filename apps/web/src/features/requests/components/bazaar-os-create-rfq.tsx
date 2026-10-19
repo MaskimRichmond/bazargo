@@ -651,53 +651,59 @@ export function BazaarOsCreateRfq({ initialPrompt = "" }: BazaarOsCreateRfqProps
               </div>
 
               {/* BUDGET SECTION: Total Budget & Max Unit Price with Live Sync */}
-              <div className="space-y-2">
-                <Label htmlFor="totalBudget" className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Coins className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    Общий бюджет закупки (сом)
-                  </span>
-                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-mono">на всю партию</span>
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="totalBudget"
-                    type="number"
-                    step="1"
-                    min={0}
-                    value={totalBudget}
-                    onChange={(e) => handleTotalBudgetChange(e.target.value)}
-                    placeholder="Например: 24000"
-                    className="h-11 rounded-xl bg-white dark:bg-[#090A0F] border-zinc-300 dark:border-zinc-800 pr-12 font-mono text-zinc-900 dark:text-zinc-100 font-bold placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus-visible:ring-emerald-500/20 focus:border-emerald-500/50"
-                  />
-                  <span className="absolute right-3.5 top-3 text-xs text-zinc-400 dark:text-zinc-500 font-mono pointer-events-none">
-                    сом
-                  </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start md:col-span-2">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between min-h-[28px] gap-2">
+                    <Label htmlFor="totalBudget" className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center gap-1.5 cursor-pointer">
+                      <Coins className="w-4 h-4 text-emerald-700 dark:text-emerald-400 shrink-0" />
+                      <span>Общий бюджет закупки</span>
+                    </Label>
+                    <span className="text-xs text-emerald-700 dark:text-emerald-400 font-mono whitespace-nowrap shrink-0">
+                      на всю партию
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="totalBudget"
+                      type="number"
+                      step="1"
+                      min={0}
+                      value={totalBudget}
+                      onChange={(e) => handleTotalBudgetChange(e.target.value)}
+                      placeholder="Например: 24000"
+                      className="h-11 rounded-xl bg-white dark:bg-[#090A0F] border-zinc-300 dark:border-zinc-800 pr-12 font-mono text-zinc-900 dark:text-zinc-100 font-bold placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus-visible:ring-emerald-500/20 focus:border-emerald-500/50"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-400 pointer-events-none">
+                      сом
+                    </span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="maxPrice" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
-                    <Tag className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
-                    Предельная цена за 1 {unit}
-                  </span>
-                  <span className="text-xs text-zinc-500 font-mono">авторасчет</span>
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="maxPrice"
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    value={maxPrice}
-                    onChange={(e) => handleMaxPriceChange(e.target.value)}
-                    placeholder="Например: 80"
-                    className="h-11 rounded-xl bg-white dark:bg-[#090A0F] border-zinc-300 dark:border-zinc-800 pr-12 font-mono text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus-visible:ring-emerald-500/20 focus:border-emerald-500/50"
-                  />
-                  <span className="absolute right-3.5 top-3 text-xs text-zinc-400 dark:text-zinc-500 font-mono pointer-events-none">
-                    сом
-                  </span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between min-h-[28px] gap-2">
+                    <Label htmlFor="maxPrice" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 cursor-pointer">
+                      <Tag className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" />
+                      <span>Предельная цена за 1 {unit}</span>
+                    </Label>
+                    <span className="text-xs text-zinc-500 font-mono whitespace-nowrap shrink-0">
+                      авторасчет
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="maxPrice"
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      value={maxPrice}
+                      onChange={(e) => handleMaxPriceChange(e.target.value)}
+                      placeholder="Например: 80"
+                      className="h-11 rounded-xl bg-white dark:bg-[#090A0F] border-zinc-300 dark:border-zinc-800 pr-12 font-mono text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus-visible:ring-emerald-500/20 focus:border-emerald-500/50"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-400 pointer-events-none">
+                      сом
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -859,7 +865,7 @@ export function BazaarOsCreateRfq({ initialPrompt = "" }: BazaarOsCreateRfqProps
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full h-12 rounded-xl text-base font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-950/20 dark:shadow-emerald-950/40 gap-2 transition-all cursor-pointer"
+                    className="w-full h-12 rounded-xl text-base font-bold bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-zinc-950 shadow-lg shadow-emerald-950/20 dark:shadow-emerald-950/40 gap-2 transition-all cursor-pointer"
                   >
                     {isSubmitting ? (
                       <>
@@ -882,7 +888,7 @@ export function BazaarOsCreateRfq({ initialPrompt = "" }: BazaarOsCreateRfqProps
                   type="button"
                   onClick={() => handleFindSuppliers()}
                   disabled={isSearchingSuppliers || isParsing}
-                  className="w-full h-12 rounded-xl text-base font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-950/20 dark:shadow-emerald-950/40 gap-2 transition-all cursor-pointer"
+                  className="w-full h-12 rounded-xl text-base font-bold bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-zinc-950 shadow-lg shadow-emerald-950/20 dark:shadow-emerald-950/40 gap-2 transition-all cursor-pointer"
                 >
                   {isSearchingSuppliers || isParsing ? (
                     <>
@@ -921,7 +927,7 @@ export function BazaarOsCreateRfq({ initialPrompt = "" }: BazaarOsCreateRfqProps
             </div>
 
             <div className="space-y-3 pt-2">
-              <Button asChild className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold gap-2">
+              <Button asChild className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-zinc-950 font-bold gap-2">
                 <Link href={`/requests/${createdRequestId}`}>
                   <span>Перейти к заявке</span>
                   <ArrowRight className="w-4 h-4" />

@@ -174,13 +174,13 @@ export default async function RequestDetailsPage(props: { params: Promise<{ id: 
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
           <div className="space-y-3 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-mono font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full uppercase tracking-wider">
+              <span className="text-xs font-mono font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/40 px-3 py-1 rounded-full uppercase tracking-wider">
                 {categoryName}
               </span>
               <span
                 className={`text-xs font-mono font-bold px-3 py-1 rounded-full uppercase tracking-wider ${
                   effectiveStatus === "OPEN"
-                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                    ? "bg-emerald-100/80 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/50"
                     : effectiveStatus === "EXPIRED"
                     ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
                     : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
@@ -203,13 +203,13 @@ export default async function RequestDetailsPage(props: { params: Promise<{ id: 
             {/* Meta details */}
             <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-500 dark:text-zinc-400">
               <span className="flex items-center gap-1.5 font-medium">
-                <MapPin className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> {request.city}
+                <MapPin className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /> {request.city}
               </span>
               <span className="flex items-center gap-1.5 font-medium">
-                <Clock className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> Срок: до {deadlineDays} дн. {request.expires_at ? `(до ${new Date(request.expires_at).toLocaleDateString("ru-RU")})` : ""}
+                <Clock className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /> Срок: до {deadlineDays} дн. {request.expires_at ? `(до ${new Date(request.expires_at).toLocaleDateString("ru-RU")})` : ""}
               </span>
               <span className="flex items-center gap-1.5 font-medium">
-                <User className="w-4 h-4 text-emerald-500 dark:text-emerald-400" /> {buyerProfile?.full_name || (isOwner ? "Вы (Заказчик)" : "Заказчик")}
+                <User className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /> {buyerProfile?.full_name || (isOwner ? "Вы (Заказчик)" : "Заказчик")}
               </span>
             </div>
           </div>
@@ -220,7 +220,7 @@ export default async function RequestDetailsPage(props: { params: Promise<{ id: 
               Объем партии
             </div>
             <div className="text-2xl font-black text-zinc-900 dark:text-white flex items-center justify-center gap-1.5 font-mono">
-              <Boxes className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+              <Boxes className="w-5 h-5 text-emerald-700 dark:text-emerald-400" />
               <span>{quantity.toLocaleString("ru-RU")}</span>
               <span className="text-sm font-bold text-zinc-500 dark:text-zinc-400 font-sans">{unit}</span>
             </div>
@@ -228,7 +228,7 @@ export default async function RequestDetailsPage(props: { params: Promise<{ id: 
             {maxPrice ? (
               <div className="pt-2 border-t border-zinc-200 dark:border-zinc-800 text-xs">
                 <div className="text-zinc-500 font-mono">Желаемая цена:</div>
-                <div className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
+                <div className="text-base font-extrabold text-emerald-700 dark:text-emerald-400 font-mono">
                   до {maxPrice.toLocaleString("ru-RU")} сом/{unit}
                 </div>
                 {totalBudget && (
@@ -250,7 +250,7 @@ export default async function RequestDetailsPage(props: { params: Promise<{ id: 
           <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800 space-y-4">
             {specs && (
               <div className="flex items-start gap-2.5">
-                <Tag className="w-4 h-4 text-emerald-500 dark:text-emerald-400 mt-0.5 shrink-0" />
+                <Tag className="w-4 h-4 text-emerald-700 dark:text-emerald-400 mt-0.5 shrink-0" />
                 <div>
                   <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider font-mono">
                     Характеристики и спецификация
@@ -264,7 +264,7 @@ export default async function RequestDetailsPage(props: { params: Promise<{ id: 
 
             {request.description && (
               <div className="flex items-start gap-2.5">
-                <FileText className="w-4 h-4 text-emerald-500 dark:text-emerald-400 mt-0.5 shrink-0" />
+                <FileText className="w-4 h-4 text-emerald-700 dark:text-emerald-400 mt-0.5 shrink-0" />
                 <div>
                   <div className="text-xs font-semibold text-zinc-500 uppercase tracking-wider font-mono">
                     Требования к заказу
