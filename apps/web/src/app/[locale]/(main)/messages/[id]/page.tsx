@@ -92,14 +92,13 @@ export default async function ChatPage(props: { params: Promise<{ id: string }> 
               <span className="hidden sm:inline-block w-1 h-1 bg-muted-foreground/30 rounded-full" />
               <span className="hidden sm:inline-block text-[13px] text-muted-foreground">{isBuyer ? "Продавец" : "Покупатель"}</span>
             </div>
-            {listing ? (
-              <Link href={`/product/${listing.id}`} className="text-[12px] sm:text-[13px] font-medium text-primary hover:underline truncate mt-0.5">
-                {listing.title} <span className="text-muted-foreground font-normal ml-1">· {listing.price?.toLocaleString("ru-RU")} {t("som")}</span>
+            <div className="flex items-center gap-2 text-[12px] sm:text-[13px] text-muted-foreground mt-0.5">
+              <span className="font-semibold text-foreground">Переговоры по B2B-закупке</span>
+              <span>·</span>
+              <Link href="/requests" className="text-primary hover:underline font-medium">
+                Биржа заявок
               </Link>
-            ) : (
-              <span className="text-[12px] sm:text-[13px] font-medium text-muted-foreground truncate mt-0.5">
-                {t("obyavlenie_nedostupno")}</span>
-            )}
+            </div>
           </div>
         </div>
         

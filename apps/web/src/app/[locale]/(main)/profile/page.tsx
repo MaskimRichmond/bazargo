@@ -99,27 +99,15 @@ export default async function ProfilePage() {
       </div>
 
       <div className="space-y-6">
-        
-        <div className="bg-background sm:border sm:rounded-2xl overflow-hidden shadow-sm divide-y">
-          <NavItem href="/my-listings" icon={Package} title={t("moi_obyavleniya")} subtitle={t("aktivnye_prodannye_arhiv")} />
-          <NavItem href="/favorites" icon={Heart} title={t("izbrannoe")} subtitle={t("sohranennye_tovary")} />
-          <NavItem href="/orders" icon={ShoppingBag} title={t("moi_zakazy")} subtitle={t("pokupki_i_status_dostavki")} />
-          <NavItem href="/messages" icon={MessageCircle} title={t("chaty_1")} subtitle={t("perepiska_s_prodavtsami_i")} />
+        <div className="px-4 sm:px-0 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+          B2B Снабжение и Закупки
         </div>
-
-        <div className="px-4 sm:px-0 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6">
-          {t("biznes_i_prodazhi")}</div>
         <div className="bg-background sm:border sm:rounded-2xl overflow-hidden shadow-sm divide-y">
-          <NavItem href="/seller/orders" icon={Package} title={t("zakazy_klientov")} subtitle={t("upravlenie_zakazami_na_vashi")} />
-          <NavItem href="/my-store" icon={Store} title={t("moy_magazin")} subtitle={t("upravlenie_vitrinoy_i_tovarami")} />
-          <NavItem href="/my-requests" icon={HelpCircle} title={t("moi_zaprosy_nuzhen_tovar")} subtitle={t("poisk_redkih_tovarov")} />
-          <NavItem href="/b2b" icon={Briefcase} title={t("dlya_biznesa_b2b")} subtitle={t("optovye_zakupki_i_zayavki")} isPrimary={true} />
-        </div>
-
-        <div className="px-4 sm:px-0 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6">
-          {t("akkaunt")}</div>
-        <div className="bg-background sm:border sm:rounded-2xl overflow-hidden shadow-sm divide-y">
-          <NavItem href="/settings" icon={Settings} title={t("nastroyki")} subtitle={t("parol_uvedomleniya_dannye")} />
+          <NavItem href="/my-requests" icon={HelpCircle} title="Мои закупки (RFQ)" subtitle="Отслеживание статусов и предложений поставщиков" isPrimary={true} />
+          <NavItem href="/requests" icon={Briefcase} title="Биржа заказов (Для поставщиков)" subtitle="Открытые запросы от предприятий и кофеен" />
+          <NavItem href="/messages" icon={MessageCircle} title="Сообщения по сделкам" subtitle="Переговоры по коммерческим предложениям" />
+          <NavItem href="/b2b" icon={Store} title="Кабинет поставщика" subtitle="Управление оптовыми предложениями и заявками" />
+          <NavItem href="/settings" icon={Settings} title="Настройки аккаунта" subtitle="Безопасность, профиль компании и реквизиты" />
         </div>
 
         <div className="px-4 sm:px-0 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-6">

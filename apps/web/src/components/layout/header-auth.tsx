@@ -4,7 +4,7 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { User, LogOut, Package, Store, Heart, MessageCircle, Settings, ClipboardList, ShoppingBag } from "lucide-react"
+import { User, LogOut, Package, Store, Heart, MessageCircle, Settings, ClipboardList, ShoppingBag, Layers, Briefcase } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
@@ -120,26 +120,30 @@ export function HeaderAuth() {
               <p className="text-xs text-muted-foreground truncate">{user.phone || user.email}</p>
             </div>
             
-            <Link href="/profile" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <User className="w-4 h-4" /> {t("profil")}</Link>
-            <Link href="/my-listings" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <Package className="w-4 h-4" /> {t("moi_obyavleniya")}</Link>
-            <Link href="/my-store" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors text-primary font-medium">
-              <Store className="w-4 h-4" /> {t("moy_magazin")}</Link>
-            <Link href="/my-requests" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <ClipboardList className="w-4 h-4" /> {t("moi_zaprosy")}</Link>
-            <Link href="/cart" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors text-primary">
-              <ShoppingBag className="w-4 h-4" /> {t("korzina")}</Link>
-            <Link href="/orders" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <Package className="w-4 h-4" /> {t("moi_pokupki")}</Link>
-            <Link href="/seller/orders" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <Store className="w-4 h-4" /> {t("zakazy_klientov")}</Link>
-            <Link href="/favorites" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <Heart className="w-4 h-4" /> {t("izbrannoe")}</Link>
-            <Link href="/messages" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <MessageCircle className="w-4 h-4" /> {t("chaty_1")}</Link>
-            <Link href="/settings" onClick={() => setIsOpen(false)} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
-              <Settings className="w-4 h-4" /> {t("nastroyki")}</Link>
+            <Link href="/my-requests" onClick={() => setIsOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors font-medium">
+              <ClipboardList className="w-4 h-4 text-primary" />
+              <span>Мои закупки (RFQ)</span>
+            </Link>
+
+            <Link href="/requests" onClick={() => setIsOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
+              <Layers className="w-4 h-4 text-muted-foreground" />
+              <span>Биржа заказов (Для поставщиков)</span>
+            </Link>
+
+            <Link href="/messages" onClick={() => setIsOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
+              <MessageCircle className="w-4 h-4 text-muted-foreground" />
+              <span>Сообщения по сделкам</span>
+            </Link>
+
+            <Link href="/b2b" onClick={() => setIsOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors">
+              <Briefcase className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>Кабинет поставщика</span>
+            </Link>
+
+            <Link href="/settings" onClick={() => setIsOpen(false)} className="flex items-center gap-2.5 px-3 py-2 text-sm hover:bg-muted rounded-md transition-colors text-muted-foreground">
+              <Settings className="w-4 h-4" />
+              <span>Настройки аккаунта</span>
+            </Link>
             
             <div className="h-px bg-border my-1" />
             

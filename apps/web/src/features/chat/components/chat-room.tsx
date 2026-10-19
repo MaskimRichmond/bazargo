@@ -276,34 +276,16 @@ export function ChatRoom({ chatId, currentUserId, initialMessages, b2bOffers = [
           </div>
         )}
 
-        {listing && (
-          <div className="flex justify-center shrink-0">
-            <Link href={`/product/${listing.id}`} className="bg-muted/30 hover:bg-muted/50 transition-colors border border-border/50 rounded-2xl p-2 flex items-center gap-3 w-full max-w-[320px] shadow-sm group outline-none">
-              <div className="w-12 h-12 rounded-xl bg-muted overflow-hidden shrink-0 relative">
-                {listing.listing_images?.[0]?.url ? (
-                  <img src={listing.listing_images[0].url} className="w-full h-full object-cover" alt="Product" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground"><ShoppingBag className="w-5 h-5" /></div>
-                )}
-                {listing.status && listing.status !== 'ACTIVE' && (
-                  <div className="absolute inset-0 bg-background/80 flex items-center justify-center text-center px-1">
-                    <span className="text-[9px] font-bold uppercase">
-                      {listing.status === 'SOLD' ? 'Продано' : 
-                       listing.status === 'ARCHIVED' ? 'В архиве' : 
-                       listing.status === 'OUT_OF_STOCK' ? 'Нет в наличии' : 
-                       listing.status === 'BLOCKED' ? 'Заблокировано' : 
-                       'Неактивно'}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0 pr-1">
-                <p className="text-[13px] font-semibold leading-tight truncate text-foreground group-hover:text-primary transition-colors">{listing.title}</p>
-                <p className="text-[12px] font-bold text-muted-foreground mt-0.5">{listing.price?.toLocaleString("ru-RU")} {t("som")}</p>
-              </div>
+        <div className="flex justify-center shrink-0">
+          <div className="bg-muted/40 border border-border/60 rounded-xl px-4 py-2 flex items-center gap-2.5 text-xs text-muted-foreground shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+            <span className="font-semibold text-foreground">Переговоры по B2B-закупке</span>
+            <span className="text-muted-foreground">·</span>
+            <Link href="/requests" className="text-primary hover:underline font-medium">
+              Биржа заявок
             </Link>
           </div>
-        )}
+        </div>
 
         {messages.length === 0 && offers.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-muted-foreground text-sm flex-1 opacity-60">

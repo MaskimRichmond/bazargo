@@ -3,10 +3,9 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { useTranslations } from "next-intl";
+import { Sparkles, Layers, Building2 } from "lucide-react"
 
 export function HeaderNav() {
-    const t = useTranslations();
   const pathname = usePathname()
 
   const isActive = (path: string) => {
@@ -15,28 +14,37 @@ export function HeaderNav() {
   }
 
   return (
-    <nav className="hidden xl:flex items-center gap-6 text-sm font-medium">
+    <nav className="hidden lg:flex items-center gap-6 text-sm font-semibold">
       <Link 
-        href="/catalog" 
-        className={cn("transition-colors", isActive("/catalog") || isActive("/product") ? "text-primary font-bold" : "text-muted-foreground hover:text-primary")}
+        href="/requests/create" 
+        className={cn(
+          "inline-flex items-center gap-1.5 transition-colors", 
+          isActive("/requests/create") ? "text-primary font-bold" : "text-muted-foreground hover:text-primary"
+        )}
       >
-        {t("katalog")}</Link>
-      <Link 
-        href="/stores" 
-        className={cn("transition-colors", isActive("/stores") || isActive("/store") ? "text-primary font-bold" : "text-muted-foreground hover:text-primary")}
-      >
-        {t("magaziny")}</Link>
+        <Sparkles className="w-4 h-4 text-primary" />
+        <span>Создать закупку (AI)</span>
+      </Link>
       <Link 
         href="/requests" 
-        className={cn("transition-colors", isActive("/requests") ? "text-primary font-bold" : "text-muted-foreground hover:text-primary")}
+        className={cn(
+          "inline-flex items-center gap-1.5 transition-colors", 
+          isActive("/requests") && !isActive("/requests/create") ? "text-primary font-bold" : "text-muted-foreground hover:text-primary"
+        )}
       >
-        {t("nav_requests")}</Link>
+        <Layers className="w-4 h-4" />
+        <span>Биржа запросов B2B</span>
+      </Link>
       <Link 
-        href="/b2b" 
-        className={cn("transition-colors", isActive("/b2b") ? "text-primary font-bold" : "text-muted-foreground hover:text-primary")}
+        href="/b2b/become-supplier" 
+        className={cn(
+          "inline-flex items-center gap-1.5 transition-colors", 
+          isActive("/b2b/become-supplier") ? "text-primary font-bold" : "text-muted-foreground hover:text-primary"
+        )}
       >
-        B2B
+        <Building2 className="w-4 h-4" />
+        <span>Стать поставщиком</span>
       </Link>
     </nav>
-  );
+  )
 }

@@ -6,6 +6,14 @@ import { routing } from './i18n/routing';
 const handleI18nRouting = createMiddleware(routing);
 
 export async function proxy(request: NextRequest) {
+  // Never intercept API routes or Auth callbacks with i18n redirects
+  if (
+    request.nextUrl.pathname.startsWith('/api') || 
+    request.nextUrl.pathname.startsWith('/auth')
+  ) {
+    return NextResponse.next()
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -53,6 +61,6 @@ export const config = {
   matcher: [
     '/',
     '/(ru|ky)/:path*',
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

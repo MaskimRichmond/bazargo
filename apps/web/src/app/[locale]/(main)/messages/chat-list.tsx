@@ -65,9 +65,10 @@ export function ChatList({ chats: initialChats, currentUserId }: { chats: any[],
         {!chats || chats.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-6 text-muted-foreground">
             <MessageSquare className="w-12 h-12 mb-4 opacity-20" />
-            <p className="text-sm">{t("u_vas_poka_net_1")}</p>
-            <Link href="/catalog" className="text-sm text-primary font-medium mt-2 hover:underline">
-              {t("nayti_tovar")}</Link>
+            <p className="text-sm">У вас пока нет активных диалогов</p>
+            <Link href="/requests" className="text-sm text-primary font-medium mt-2 hover:underline">
+              Перейти к бирже заказов
+            </Link>
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-6 text-center text-sm text-muted-foreground">
