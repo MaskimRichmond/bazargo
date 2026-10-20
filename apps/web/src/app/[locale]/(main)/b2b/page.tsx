@@ -192,6 +192,30 @@ export default async function B2bSupplierCabinetPage() {
   // Authenticated Supplier Workspace
   return (
     <div className="container mx-auto px-4 py-8 md:py-14 max-w-6xl space-y-10">
+      {/* Pending Moderation Status Alert */}
+      {isPendingSupplier && (
+        <div className="p-5 sm:p-6 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-200">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm sm:text-base text-zinc-900 dark:text-white">
+                  Заявка на модерации
+                </span>
+                <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full">
+                  до 24 часов
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-3xl">
+                Ваша заявка находится на проверке службы безопасности BazaarOS (до 24 часов). После подтверждения ваш оптовый прайс станет доступен покупателям.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Supplier Profile Card */}
       <div className="rounded-3xl bg-white dark:bg-[#11131A] border border-zinc-200 dark:border-zinc-800 p-6 md:p-8 shadow-sm space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">

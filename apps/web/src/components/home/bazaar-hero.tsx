@@ -132,19 +132,21 @@ export function BazaarHero() {
   )
 
   return (
-    <section className="relative overflow-hidden bg-zinc-50 dark:bg-[#090A0F] text-zinc-900 dark:text-zinc-100 border-b border-zinc-200 dark:border-zinc-800/80 pt-10 pb-16 md:pt-14 md:pb-20 transition-colors">
+    <section className="relative isolate overflow-hidden bg-zinc-50 dark:bg-[#090A0F] text-zinc-900 dark:text-zinc-100 border-b border-zinc-200 dark:border-zinc-800/80 pt-10 pb-16 md:pt-14 md:pb-20 transition-colors">
       {/* Adaptive SVG Grid Pattern Overlay */}
-      <svg 
-        className="absolute inset-0 w-full h-full stroke-zinc-200 dark:stroke-zinc-800/40 opacity-70 dark:opacity-30 pointer-events-none [mask-image:radial-gradient(100%_100%_at_top_center,white,transparent)]"
-        aria-hidden="true"
-      >
-        <defs>
-          <pattern id="hero-b2b-grid" width="32" height="32" patternUnits="userSpaceOnUse" x="50%" y="-1">
-            <path d="M.5 32V.5H32" fill="none" />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" strokeWidth="0" fill="url(#hero-b2b-grid)" />
-      </svg>
+      <div className="absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_75%_60%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none">
+        <svg 
+          className="w-full h-full stroke-zinc-300 dark:stroke-white/[0.09]" 
+          aria-hidden="true"
+        >
+          <defs>
+            <pattern id="bazaar-grid" width="36" height="36" patternUnits="userSpaceOnUse">
+              <path d="M 36 0 L 0 0 0 36" fill="none" strokeWidth="1" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#bazaar-grid)" />
+        </svg>
+      </div>
 
       <div className="container mx-auto px-4 max-w-7xl relative z-10">
         {/* Two-Column Strict Linear Grid */}

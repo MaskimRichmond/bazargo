@@ -18,10 +18,10 @@ export function Header() {
   const { setTheme, theme } = useTheme()
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md">
-      <div className="container mx-auto px-4 h-14 md:h-16 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-50 w-full border-b border-zinc-200 dark:border-zinc-800/80 bg-white/90 dark:bg-[#090A0F]/90 backdrop-blur-md">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         {/* Left: Strict Geometric BazaarOS Logo & Location */}
-        <div className="flex items-center gap-4 md:gap-6">
+        <div className="flex items-center gap-4 md:gap-6 shrink-0">
           <BazaarLogo size="header" />
           
           <Suspense fallback={<div className="hidden lg:flex w-24 h-8 bg-zinc-100 dark:bg-zinc-800 rounded-md animate-pulse" />}>
@@ -33,7 +33,7 @@ export function Header() {
         <HeaderNav />
 
         {/* Right Actions: Theme, Lang, Auth, and Primary B2B Action */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <Button
             variant="ghost"
             size="icon"
@@ -51,7 +51,7 @@ export function Header() {
           <HeaderAuth />
           
           <Button 
-            className="hidden sm:inline-flex bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-zinc-950 rounded-xl px-4 py-2 font-bold shadow-sm gap-1.5 text-xs md:text-sm cursor-pointer"
+            className="hidden sm:inline-flex bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-500 dark:hover:bg-emerald-400 dark:text-zinc-950 rounded-xl shrink-0 whitespace-nowrap px-4 py-2 text-sm font-semibold shadow-sm gap-1.5 cursor-pointer"
             asChild
           >
             <Link href="/requests/create">

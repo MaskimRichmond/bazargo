@@ -97,9 +97,8 @@ export function SupplierApplicationForm({ userId }: { userId: string }) {
         return
       }
 
-      setIsSuccess(true)
-      toast.success("Заявка успешно отправлена! Мы свяжемся с вами в Telegram")
-      router.refresh()
+      toast.success("Заявка успешно отправлена на проверку службы безопасности")
+      router.push("/b2b")
     } catch (err: any) {
       toast.error(err.message || "Ошибка при отправке заявки. Попробуйте позже.")
     } finally {
@@ -239,7 +238,7 @@ export function SupplierApplicationForm({ userId }: { userId: string }) {
         <div className="space-y-2">
           <Label htmlFor="telegram_username" className="text-sm font-semibold flex items-center gap-1.5 text-zinc-900 dark:text-zinc-200">
             <Send className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            Telegram (@username) для мгновенного получения заказов
+            Telegram (@username)
           </Label>
           <div className="relative">
             <Input 

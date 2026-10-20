@@ -281,36 +281,45 @@ export async function getPublicRegistry(filters?: {
 }) {
   const supabase = await createClient()
 
-  let query = supabase
-    .from("supplier_products")
-    .select("*")
-    .eq("in_stock", true)
-    .order("created_at", { ascending: false })
-
-  if (filters?.category && filters.category !== "all") {
-    query = query.eq("category_tag", filters.category)
-  }
-  if (filters?.city && filters.city !== "all") {
-    query = query.ilike("city", `%${filters.city}%`)
-  }
-  if (filters?.maxPrice) {
-    query = query.lte("unit_price", filters.maxPrice)
-  }
-  if (filters?.search) {
-    const s = filters.search.trim()
-    query = query.or(`title.ilike.%${s}%,specs.ilike.%${s}%,company_name.ilike.%${s}%`)
-  }
-
-  const { data: products, error } = await query
-
-  // Also fetch approved B2B supplier applications
+  // 1. Fetch STRICTLY APPROVED B2B supplier applications
   const { data: rawSuppliers } = await supabase
     .from("b2b_applications")
     .select("*")
-    .in("status", ["APPROVED", "PENDING"])
+    .eq("status", "APPROVED")
     .order("created_at", { ascending: false })
 
-  const suppliers: SupplierProfile[] = (rawSuppliers || []).map((sup: any) => {
+  const approvedSuppliers = rawSuppliers || []
+  const approvedUserIds = approvedSuppliers.map((sup: any) => sup.user_id).filter(Boolean)
+
+  // 2. Fetch products ONLY from verified (APPROVED) suppliers
+  let products: SupplierProduct[] = []
+  if (approvedUserIds.length > 0) {
+    let query = supabase
+      .from("supplier_products")
+      .select("*")
+      .eq("in_stock", true)
+      .in("supplier_id", approvedUserIds)
+      .order("created_at", { ascending: false })
+
+    if (filters?.category && filters.category !== "all") {
+      query = query.eq("category_tag", filters.category)
+    }
+    if (filters?.city && filters.city !== "all") {
+      query = query.ilike("city", `%${filters.city}%`)
+    }
+    if (filters?.maxPrice) {
+      query = query.lte("unit_price", filters.maxPrice)
+    }
+    if (filters?.search) {
+      const s = filters.search.trim()
+      query = query.or(`title.ilike.%${s}%,specs.ilike.%${s}%,company_name.ilike.%${s}%`)
+    }
+
+    const { data: prods } = await query
+    products = (prods as SupplierProduct[]) || []
+  }
+
+  const suppliers: SupplierProfile[] = approvedSuppliers.map((sup: any) => {
     let companyType: CompanyType = 'LLC'
     if (sup.company_type && ['IP', 'LLC', 'FACTORY'].includes(sup.company_type)) {
       companyType = sup.company_type as CompanyType
@@ -337,8 +346,6 @@ export async function getPublicRegistry(filters?: {
       if (match) directorName = match[1].trim()
     }
 
-    const moderationStatus = (sup.status === 'APPROVED' ? 'VERIFIED' : sup.status === 'REJECTED' ? 'REJECTED' : 'PENDING')
-
     return {
       id: sup.id,
       userId: sup.user_id,
@@ -352,14 +359,14 @@ export async function getPublicRegistry(filters?: {
       address: sup.address || undefined,
       phone: sup.phone,
       telegramUsername: sup.telegram_username,
-      moderationStatus,
+      moderationStatus: 'VERIFIED' as const,
       description: sup.description,
       createdAt: sup.created_at || new Date().toISOString()
     }
   })
 
   return {
-    products: (products as SupplierProduct[]) || [],
+    products,
     suppliers
   }
 }

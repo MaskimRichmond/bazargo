@@ -356,8 +356,9 @@ export function PublicRegistryView({
                             Аккредитован
                           </span>
                         ) : (
-                          <span className="text-[11px] font-medium text-zinc-600 dark:text-zinc-400 px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800">
-                            Проверен
+                          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
+                            <Clock className="w-3 h-3 text-amber-500" />
+                            На модерации
                           </span>
                         )}
                       </div>

@@ -673,124 +673,135 @@ export async function searchSuppliers(params: {
   const searchKeyword = (params.text || "").toLowerCase().trim()
   const reqQty = Number(params.quantity) || 1
 
-  // 1. Search in REAL supplier_products table
-  try {
-    const supabase = await createClient()
-    let prodQuery = supabase
-      .from("supplier_products")
-      .select("*")
-      .eq("in_stock", true)
-
-    if (cat && cat !== "other") {
-      prodQuery = prodQuery.eq("category_tag", cat)
-    }
-
-    const { data: products } = await prodQuery.limit(10)
-
-    if (products && products.length > 0) {
-      for (const prod of products) {
-        const titleStr = (prod.title || "").toLowerCase()
-        const specsStr = (prod.specs || "").toLowerCase()
-        const compStr = (prod.company_name || "").toLowerCase()
-
-        const matchesKeyword = !searchKeyword ||
-          titleStr.includes(searchKeyword) ||
-          specsStr.includes(searchKeyword) ||
-          compStr.includes(searchKeyword)
-
-        if (matchesKeyword) {
-          const unitPrice = Number(prod.unit_price) || 0
-          const deliveryCost = Number(prod.delivery_cost) || 0
-          const moq = Number(prod.moq) || 1
-          const totalCost = (unitPrice * reqQty) + deliveryCost
-          const fitsMoq = reqQty >= moq
-
-          results.push({
-            id: prod.id,
-            productId: prod.id,
-            supplierId: prod.supplier_id,
-            name: prod.company_name || "Поставщик",
-            title: prod.title,
-            specs: prod.specs || undefined,
-            unit: prod.unit || "шт",
-            city: prod.city || city,
-            category: prod.category_tag || cat,
-            unitPrice,
-            moq,
-            deliveryCost,
-            leadTimeDays: prod.lead_time_days || 3,
-            totalCost,
-            fitsMoq,
-            phone: prod.phone || undefined,
-            telegram_username: prod.telegram_username || undefined,
-            isVerified: true,
-            source: "supplier_product"
-          })
-        }
-      }
-    }
-  } catch (prodErr) {
-    console.warn("supplier_products search non-fatal error:", prodErr)
-  }
-
-  // 2. Search in REAL b2b_applications table
+  // 1. Fetch strictly APPROVED suppliers from b2b_applications first
+  let approvedApps: any[] = []
   try {
     const admin = createAdminClient()
     const { data: apps } = await admin
       .from("b2b_applications")
       .select("id, user_id, company_name, city, categories, description, phone, telegram_username, status")
-      .in("status", ["APPROVED", "PENDING"])
-      .limit(10)
+      .eq("status", "APPROVED")
+      .limit(20)
 
-    if (apps && apps.length > 0) {
-      for (const app of apps) {
-        const catStr = (app.categories || "").toLowerCase()
-        const descStr = (app.description || "").toLowerCase()
-        const compStr = (app.company_name || "").toLowerCase()
-
-        const matchesCategory =
-          (cat === "packaging" && (catStr.includes("упаков") || catStr.includes("короб") || descStr.includes("короб"))) ||
-          (cat === "cups" && (catStr.includes("стакан") || catStr.includes("посуд") || descStr.includes("стакан"))) ||
-          (cat === "syrups" && (catStr.includes("сироп") || catStr.includes("кофе") || catStr.includes("horeca"))) ||
-          (cat === "food" && (catStr.includes("продукт") || catStr.includes("сырь") || catStr.includes("horeca"))) ||
-          (cat === "cleaning" && (catStr.includes("хоз") || catStr.includes("хим") || catStr.includes("моюще"))) ||
-          (cat === "textiles" && (catStr.includes("текстил") || catStr.includes("форм") || catStr.includes("спецодежд"))) ||
-          (cat === "printing" && (catStr.includes("полиграф") || catStr.includes("печат") || catStr.includes("лого"))) ||
-          (cat === "equipment" && (catStr.includes("оборудован") || catStr.includes("кофемашин") || catStr.includes("печ")))
-
-        const matchesKeyword = searchKeyword && (
-          compStr.includes(searchKeyword) ||
-          catStr.includes(searchKeyword) ||
-          descStr.includes(searchKeyword)
-        )
-
-        if (matchesCategory || matchesKeyword) {
-          // Avoid duplicate supplier if already in results from supplier_products
-          const alreadyAdded = results.some(r => r.supplierId === app.user_id || r.name === app.company_name)
-          if (!alreadyAdded) {
-            results.push({
-              id: app.id,
-              supplierId: app.user_id,
-              name: app.company_name,
-              city: app.city || city,
-              category: app.categories || "Верифицированный B2B поставщик",
-              description: app.description || undefined,
-              phone: app.phone || undefined,
-              telegram_username: app.telegram_username || undefined,
-              isVerified: app.status === "APPROVED",
-              source: "b2b_partner"
-            })
-          }
-        }
-      }
-    }
+    approvedApps = apps || []
   } catch (appErr) {
     console.warn("b2b_applications search non-fatal error:", appErr)
   }
 
-  // STRICTLY NO FAKE/CURATED FALLBACKS!
+  const approvedUserIds = approvedApps.map(a => a.user_id).filter(Boolean)
+
+  // 2. Search in REAL supplier_products table — ONLY from verified (APPROVED) suppliers
+  if (approvedUserIds.length > 0) {
+    try {
+      const supabase = await createClient()
+      let prodQuery = supabase
+        .from("supplier_products")
+        .select("*")
+        .eq("in_stock", true)
+        .in("supplier_id", approvedUserIds)
+
+      if (cat && cat !== "other") {
+        prodQuery = prodQuery.eq("category_tag", cat)
+      }
+
+      const { data: products } = await prodQuery.limit(10)
+
+      if (products && products.length > 0) {
+        for (const prod of products) {
+          const titleStr = (prod.title || "").toLowerCase()
+          const specsStr = (prod.specs || "").toLowerCase()
+          const compStr = (prod.company_name || "").toLowerCase()
+
+          const matchesKeyword = !searchKeyword ||
+            titleStr.includes(searchKeyword) ||
+            specsStr.includes(searchKeyword) ||
+            compStr.includes(searchKeyword)
+
+          if (matchesKeyword) {
+            const unitPrice = Number(prod.unit_price) || 0
+            const deliveryCost = Number(prod.delivery_cost) || 0
+            const moq = Number(prod.moq) || 1
+            const totalCost = (unitPrice * reqQty) + deliveryCost
+            const fitsMoq = reqQty >= moq
+
+            results.push({
+              id: prod.id,
+              productId: prod.id,
+              supplierId: prod.supplier_id,
+              name: prod.company_name || "Поставщик",
+              title: prod.title,
+              specs: prod.specs || undefined,
+              unit: prod.unit || "шт",
+              city: prod.city || city,
+              category: prod.category_tag || cat,
+              unitPrice,
+              moq,
+              deliveryCost,
+              leadTimeDays: prod.lead_time_days || 3,
+              totalCost,
+              fitsMoq,
+              phone: prod.phone || undefined,
+              telegram_username: prod.telegram_username || undefined,
+              isVerified: true,
+              source: "supplier_product"
+            })
+          }
+        }
+      }
+    } catch (prodErr) {
+      console.warn("supplier_products search non-fatal error:", prodErr)
+    }
+  }
+
+  // 3. Search in APPROVED b2b partners matching category or keyword
+  if (approvedApps.length > 0) {
+    for (const app of approvedApps) {
+      const catStr = (app.categories || "").toLowerCase()
+      const descStr = (app.description || "").toLowerCase()
+      const compStr = (app.company_name || "").toLowerCase()
+
+      const matchesCategory =
+        (cat === "packaging" && (catStr.includes("упаков") || catStr.includes("короб") || descStr.includes("короб"))) ||
+        (cat === "cups" && (catStr.includes("стакан") || catStr.includes("посуд") || descStr.includes("стакан"))) ||
+        (cat === "syrups" && (catStr.includes("сироп") || catStr.includes("кофе") || catStr.includes("horeca"))) ||
+        (cat === "food" && (catStr.includes("продукт") || catStr.includes("сырь") || catStr.includes("horeca"))) ||
+        (cat === "cleaning" && (catStr.includes("хоз") || catStr.includes("хим") || catStr.includes("моюще"))) ||
+        (cat === "textiles" && (catStr.includes("текстил") || catStr.includes("форм") || catStr.includes("спецодежд"))) ||
+        (cat === "printing" && (catStr.includes("полиграф") || catStr.includes("печат") || catStr.includes("лого"))) ||
+        (cat === "equipment" && (catStr.includes("оборудован") || catStr.includes("кофемашин") || catStr.includes("печ")))
+
+      const matchesKeyword = searchKeyword && (
+        compStr.includes(searchKeyword) ||
+        catStr.includes(searchKeyword) ||
+        descStr.includes(searchKeyword)
+      )
+
+      if (matchesCategory || matchesKeyword) {
+        // Avoid duplicate supplier if already in results from supplier_products
+        const alreadyAdded = results.some(r => r.supplierId === app.user_id || r.name === app.company_name)
+        if (!alreadyAdded) {
+          results.push({
+            id: app.id,
+            supplierId: app.user_id,
+            name: app.company_name,
+            city: app.city || city,
+            category: app.categories || "Верифицированный B2B поставщик",
+            description: app.description || undefined,
+            phone: app.phone || undefined,
+            telegram_username: app.telegram_username || undefined,
+            isVerified: true,
+            source: "b2b_partner"
+          })
+        }
+      }
+    }
+  }
+
+  // STRICTLY NO UNMODERATED / PENDING / REJECTED / FAKE SUPPLIERS!
   return { suppliers: results }
 }
+
+export const searchSuppliersForRfq = searchSuppliers
 
 export async function offerListing(requestId: string, listingId: string, message?: string) {
   const supabase = await createClient()

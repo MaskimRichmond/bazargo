@@ -128,6 +128,16 @@ export function BazaarOsCreateRfq({ initialPrompt = "" }: BazaarOsCreateRfqProps
     }
   }
 
+  const handleBudgetChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleTotalBudgetChange(e.target.value)
+  }
+
+  const handleUnitPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleMaxPriceChange(e.target.value)
+  }
+
+  const unitPrice = maxPrice
+
   const handleQuantityChange = (val: string) => {
     setQuantity(val)
     const numQty = Number(val) || 0
@@ -651,58 +661,48 @@ export function BazaarOsCreateRfq({ initialPrompt = "" }: BazaarOsCreateRfqProps
               </div>
 
               {/* BUDGET SECTION: Total Budget & Max Unit Price with Live Sync */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start md:col-span-2">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between min-h-[28px] gap-2">
-                    <Label htmlFor="totalBudget" className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center gap-1.5 cursor-pointer">
-                      <Coins className="w-4 h-4 text-emerald-700 dark:text-emerald-400 shrink-0" />
-                      <span>Общий бюджет закупки</span>
-                    </Label>
-                    <span className="text-xs text-emerald-700 dark:text-emerald-400 font-mono whitespace-nowrap shrink-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start md:col-span-2">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between h-7">
+                    <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 whitespace-nowrap">
+                      <Coins className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0"/>
+                      Бюджет партии *
+                    </label>
+                    <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 whitespace-nowrap">
                       на всю партию
                     </span>
                   </div>
                   <div className="relative">
-                    <Input
-                      id="totalBudget"
-                      type="number"
-                      step="1"
-                      min={0}
+                    <input
+                      type="text"
                       value={totalBudget}
-                      onChange={(e) => handleTotalBudgetChange(e.target.value)}
+                      onChange={handleBudgetChange}
                       placeholder="Например: 24000"
-                      className="h-11 rounded-xl bg-white dark:bg-[#090A0F] border-zinc-300 dark:border-zinc-800 pr-12 font-mono text-zinc-900 dark:text-zinc-100 font-bold placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus-visible:ring-emerald-500/20 focus:border-emerald-500/50"
+                      className="w-full h-11 px-3.5 pr-12 rounded-xl bg-white dark:bg-[#11131A] border border-zinc-300 dark:border-zinc-800 font-mono text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-emerald-500"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-400 pointer-events-none">
-                      сом
-                    </span>
+                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-zinc-500">сом</span>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between min-h-[28px] gap-2">
-                    <Label htmlFor="maxPrice" className="text-sm font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 cursor-pointer">
-                      <Tag className="w-4 h-4 text-zinc-400 dark:text-zinc-500 shrink-0" />
-                      <span>Предельная цена за 1 {unit}</span>
-                    </Label>
-                    <span className="text-xs text-zinc-500 font-mono whitespace-nowrap shrink-0">
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between h-7">
+                    <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300 flex items-center gap-1.5 whitespace-nowrap">
+                      <Tag className="w-3.5 h-3.5 text-zinc-400 shrink-0"/>
+                      Цена за 1 шт
+                    </label>
+                    <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-800/60 px-1.5 py-0.5 rounded whitespace-nowrap">
                       авторасчет
                     </span>
                   </div>
                   <div className="relative">
-                    <Input
-                      id="maxPrice"
-                      type="number"
-                      step="0.01"
-                      min={0}
-                      value={maxPrice}
-                      onChange={(e) => handleMaxPriceChange(e.target.value)}
+                    <input
+                      type="text"
+                      value={unitPrice}
+                      onChange={handleUnitPriceChange}
                       placeholder="Например: 80"
-                      className="h-11 rounded-xl bg-white dark:bg-[#090A0F] border-zinc-300 dark:border-zinc-800 pr-12 font-mono text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 dark:placeholder:text-zinc-600 focus-visible:ring-emerald-500/20 focus:border-emerald-500/50"
+                      className="w-full h-11 px-3.5 pr-12 rounded-xl bg-white dark:bg-[#11131A] border border-zinc-300 dark:border-zinc-800 font-mono text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:border-emerald-500"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-400 pointer-events-none">
-                      сом
-                    </span>
+                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-zinc-500">сом</span>
                   </div>
                 </div>
               </div>
